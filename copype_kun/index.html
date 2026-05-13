@@ -1,0 +1,2700 @@
+<!DOCTYPE html>
+
+<html lang="ja" data-theme="sora">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>化学式コピペくん – 化学式 → Word リッチテキスト変換</title>
+
+<style>
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+
+/* ══════════════════════════════════════════
+
+テーマ変数
+
+══════════════════════════════════════════ */
+
+html[data-theme="sakura"] {
+
+--bg:         linear-gradient(150deg,#fdf0f0 0%,#f8e8ec 50%,#f2e0e8 100%);
+
+--surface:    #ffffff;  --surface2: #fdf6f8;
+
+--border:     #e8d4da;  --border2: #d8bfc8;
+
+--text:       #4a2d36;  --text2: #7a4a55;  --text3: #b08090;
+
+--accent:     #c07888;  --accent2: #8f5060;
+
+--accent-bg:  rgba(192,120,136,.09);  --accent-bg2: rgba(192,120,136,.18);
+
+--green:      #6a9e7a;
+
+--done-bg:    #9a7888;
+
+--red:        #c05060;  --red-bg: rgba(192,80,96,.10);
+
+--shadow:     rgba(74,45,54,.10);  --overlay: rgba(74,45,54,.40);
+
+--h-shadow:   0 1px 6px rgba(192,120,136,.10);
+
+--c-shadow:   0 1px 6px rgba(192,120,136,.07);
+
+--m-shadow:   0 16px 48px rgba(74,45,54,.16);
+
+--preview-bg: #fdf6f8;
+
+}
+
+html[data-theme="sora"] {
+
+--bg:         linear-gradient(150deg,#f0f5fb 0%,#e8f0f8 50%,#dfe9f5 100%);
+
+--surface:    #ffffff;  --surface2: #f5f8fc;
+
+--border:     #d0dcea;  --border2: #b8ccd8;
+
+--text:       #2a3d50;  --text2: #4a6070;  --text3: #7a90a0;
+
+--accent:     #5a80a0;  --accent2: #3a6080;
+
+--accent-bg:  rgba(90,128,160,.09);  --accent-bg2: rgba(90,128,160,.18);
+
+--green:      #5a9e82;
+
+--done-bg:    #4a7090;
+
+--red:        #b85860;  --red-bg: rgba(184,88,96,.10);
+
+--shadow:     rgba(42,61,80,.10);  --overlay: rgba(42,61,80,.40);
+
+--h-shadow:   0 1px 6px rgba(90,128,160,.10);
+
+--c-shadow:   0 1px 6px rgba(90,128,160,.07);
+
+--m-shadow:   0 16px 48px rgba(42,61,80,.16);
+
+--preview-bg: #f5f8fc;
+
+}
+
+html[data-theme="frost"] {
+
+--bg:         #334155;
+
+--surface:    #475569;  --surface2: #64748b;
+
+--border:     #475569;  --border2: #64748b;
+
+--text:       #f8fafc;  --text2: #e2e8f0;  --text3: #cbd5e1;
+
+--accent:     #e2e8f0;  --accent2: #cbd5e1;
+
+--accent-bg:  rgba(203,213,225,.10);  --accent-bg2: rgba(203,213,225,.20);
+
+--green:      #86efac;
+
+--done-bg:    #3a5878;
+
+--red:        #fca5a5;  --red-bg: rgba(252,165,165,.15);
+
+--shadow:     rgba(0,0,0,.30);  --overlay: rgba(0,0,0,.60);
+
+--h-shadow:   0 1px 8px rgba(0,0,0,.20);
+
+--c-shadow:   0 2px 8px rgba(0,0,0,.15);
+
+--m-shadow:   0 16px 48px rgba(0,0,0,.45);
+
+--preview-bg: #334155;
+
+}
+
+html[data-theme="mocha"] {
+
+--bg:         linear-gradient(150deg,#f0e9dc 0%,#ece2d4 50%,#e5d9c8 100%);
+
+--surface:    #ffffff;  --surface2: #f7f2ea;
+
+--border:     #ddd0bc;  --border2: #ccc0aa;
+
+--text:       #4a3828;  --text2: #7a6050;  --text3: #a89070;
+
+--accent:     #9a7050;  --accent2: #7a5030;
+
+--accent-bg:  rgba(154,112,80,.09);  --accent-bg2: rgba(154,112,80,.18);
+
+--green:      #6a9060;
+
+--done-bg:    #7a6848;
+
+--red:        #b85848;  --red-bg: rgba(184,88,72,.10);
+
+--shadow:     rgba(74,56,40,.12);  --overlay: rgba(74,56,40,.40);
+
+--h-shadow:   0 1px 6px rgba(154,112,80,.10);
+
+--c-shadow:   0 1px 6px rgba(154,112,80,.07);
+
+--m-shadow:   0 16px 48px rgba(74,56,40,.16);
+
+--preview-bg: #f7f2ea;
+
+}
+
+html[data-theme="matcha"] {
+
+--bg:         linear-gradient(150deg,#f0f4ee 0%,#e8efe5 50%,#dfe8db 100%);
+
+--surface:    #ffffff;  --surface2: #f5f8f3;
+
+--border:     #ccd8c8;  --border2: #b0c4ac;
+
+--text:       #263220;  --text2: #486044;  --text3: #7a9878;
+
+--accent:     #5a8060;  --accent2: #3a6040;
+
+--accent-bg:  rgba(90,128,96,.09);  --accent-bg2: rgba(90,128,96,.18);
+
+--green:      #5a9068;
+
+--done-bg:    #4a7850;
+
+--red:        #b85858;  --red-bg: rgba(184,88,88,.10);
+
+--shadow:     rgba(38,50,32,.12);  --overlay: rgba(38,50,32,.40);
+
+--h-shadow:   0 1px 6px rgba(90,128,96,.10);
+
+--c-shadow:   0 1px 6px rgba(90,128,96,.07);
+
+--m-shadow:   0 16px 48px rgba(38,50,32,.16);
+
+--preview-bg: #f5f8f3;
+
+}
+
+
+
+/* ══════════════════════════════════════════
+
+共通スタイル
+
+══════════════════════════════════════════ */
+
+body {
+
+min-height: 100vh; background: var(--bg); color: var(--text);
+
+font-family: 'Georgia','Noto Serif JP',serif; transition: background .25s,color .25s;
+
+}
+
+
+
+/* ヘッダー */
+
+header {
+
+background: var(--surface); border-bottom: 1px solid var(--border);
+
+position: sticky; top: 0; z-index: 10; box-shadow: var(--h-shadow);
+
+transition: background .25s,border-color .25s;
+
+}
+
+.header-inner {
+
+max-width: 1100px; margin: 0 auto; padding: 11px 24px;
+
+display: flex; align-items: center; gap: 12px;
+
+}
+
+.logo { display: flex; align-items: center; }
+
+.logo-title {
+
+font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W4", "Helvetica Neue", Arial, "メイリオ", Meiryo, "Segoe UI", sans-serif;
+
+font-size: 21px; font-weight: 700; letter-spacing: .04em; color: var(--accent2);
+
+}
+
+
+
+/* テーマ切り替え */
+
+.theme-sw { margin-left: auto; display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border2); }
+
+.t-btn {
+
+padding: 5px 13px; border: none; border-right: 1px solid var(--border2);
+
+font-size: 12px; font-weight: 700; font-family: monospace; cursor: pointer;
+
+background: var(--surface2); color: var(--text3); transition: all .15s; letter-spacing: .02em;
+
+}
+
+.t-btn:last-child { border-right: none; }
+
+.t-btn:not(.active):hover { background: var(--accent-bg); color: var(--text2); }
+
+.t-btn.active { color: #fff; }
+
+.t-btn[data-t="sakura"].active { background: #c07888; }
+
+.t-btn[data-t="sora"].active   { background: #5a80a0; }
+
+.t-btn[data-t="frost"].active  { background: #475569; } /* Frost Steel */
+
+.t-btn[data-t="mocha"].active  { background: #9a7050; }
+
+.t-btn[data-t="matcha"].active { background: #5a8060; }
+
+
+
+main { max-width: 1100px; margin: 0 auto; padding: 20px 24px 64px; }
+
+
+
+/* 大文字固定トグル */
+
+.caps-area {
+
+background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+
+padding: 9px 14px; margin-bottom: 10px; display: flex; align-items: center;
+
+gap: 10px; flex-wrap: wrap; box-shadow: var(--c-shadow);
+
+transition: background .25s,border-color .25s;
+
+}
+
+.caps-label { font-size: 11px; color: var(--text2); font-family: monospace; flex-shrink: 0; }
+
+.caps-toggle { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--border2); }
+
+.caps-toggle input[type=checkbox] { display: none; }
+
+.caps-toggle-label {
+
+font-size: 12px; font-family: 'Courier New',monospace; padding: 3px 9px;
+
+color: var(--text2); background: var(--surface2); cursor: pointer;
+
+user-select: none; transition: all .15s; line-height: 1;
+
+display: flex; align-items: center; border-right: 1px solid var(--border); white-space: nowrap;
+
+}
+
+.caps-toggle-label:last-child { border-right: none; }
+
+.caps-toggle input:checked + .caps-toggle-label {
+
+background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #fff; font-weight: 700;
+
+}
+
+
+
+/* ── frostテーマ専用のボタン背景同期 (Frost Steel) ── */
+
+html[data-theme="frost"] .caps-toggle input:checked + .caps-toggle-label,
+
+html[data-theme="frost"] .copy-btn {
+
+  background: #475569;
+
+  color: #f8fafc;
+
+  background-image: none;
+
+}
+
+
+
+.caps-hint { font-size: 10px; color: var(--text3); font-family: monospace; margin-left: auto; }
+
+
+
+/* 化学式ボタンエリア */
+
+.btn-area {
+
+background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+
+padding: 10px 14px; margin-bottom: 14px; box-shadow: var(--c-shadow);
+
+transition: background .25s,border-color .25s;
+
+overflow: hidden;
+
+}
+
+.btn-area-header {
+
+float: right; 
+
+display: flex; gap: 4px; align-items: center;
+
+margin-left: 8px; margin-bottom: 4px;
+
+}
+
+
+
+.icon-btn {
+
+width: 24px; height: 24px; border: 1px solid var(--border2); border-radius: 6px;
+
+background: var(--surface2); color: var(--text2); cursor: pointer;
+
+transition: all .15s; display: inline-flex; align-items: center; justify-content: center;
+
+}
+
+.icon-btn:hover { background: var(--accent-bg2); border-color: var(--accent); color: var(--accent2); }
+
+.icon-btn svg {
+
+width: 14px; height: 14px; stroke: currentColor; fill: none;
+
+stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+
+}
+
+
+
+.example-bar { display: block; min-height: 24px; }
+
+
+
+.ex-btn {
+
+height: 24px; padding: 0 4px; margin: 0 4px 4px 0;
+
+border: 1px solid var(--border2); border-radius: 3px;
+
+background: var(--surface2); color: var(--accent2);
+
+font-size: 12px; font-family: Calibri,'Yu Gothic',sans-serif;
+
+cursor: pointer; transition: all .15s;
+
+display: inline-flex; align-items: center; white-space: nowrap; line-height: 1;
+
+vertical-align: middle;
+
+}
+
+.ex-btn > span { display: inline-block; }
+
+.ex-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
+
+.empty-hint { font-size: 11px; color: var(--text3); font-family: monospace; }
+
+
+
+/* モーダル */
+
+.modal-overlay {
+
+display: flex; position: fixed; inset: 0; background: var(--overlay);
+
+z-index: 100; align-items: center; justify-content: center;
+
+visibility: hidden; pointer-events: none; opacity: 0; transition: opacity .15s;
+
+}
+
+.modal-overlay.open { visibility: visible; pointer-events: auto; opacity: 1; }
+
+.modal {
+
+background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+
+width: min(700px,95vw); max-height: 85vh; display: flex; flex-direction: column;
+
+box-shadow: var(--m-shadow); transition: background .25s;
+
+}
+
+.modal-header {
+
+display: flex; align-items: center; justify-content: space-between;
+
+padding: 14px 18px; border-bottom: 1px solid var(--border);
+
+flex-shrink: 0; background: var(--surface2); border-radius: 14px 14px 0 0;
+
+}
+
+.modal-title { font-size: 13px; font-weight: 700; color: var(--accent2); font-family: monospace; }
+
+.modal-close {
+
+background: none; border: none; color: var(--text3); font-size: 18px;
+
+cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all .15s;
+
+}
+
+.modal-close:hover { color: var(--text); background: var(--accent-bg); }
+
+.modal-body { overflow-y: auto; padding: 14px 18px; flex: 1; }
+
+.modal-footer {
+
+display: flex; align-items: center; justify-content: space-between;
+
+gap: 10px; padding: 12px 18px; border-top: 1px solid var(--border);
+
+flex-shrink: 0; background: var(--surface2); border-radius: 0 0 14px 14px; flex-wrap: wrap;
+
+}
+
+.edit-table { width: 100%; border-collapse: collapse; }
+
+.edit-table th {
+
+font-size: 10px; color: var(--text3); font-family: monospace;
+
+text-align: left; padding: 3px 6px 7px; letter-spacing: .05em;
+
+border-bottom: 1px solid var(--border); font-weight: 600;
+
+}
+
+.edit-table td { padding: 3px; vertical-align: middle; }
+
+.edit-table tr { border-bottom: 1px solid var(--border); }
+
+.edit-table tr:last-child { border-bottom: none; }
+
+.edit-table tr.drag-over { background: var(--accent-bg2); }
+
+.tbl-input {
+
+width: 100%; background: var(--surface2); border: 1px solid var(--border);
+
+border-radius: 5px; color: var(--text); font-size: 12px; font-family: monospace;
+
+padding: 4px 7px; outline: none; transition: border-color .15s;
+
+}
+
+.tbl-input:focus { border-color: var(--accent); background: var(--surface); }
+
+.tbl-preview {
+
+padding: 4px 10px; font-family: Calibri,'Yu Gothic',sans-serif;
+
+font-size: 13px; color: var(--accent2); white-space: nowrap;
+
+min-width: 120px;
+
+}
+
+.tbl-preview sub { font-size: .72em; }
+
+.tbl-preview sup { font-size: .72em; }
+
+.drag-handle { cursor: grab; color: var(--text3); font-size: 14px; padding: 0 5px; user-select: none; }
+
+.drag-handle:active { cursor: grabbing; }
+
+.tbl-move {
+
+background: none; border: 1px solid var(--border2); border-radius: 4px;
+
+color: var(--accent); font-size: 11px; cursor: pointer; padding: 2px 5px; transition: all .15s;
+
+}
+
+.tbl-move:hover { background: var(--accent-bg); }
+
+.tbl-del {
+
+background: none; border: 1px solid var(--red-bg); border-radius: 4px;
+
+color: var(--red); font-size: 11px; cursor: pointer; padding: 2px 6px; transition: all .15s;
+
+}
+
+.tbl-del:hover { background: var(--red-bg); }
+
+.add-row-btn {
+
+background: none; border: 1px dashed var(--border2); border-radius: 6px;
+
+color: var(--accent); font-size: 12px; cursor: pointer;
+
+padding: 6px 14px; width: 100%; margin-top: 8px; font-family: monospace; transition: all .15s;
+
+}
+
+.add-row-btn:hover { background: var(--accent-bg); border-style: solid; }
+
+.save-all-btn {
+
+padding: 7px 22px; background: linear-gradient(135deg,var(--accent),var(--accent2));
+
+border: none; border-radius: 7px; color: white; font-size: 13px; font-weight: 700;
+
+cursor: pointer; font-family: monospace; box-shadow: 0 3px 10px var(--shadow); transition: filter .15s;
+
+}
+
+.save-all-btn:hover { filter: brightness(1.08); }
+
+.discard-btn {
+
+padding: 7px 14px; background: transparent; border: 1px solid var(--border2);
+
+border-radius: 7px; color: var(--text2); font-size: 13px;
+
+cursor: pointer; font-family: monospace; transition: all .15s;
+
+}
+
+.discard-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+
+
+/* 2カラム */
+
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+.cols .btn-row { grid-column: 2; margin-bottom: 0; align-self: start; }
+
+@media (max-width: 680px) {
+
+  .cols { grid-template-columns: 1fr; }
+
+  .cols .btn-row { grid-column: 1; }
+
+}
+
+.card {
+
+background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+
+overflow: hidden; box-shadow: var(--c-shadow); transition: background .25s,border-color .25s;
+
+}
+
+.card-header {
+
+display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+
+border-bottom: 1px solid var(--border); background: var(--surface2);
+
+}
+
+.card-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+.card-title { font-size: 12px; font-weight: 700; color: var(--text2); font-family: monospace; }
+
+.card-hint { font-size: 11px; color: var(--text3); margin-left: auto; font-family: monospace; }
+
+textarea {
+
+width: 100%; height: 220px; background: transparent; border: none;
+
+border-bottom: 1px solid var(--border); color: var(--text); font-size: 14px;
+
+font-family: 'Courier New',monospace; padding: 14px; resize: vertical; line-height: 1.8; outline: none;
+
+}
+
+textarea:focus { border-bottom-color: var(--accent); }
+
+textarea::placeholder { color: var(--text3); }
+
+.raw-line {
+
+display: flex; align-items: flex-start; gap: 7px; padding: 7px 14px;
+
+border-top: 1px solid var(--border); background: var(--surface2);
+
+}
+
+.badge {
+
+background: var(--accent-bg); color: var(--accent2); font-size: 10px;
+
+font-family: monospace; padding: 1px 5px; border-radius: 4px;
+
+border: 1px solid var(--border2); flex-shrink: 0; margin-top: 2px;
+
+}
+
+.raw-code { font-size: 10px; color: var(--text3); font-family: monospace; word-break: break-all; }
+
+
+
+/* プレビュー */
+
+.preview { min-height: 175px; padding: 16px; background: var(--surface2); }
+
+.preview-text, .preview-placeholder {
+
+background: var(--preview-bg); color: var(--accent2); padding: 16px 20px; border-radius: 8px;
+
+font-family: Calibri,'Yu Gothic',sans-serif; font-size: 16px; line-height: 2.1;
+
+box-shadow: 0 2px 10px var(--shadow); letter-spacing: .02em; border: 1px solid var(--border);
+
+}
+
+.preview-text sub, .preview-text sup,
+
+.preview-placeholder sub, .preview-placeholder sup { font-family: inherit; }
+
+.preview-placeholder { opacity: .3; width: 100%; }
+
+.html-line {
+
+display: flex; align-items: flex-start; gap: 7px; padding: 7px 14px;
+
+border-top: 1px solid var(--border); background: var(--surface2);
+
+}
+
+.html-code { font-size: 10px; color: var(--text3); font-family: monospace; word-break: break-all; line-height: 1.6; }
+
+
+
+/* コピーボタン */
+
+.btn-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+
+.copy-btn {
+
+padding: 10px 28px; background: linear-gradient(135deg,var(--accent),var(--accent2));
+
+border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 700;
+
+cursor: pointer; font-family: 'Georgia',serif; letter-spacing: .03em;
+
+box-shadow: 0 3px 12px var(--shadow); transition: all .15s;
+
+}
+
+.copy-btn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+
+.copy-btn:disabled { opacity: .4; cursor: default; transform: none; }
+
+.copy-btn.done {
+
+background: var(--done-bg);
+
+cursor: default; transform: none;
+
+}
+
+.btn-note { font-size: 11px; color: var(--text3); font-family: monospace; }
+
+
+
+/* ── ピンボタン ───────────────────────────────── */
+
+.pin-btn {
+
+  width: 20px; height: 20px; flex-shrink: 0;
+
+  border: 1px solid var(--border2); border-radius: 3px;
+
+  background: transparent; color: var(--text3);
+
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+
+  opacity: 0.3; transition: opacity .15s, background .15s, color .15s; padding: 0;
+
+}
+
+.pin-btn:hover { opacity: 1; background: var(--accent-bg); color: var(--accent2); }
+
+.pin-btn.pinned { opacity: 0.85; color: var(--accent); }
+
+.pin-btn svg { display: block; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; }
+
+.preview-row { display: flex; align-items: center; padding: 2px 0; }
+
+.preview-row-text { flex: 1; margin-left: 8px; }
+
+
+
+/* ── RAW/HTML 折りたたみトグル ─────────────────── */
+
+.collapse-btn {
+
+  padding: 2px 7px; border: 1px solid var(--border2); border-radius: 4px;
+
+  background: var(--surface2); color: var(--text3);
+
+  font-size: 10px; font-family: monospace; font-weight: 700;
+
+  cursor: pointer; transition: all .15s; letter-spacing: .04em; margin-left: 6px;
+
+}
+
+.collapse-btn:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-bg); }
+
+.collapse-btn.open { background: var(--accent-bg); color: var(--accent2); border-color: var(--accent); }
+
+
+
+/* ── 反応式ストックエリア ─────────────────────── */
+
+.stock-area {
+
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+
+  padding: 10px 14px; margin-top: 14px; box-shadow: var(--c-shadow);
+
+  transition: background .25s, border-color .25s; overflow: hidden;
+
+}
+
+.stock-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+
+.stock-header.collapsed { margin-bottom: 0; }
+
+.stock-label { font-size: 11px; color: var(--text2); font-family: monospace; font-weight: 700; }
+
+.stock-toggle {
+
+  margin-left: auto; padding: 2px 7px; border: 1px solid var(--border2); border-radius: 4px;
+
+  background: var(--surface2); color: var(--text3);
+
+  font-size: 10px; font-family: monospace; cursor: pointer; transition: all .15s;
+
+}
+
+.stock-toggle:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-bg); }
+
+.stock-bar { display: block; min-height: 24px; }
+
+.stock-bar.hidden { display: none; }
+
+.stock-item {
+
+  position: relative; display: inline-flex; align-items: center;
+
+  margin: 0 4px 4px 0; vertical-align: middle;
+
+}
+
+.stock-btn {
+
+  height: 24px; padding: 0 20px 0 4px;
+
+  border: 1px solid var(--border2); border-radius: 3px;
+
+  background: var(--surface2); color: var(--accent2);
+
+  font-size: 12px; font-family: Calibri,'Yu Gothic',sans-serif;
+
+  cursor: pointer; transition: all .15s;
+
+  display: inline-flex; align-items: center; white-space: nowrap; line-height: 1;
+
+}
+
+.stock-btn > span { display: inline-block; }
+
+.stock-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
+
+.stock-del {
+
+  position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+
+  width: 14px; height: 14px; border-radius: 2px;
+
+  background: none; border: none; color: var(--text3);
+
+  font-size: 10px; line-height: 1; cursor: pointer;
+
+  display: flex; align-items: center; justify-content: center;
+
+  opacity: 0; transition: opacity .15s, color .15s; padding: 0;
+
+}
+
+.stock-item:hover .stock-del { opacity: 1; }
+
+.stock-del:hover { color: var(--red); }
+
+.stock-empty-hint { font-size: 11px; color: var(--text3); font-family: monospace; }
+
+.stock-drag-handle {
+
+  font-size: 11px; color: var(--text3); cursor: grab; user-select: none;
+
+  padding: 0 3px; opacity: 0.25; transition: opacity .15s; flex-shrink: 0; line-height: 1;
+
+}
+
+.stock-item:hover .stock-drag-handle { opacity: 0.9; }
+
+.stock-drag-handle:active { cursor: grabbing; }
+
+.stock-item.drag-over { outline: 1px dashed var(--accent); border-radius: 3px; }
+
+
+
+/* ── 平衡定数フィールドコード行 ──────────────────────────── */
+
+.preview-row.field-code .preview-row-text {
+
+  color: var(--accent2);
+
+  font-family: 'BIZ UDGothic', 'Yu Gothic', 'Meiryo', 'Osaka-Mono', monospace;
+
+  font-size: 13px;
+
+}
+
+.field-copy-btn {
+
+  width: 20px; height: 20px; flex-shrink: 0;
+
+  border: 1px solid var(--border2); border-radius: 3px;
+
+  background: transparent; color: var(--accent2);
+
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+
+  opacity: 0.55; transition: opacity .15s, background .15s, color .15s; padding: 0;
+
+  margin-left: 6px;
+
+}
+
+.field-copy-btn:hover { opacity: 1; background: var(--accent-bg2); color: var(--accent2); }
+
+.field-copy-btn.copied { opacity: 1; color: var(--accent); background: var(--accent-bg); }
+
+.field-copy-btn svg { display: block; stroke: currentColor; fill: none;
+
+  stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── 初期化エリア ─────────────────────────────────────── */
+.reset-area {
+  display: flex; justify-content: center; padding: 16px 0 2px;
+}
+.reset-trigger-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text3); font-size: 11px; font-family: monospace;
+  padding: 5px 16px; cursor: pointer; transition: all .2s;
+  display: inline-flex; align-items: center; gap: 6px;
+  letter-spacing: .04em; opacity: 0.5;
+}
+.reset-trigger-btn svg { flex-shrink: 0; width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round; }
+.reset-trigger-btn:hover {
+  border-color: var(--red); color: var(--red);
+  background: var(--red-bg); opacity: 1;
+}
+
+/* ── 初期化モーダル内部 ───────────────────────────────── */
+.reset-warn {
+  font-size: 11px; color: var(--text3); font-family: monospace;
+  padding-bottom: 12px; line-height: 1.7; border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.reset-check-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 4px; border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none;
+}
+.reset-check-row:last-child { border-bottom: none; }
+.reset-check-row input[type=checkbox] {
+  width: 15px; height: 15px; accent-color: var(--accent);
+  cursor: pointer; flex-shrink: 0; margin: 0;
+}
+.reset-check-label {
+  font-size: 13px; color: var(--text); font-family: monospace; flex: 1;
+}
+.reset-check-desc {
+  font-size: 10px; color: var(--text3); font-family: monospace; text-align: right;
+}
+.reset-exec-btn {
+  padding: 7px 18px; background: transparent;
+  border: 1px solid var(--red); border-radius: 7px;
+  color: var(--red); font-size: 13px; cursor: pointer;
+  font-family: monospace; transition: all .15s;
+}
+.reset-exec-btn:hover:not(:disabled) { background: var(--red-bg); }
+.reset-exec-btn:disabled { opacity: .3; cursor: default; border-color: var(--border2); color: var(--text3); }
+</style>
+
+
+
+</head>
+
+<body>
+
+
+
+<header>
+
+  <div class="header-inner">
+
+    <div class="logo">
+
+      <span class="logo-title">化学式コピペくん</span>
+
+    </div>
+
+    <div class="theme-sw">
+
+      <button class="t-btn" data-t="sakura" onclick="setTheme('sakura')">sakura</button>
+
+      <button class="t-btn" data-t="sora"   onclick="setTheme('sora')">sora</button>
+
+      <button class="t-btn" data-t="frost"  onclick="setTheme('frost')">frost</button>
+
+      <button class="t-btn" data-t="mocha"  onclick="setTheme('mocha')">mocha</button>
+
+      <button class="t-btn" data-t="matcha" onclick="setTheme('matcha')">matcha</button>
+
+    </div>
+
+  </div>
+
+</header>
+
+
+
+<main>
+
+  <div class="caps-area">
+
+    <span class="caps-label">大文字固定：</span>
+
+    <label class="caps-toggle">
+
+      <input type="checkbox" id="fix-cn" checked onchange="update()">
+
+      <span class="caps-toggle-label">CN</span>
+
+    </label>
+
+    <label class="caps-toggle">
+
+      <input type="checkbox" id="fix-co" checked onchange="update()">
+
+      <span class="caps-toggle-label">CO</span>
+
+    </label>
+
+    <label class="caps-toggle">
+
+      <input type="checkbox" id="fix-cs" checked onchange="update()">
+
+      <span class="caps-toggle-label">CS</span>
+
+    </label>
+
+    <label class="caps-toggle">
+
+      <input type="checkbox" id="fix-no" checked onchange="update()">
+
+      <span class="caps-toggle-label">NO</span>
+
+    </label>
+
+    <label class="caps-toggle">
+
+      <input type="checkbox" id="fix-po" checked onchange="update()">
+
+      <span class="caps-toggle-label">PO</span>
+
+    </label>
+
+    <span class="caps-hint">ON = co→CO（大文字2元素）　OFF = co→Co（2文字元素記号）</span>
+
+  </div>
+
+
+
+  <div class="btn-area">
+
+    <div class="btn-area-header">
+
+      <button class="icon-btn" onclick="openModal()" title="化学式ボタンを追加・編集">
+
+        <svg viewBox="0 0 24 24">
+
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+
+        </svg>
+
+      </button>
+
+      <button class="icon-btn" onclick="exportJSON()" title="設定一覧をJSONファイルで保存">
+
+        <svg viewBox="0 0 24 24">
+
+          <path d="M3,14 L3,21 L21,21 L21,14"/>
+
+          <polyline points="8,9 12,4 16,9"/>
+
+          <line x1="12" y1="4" x2="12" y2="15"/>
+
+        </svg>
+
+      </button>
+
+      <button class="icon-btn" onclick="document.getElementById('import-file').click()" title="JSONファイルを読み込んで設定を復元">
+
+        <svg viewBox="0 0 24 24">
+
+          <path d="M3,14 L3,21 L21,21 L21,14"/>
+
+          <polyline points="8,10 12,15 16,10"/>
+
+          <line x1="12" y1="3" x2="12" y2="15"/>
+
+        </svg>
+
+      </button>
+
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+
+    </div>
+
+    <div class="example-bar" id="example-bar">
+
+      <span class="empty-hint" id="empty-hint" style="display:none">鉛筆アイコンからボタンを登録してください。</span>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <span class="modal-title">化学式ボタン 追加・編集</span>
+
+        <button class="modal-close" onclick="closeModal()">✕</button>
+
+      </div>
+
+      <div class="modal-body">
+
+        <table class="edit-table">
+
+          <thead><tr>
+
+            <th style="width:26px"></th>
+
+            <th>化学式（プレーンテキスト）</th>
+
+            <th>変換後プレビュー</th>
+
+            <th style="width:82px">順序</th>
+
+            <th style="width:36px"></th>
+
+          </tr></thead>
+
+          <tbody id="edit-tbody"></tbody>
+
+        </table>
+
+        <button class="add-row-btn" onclick="addRow()">＋ 新しい化学式を追加</button>
+
+      </div>
+
+      <div class="modal-footer">
+
+        <button class="discard-btn" onclick="closeModal()">キャンセル</button>
+
+        <button class="save-all-btn" onclick="saveAll()">💾 保存して閉じる</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="cols">
+
+    <div class="card">
+
+      <div class="card-header">
+
+        <span class="card-dot"></span>
+
+        <span class="card-title">入力</span>
+
+        <span class="card-hint">プレーンテキストで化学式を入力</span>
+
+        <button class="collapse-btn" id="raw-toggle" onclick="toggleSection('raw')" title="RAWコード表示の切り替え">RAW</button>
+
+      </div>
+
+      <textarea id="input"
+
+        placeholder="例 n2+3h2&lt;&gt;2nh3&#10;例 ag2o+4nh3+h2o&gt;2[ag(nh3)2]++2oh-&#10;例 cr2o72-+14h++6e-&gt;2cr3++7h2o&#10;例 6c(s+3h2(g&gt;c6h6(l&#10;例 nacl(s+aq&gt;na+aq+cl-aq&#10;例 h=-394、h=6.0/"
+
+        oninput="update()"></textarea>
+
+      <div class="raw-line" id="raw-line" style="display:none">
+
+        <span class="badge">RAW</span>
+
+        <code class="raw-code" id="raw-code"></code>
+
+      </div>
+
+    </div>
+
+    <div class="card">
+
+      <div class="card-header">
+
+        <span class="card-dot"></span>
+
+        <span class="card-title">プレビュー</span>
+
+        <span class="card-hint">Word 貼り付け時の表示</span>
+
+        <button class="collapse-btn" id="html-toggle" onclick="toggleSection('html')" title="HTMLコード表示の切り替え">HTML</button>
+
+      </div>
+
+      <div class="preview">
+
+        <div id="preview-empty" class="preview-placeholder"></div>
+
+        <div id="preview-text" class="preview-text" style="display:none"></div>
+
+      </div>
+
+      <div class="html-line" id="html-line" style="display:none">
+
+        <span class="badge">HTML</span>
+
+        <code class="html-code" id="html-code"></code>
+
+      </div>
+
+    </div>
+
+    <div class="btn-row">
+
+      <button class="copy-btn" id="copy-btn" onclick="copyToClipboard()" disabled>📋 Word 用にコピー</button>
+
+      <span class="btn-note">text/html + text/plain 両形式でクリップボードに書き込みます</span>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="stock-area">
+
+    <div class="stock-header" id="stock-header">
+
+      <span class="stock-label">反応式ストック</span>
+
+      <button class="stock-toggle" id="stock-toggle" onclick="toggleStock()">▲</button>
+
+    </div>
+
+    <div class="stock-bar" id="stock-bar"></div>
+
+  </div>
+
+
+
+  <div class="reset-area">
+
+    <button class="reset-trigger-btn" onclick="openResetModal()" title="ボタン設定・ストックをデフォルトに戻す">
+
+      <svg viewBox="0 0 16 16">
+
+        <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5"/>
+
+        <polyline points="11,1 13.5,3.5 11,6"/>
+
+      </svg>
+
+      データを初期化...
+
+    </button>
+
+  </div>
+
+
+
+  <!-- 初期化確認モーダル -->
+
+  <div class="modal-overlay" id="reset-modal-overlay" onclick="handleResetOverlayClick(event)">
+
+    <div class="modal" style="width:min(420px,95vw)">
+
+      <div class="modal-header">
+
+        <span class="modal-title">データの初期化</span>
+
+        <button class="modal-close" onclick="closeResetModal()">✕</button>
+
+      </div>
+
+      <div class="modal-body">
+
+        <p class="reset-warn">初期化するデータを選択してください。<br>現在の内容は削除され、デフォルトに戻ります。この操作は取り消せません。</p>
+
+        <label class="reset-check-row">
+
+          <input type="checkbox" id="reset-buttons" checked onchange="updateResetBtn()">
+
+          <span class="reset-check-label">化学式ボタン設定</span>
+
+          <span class="reset-check-desc">ショートカットボタンをデフォルトに戻す</span>
+
+        </label>
+
+        <label class="reset-check-row">
+
+          <input type="checkbox" id="reset-stock" checked onchange="updateResetBtn()">
+
+          <span class="reset-check-label">反応式ストック</span>
+
+          <span class="reset-check-desc">ストック一覧をデフォルトに戻す</span>
+
+        </label>
+
+      </div>
+
+      <div class="modal-footer">
+
+        <button class="reset-exec-btn" id="reset-exec-btn" onclick="execReset()">初期化する</button>
+
+        <button class="discard-btn" id="reset-cancel-btn" onclick="closeResetModal()">キャンセル</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+
+
+<script>
+
+// ── テーマ ──────────────────────────────────────────────────
+
+const THEME_KEY = 'chemscript_theme';
+
+function setTheme(t) {
+
+  document.documentElement.setAttribute('data-theme', t);
+
+  localStorage.setItem(THEME_KEY, t);
+
+  document.querySelectorAll('.t-btn').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+
+}
+
+const VALID_THEMES = new Set(['sakura','sora','frost','mocha','matcha']);
+
+const savedTheme = localStorage.getItem(THEME_KEY);
+
+setTheme(VALID_THEMES.has(savedTheme) ? savedTheme : 'sora');
+
+
+
+// ── 自動大文字化 ─────────────────────────────────────────────
+
+const TWO_LETTER = new Set([
+
+  'He','Li','Be','Ne','Na','Mg','Al','Si','Cl','Ar',
+
+  'Ca','Sc','Ti','Cr','Mn','Fe','Co','Ni','Cu','Zn',
+
+  'Ga','Ge','As','Se','Br','Kr','Rb','Sr','Zr','Nb',
+
+  'Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb',
+
+  'Te','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm',
+
+  'Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf',
+
+  'Ta','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi',
+
+  'Po','At','Rn','Fr','Ra','Ac','Th','Pa','Np','Pu',
+
+  'Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr',
+
+]);
+
+const FIX_MAP = {'fix-cn':'Cn','fix-co':'Co','fix-cs':'Cs','fix-no':'No','fix-po':'Po'};
+
+
+
+function getActiveElements() {
+
+  const a = new Set(TWO_LETTER);
+
+  for (const [id, sym] of Object.entries(FIX_MAP)) {
+
+    if (document.getElementById(id)?.checked) a.delete(sym);
+
+  }
+
+  return a;
+
+}
+
+
+
+function autoCapitalize(s) {
+
+  const elems = getActiveElements();
+
+  s = s.replace(/e-/g, '\x00');
+
+  s = s.replace(/aq(?![a-zA-Z])/g, '\x04');  // aq保護（先頭スペース不要）
+
+  s = s.replace(/\(s\)/g, '\x0b');          // (s)小文字保護
+
+  s = s.replace(/\(l\)/g, '\x0c');          // (l)小文字保護
+
+  s = s.replace(/\(g\)/g, '\x0e');          // (g)小文字保護
+
+  let r = '', i = 0;
+
+  while (i < s.length) {
+
+    if (s[i] === '\x00') { r += 'e-'; i++; continue; }
+
+    const c1 = s[i], c2 = s[i+1] ?? '';
+
+    if (!/[a-zA-Z]/.test(c1)) { r += c1; i++; continue; }
+
+    if (/[a-z]/.test(c1) && /[a-z]/.test(c2)) {
+
+      const cand = c1.toUpperCase() + c2;
+
+      if (elems.has(cand)) { r += cand; i += 2; continue; }
+
+      r += c1.toUpperCase(); i++; continue;
+
+    }
+
+    if (/[a-z]/.test(c1)) { r += c1.toUpperCase(); i++; continue; }
+
+    if (/[A-Z]/.test(c1) && /[a-z]/.test(c2)) { r += c1 + c2; i += 2; continue; }
+
+    r += c1; i++;
+
+  }
+
+  return r
+
+    .replace(/([A-Za-z0-9]+)\+\x04/g, (_, token) => {
+
+      const isComplex = (token.match(/[A-Z]/g) || []).length >= 2;
+
+      return isComplex ? token + ' \uFF0B aq' : token + '+ aq';
+
+    })
+
+    .replace(/\x04/g, ' aq')
+
+    .replace(/\x0b/g, '(s)')
+
+    .replace(/\x0c/g, '(l)')
+
+    .replace(/\x0e/g, '(g)');
+
+}
+
+
+
+// ── 変換ロジック ─────────────────────────────────────────────
+
+const FW  = {'0':'０','1':'１','2':'２','3':'３','4':'４','5':'５','6':'６','7':'７','8':'８','9':'９','+':'＋','-':'－'};
+
+const toFW = s => s.split('').map(c => FW[c] ?? c).join('');
+
+const SUP  = s => `<sup style="font-size:.75em">${s}</sup>`;
+
+const SUB  = s => `<sub style="font-size:.75em">${s}</sub>`;
+
+const ARR  = 'display:inline-block;transform:scaleX(1.5);transform-origin:center';
+
+
+
+function convertFormula(raw) {
+
+  let s = raw.replace(/e-/g,'\x00').replace(/<>/g,'\x01').replace(/>/g,'\x02');
+
+  // K式のサフィックスを小文字に戻す: KW= → Kw=, KSP= → Ksp= (autoCapitalizeで大文字化された分を修正)
+
+  s = s.replace(/^(K)([A-Z]+)(=\[)/gm, (_, k, suffix, rest) => k + suffix.toLowerCase() + rest);
+
+  s = s.replace(/C\(S(?!\))/g, 'C(黒鉛)');  // C(黒鉛) — 状態記号より先に処理
+
+  s = s.replace(/C\(D(?!\))/g, 'C(ダイヤモンド)');  // C(ダイヤモンド)
+
+  s = s.replace(/\(S(?!\))/g, '(固)');
+
+  s = s.replace(/\(L(?!\))/g, '(液)');
+
+  s = s.replace(/\(G(?!\))/g, '(気)');
+
+  // 状態記号の ( ) を保護 → 電荷誤検出防止 & 直後の + を演算子として扱う
+
+  s = s.replace(/\((固|液|気|黒鉛|[sSlLgG])\)/g, '\x05$1\x06');
+
+  s = s.replace(/H(\d*)=([-]?\d+(?:\.\d+)?)(\/?)/g, (_, sub, num, slash) => {
+
+    const subscript = sub ? SUB(sub) : '';
+
+    const sign = num.startsWith('-') ? '\uFF0D' : '';
+
+    const absNum = num.replace('-', '');
+
+    const unit = slash ? ' kJ/mol' : ' kJ';
+
+    return '\u0394<i>H</i>' + subscript + ' \uFF1D ' + sign + absNum + unit;
+
+  });
+
+  s = s.replace(/(\d+)\^([1-9]?[+\-])/g, (_,n,c) => SUB(n) + SUP(toFW(c)));
+
+  s = s.replace(/\^([1-9]?[+\-])/g, (_,c) => SUP(toFW(c)));
+
+  const charges = [];
+
+  s = s.replace(/(?<=[A-Za-z0-9)\]])([1-9]?[+\-])(?![A-Za-z0-9(])/g, m => {
+
+    const k = charges.length; charges.push(m);
+
+    return '\x03' + String.fromCharCode(65+k) + '\x03';
+
+  });
+
+  s = s.replace(/(?<=[A-Za-z)])(\d+)/g, m => SUB(m));
+
+  s = s.replace(/\+/g, ' ＋ ');
+
+  s = s.replace(/\x03([A-Z])\x03/g, (_,c) => SUP(toFW(charges[c.charCodeAt(0)-65])));
+
+  s = s.replace(/\x00/g, `e${SUP('－')}`);
+
+  s = s.replace(/\x01/g, ` <span style="${ARR}">⇌</span> `);
+
+  s = s.replace(/\x02/g, ` <span style="${ARR}">→</span> `);
+
+  s = s.replace(/\x05/g, '(').replace(/\x06/g, ')');  // 状態記号括弧を復元
+
+  return s.replace(/\s{2,}/g,' ').trim();
+
+}
+
+const convertML   = t => t.split('\n').map(l => l.trim() ? convertFormula(autoCapitalize(l)) : '').join('<br>');
+
+const capitalizeML = t => t.split('\n').map(autoCapitalize).join('\n');
+
+
+
+// ── 平衡定数フィールドコード変換 ──────────────────────────────
+
+/**
+
+ * 行が「フィールドコード出力対象のK式」かを判定する
+
+ * 条件: k/K で始まり、= の直後に [ があり、/ を含む
+
+ */
+
+function isFieldCodeLine(line) {
+
+  const trimmed = line.trim();
+
+  return /^[kK]\w*=\[/.test(trimmed) && trimmed.includes('/');
+
+}
+
+
+
+/**
+
+ * 平衡定数フィールドコードに変換する
+
+ * 例: k=[h2][i2]/[hi]2  →  EQ K ＝ \f( [H2][I2] ,[HI]２)
+
+ * HTMLタグ一切なし、全角変換のみ
+
+ */
+
+function convertKFieldCode(rawLine) {
+
+  const EQ_PAD = ' '; // スペースパディング定数
+
+
+
+  // k/K プレフィックスと残りを分離（raw のまま）
+
+  const rawMatch = rawLine.trim().match(/^([kK]\w*)=([\s\S]*)/);
+
+  if (!rawMatch) return rawLine;
+
+
+
+  const rawKSym = rawMatch[1];  // 例: "k", "kc", "ksp", "k1"
+
+  const rawRest = rawMatch[2];  // 例: "[h2][i2]/[hi]2"
+
+
+
+  // K記号のフォーマット: 先頭のk/K → K、以降の文字・数字はそのまま小文字に
+
+  let kSymFormatted = 'K';
+
+  for (const ch of rawKSym.slice(1)) {
+
+    kSymFormatted += /[a-zA-Z]/.test(ch) ? ch.toLowerCase() : ch;
+
+  }
+
+
+
+  // 残りの式にだけ autoCapitalize を適用
+
+  const capRest = autoCapitalize(rawRest);
+
+
+
+  // ブラケット外の最初の / を探す
+
+  let slashIdx = -1, depth = 0;
+
+  for (let i = 0; i < capRest.length; i++) {
+
+    const ch = capRest[i];
+
+    if (ch === '[' || ch === '(') depth++;
+
+    else if (ch === ']' || ch === ')') depth--;
+
+    else if (ch === '/' && depth === 0) { slashIdx = i; break; }
+
+  }
+
+  if (slashIdx === -1) return rawLine; // / が見つからない（通常ここには来ない）
+
+
+
+  let numerStr = capRest.slice(0, slashIdx);
+
+  let denomStr = capRest.slice(slashIdx + 1);
+
+
+
+  // 分母の外側括弧を除去: /([n2][h2]3) → [N2][H2]3
+
+  denomStr = denomStr.replace(/^\((.+)\)$/, '$1');
+
+
+
+  // フィールドコード用変換（HTMLタグなし）
+
+  function transformForFieldCode(frag) {
+
+    // e- を一時保護
+
+    frag = frag.replace(/e-/g, '\x07');
+
+    // ブラケット内の電荷を3パスで全角化（] 直前のみ対象）
+
+    // Pass1: ^記法 → ^ を除去して全角化: [NH4^+] → [NH4＋], [SO4^2-] → [SO4２－]
+
+    frag = frag.replace(/\^([1-9]?[+\-])(?=\])/g, (_, charge) => toFW(charge));
+
+    // Pass2: 直前が文字 → 電荷量は2か3のみ許可: [Ba2+]→[Ba２＋], [Fe3+]→[Fe３＋], [H+]→[H＋]
+
+    //        ([NH4+]はここで4をキャプチャしない → [23]?は4にマッチしない)
+
+    frag = frag.replace(/(?<=[a-zA-Z])([23]?[+\-])(?=\])/g, (_, charge) => toFW(charge));
+
+    // Pass3: 直前が数字 → [SO42-]の2-, [NH4+]の+ を全角化
+
+    //        ([NH4+]: +の直前が4(数字)→マッチ, [1-9]?は+にマッチしないので+のみキャプチャ→[NH4＋]✓)
+
+    //        ([SO42-]: 2の直前が4(数字)→マッチ, 2-をキャプチャ→[SO4２－]✓)
+
+    frag = frag.replace(/(?<=\d)([1-9]?[+\-])(?=\])/g, (_, charge) => toFW(charge));
+
+    // ] 直後の係数（べき乗）を全角化: [HI]2 → [HI]２
+
+    frag = frag.replace(/\](\d+)/g, (_, d) => ']' + toFW(d));
+
+    // e- を復元（全角マイナス）
+
+    frag = frag.replace(/\x07/g, 'e\uFF0D');
+
+    return frag;
+
+  }
+
+
+
+  numerStr = transformForFieldCode(numerStr);
+
+  denomStr = transformForFieldCode(denomStr);
+
+
+
+  // スペースパディング（分数横棒を長く見せる）
+
+  const nLen = numerStr.length;
+
+  const dLen = denomStr.length;
+
+  let paddedNum, paddedDen;
+
+  if (nLen > dLen) {
+
+    // 分子が長い → 分子にスペース
+
+    paddedNum = EQ_PAD + numerStr + EQ_PAD;
+
+    paddedDen = denomStr;
+
+  } else if (nLen < dLen) {
+
+    // 分母が長い → 分母にスペース
+
+    paddedNum = numerStr;
+
+    paddedDen = EQ_PAD + denomStr + EQ_PAD;
+
+  } else {
+
+    // 同じ長さ → 両方にスペース
+
+    paddedNum = EQ_PAD + numerStr + EQ_PAD;
+
+    paddedDen = EQ_PAD + denomStr + EQ_PAD;
+
+  }
+
+
+
+  return `EQ ${kSymFormatted} ＝ \\f(${paddedNum},${paddedDen})`;
+
+}
+
+
+
+// ── UI 更新 ──────────────────────────────────────────────────
+
+let currentHtml = '';
+
+let rawCollapsed = true, htmlCollapsed = true;
+
+
+
+function update() {
+
+  const val   = document.getElementById('input').value;
+
+  const rLine = document.getElementById('raw-line');
+
+  const preE  = document.getElementById('preview-empty');
+
+  const preT  = document.getElementById('preview-text');
+
+  const hLine = document.getElementById('html-line');
+
+  const cBtn  = document.getElementById('copy-btn');
+
+  if (val.trim()) {
+
+    currentHtml = convertML(val);
+
+    rLine.style.display = rawCollapsed ? 'none' : 'flex';
+
+    document.getElementById('raw-code').textContent = val;
+
+    preE.style.display = 'none'; preT.style.display = 'block';
+
+    renderPreviewWithPins(val);
+
+    hLine.style.display = htmlCollapsed ? 'none' : 'flex';
+
+    document.getElementById('html-code').textContent = currentHtml;
+
+    cBtn.disabled = false; cBtn.classList.remove('done'); cBtn.textContent = '📋 Word 用にコピー';
+
+  } else {
+
+    currentHtml = '';
+
+    rLine.style.display = 'none'; preE.style.display = 'block';
+
+    preT.style.display = 'none'; hLine.style.display = 'none';
+
+    cBtn.disabled = true; cBtn.classList.remove('done'); cBtn.textContent = '📋 Word 用にコピー';
+
+  }
+
+}
+
+
+
+function toggleSection(section) {
+
+  if (section === 'raw') {
+
+    rawCollapsed = !rawCollapsed;
+
+    document.getElementById('raw-toggle').classList.toggle('open', !rawCollapsed);
+
+    const val = document.getElementById('input').value;
+
+    if (val.trim()) document.getElementById('raw-line').style.display = rawCollapsed ? 'none' : 'flex';
+
+  } else {
+
+    htmlCollapsed = !htmlCollapsed;
+
+    document.getElementById('html-toggle').classList.toggle('open', !htmlCollapsed);
+
+    const val = document.getElementById('input').value;
+
+    if (val.trim()) document.getElementById('html-line').style.display = htmlCollapsed ? 'none' : 'flex';
+
+  }
+
+}
+
+
+
+function renderPreviewWithPins(val) {
+
+  const preT = document.getElementById('preview-text');
+
+  preT.innerHTML = '';
+
+  val.split('\n').forEach(line => {
+
+    if (!line.trim()) return;
+
+    const row = document.createElement('div');
+
+
+
+    if (isFieldCodeLine(line)) {
+
+      // ── フィールドコード行 ──────────────────────────────
+
+      row.className = 'preview-row field-code';
+
+      const fieldText = convertKFieldCode(line);
+
+
+
+      // 画びょうボタン（ストック追加）
+
+      const pinBtn = document.createElement('button');
+
+      pinBtn.className = 'pin-btn';
+
+      pinBtn.title = 'ストックに追加';
+
+      pinBtn.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="6" r="3.5"/><line x1="8" y1="9.5" x2="8" y2="14.5"/></svg>';
+
+      pinBtn.onclick = () => { pinFormula(line); pinBtn.classList.add('pinned'); };
+
+
+
+      // フィールドコードテキスト表示（プレーンテキスト）
+
+      const span = document.createElement('span');
+
+      span.className = 'preview-row-text';
+
+      span.textContent = fieldText;
+
+
+
+      // 個別コピーボタン（クリップボードアイコン）
+
+      const copyBtn = document.createElement('button');
+
+      copyBtn.className = 'field-copy-btn';
+
+      copyBtn.title = 'フィールドコードをコピー';
+
+      copyBtn.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12"><rect x="5" y="4" width="8" height="10" rx="1.5"/><path d="M3 2h6a1 1 0 0 1 1 1v1H4a1 1 0 0 0-1 1v8H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke-width="0" fill="currentColor" opacity="0.4"/><rect x="5" y="4" width="8" height="10" rx="1.5"/></svg>';
+
+      copyBtn.onclick = async () => {
+
+        try {
+
+          await navigator.clipboard.writeText(fieldText);
+
+        } catch {
+
+          // フォールバック
+
+          const ta = document.createElement('textarea');
+
+          ta.value = fieldText;
+
+          ta.style.position = 'fixed'; ta.style.opacity = '0';
+
+          document.body.appendChild(ta); ta.select();
+
+          document.execCommand('copy');
+
+          document.body.removeChild(ta);
+
+        }
+
+        copyBtn.classList.add('copied');
+
+        const origHTML = copyBtn.innerHTML;
+
+        copyBtn.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12"><polyline points="2,8 6,12 14,4"/></svg>';
+
+        setTimeout(() => {
+
+          copyBtn.classList.remove('copied');
+
+          copyBtn.innerHTML = origHTML;
+
+        }, 2000);
+
+      };
+
+
+
+      row.appendChild(pinBtn);
+
+      row.appendChild(span);
+
+      row.appendChild(copyBtn);
+
+
+
+    } else {
+
+      // ── 通常の化学式行 ──────────────────────────────────
+
+      row.className = 'preview-row';
+
+      const btn = document.createElement('button');
+
+      btn.className = 'pin-btn';
+
+      btn.title = 'ストックに追加';
+
+      btn.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="6" r="3.5"/><line x1="8" y1="9.5" x2="8" y2="14.5"/></svg>';
+
+      btn.onclick = () => { pinFormula(line); btn.classList.add('pinned'); };
+
+      const span = document.createElement('span');
+
+      span.className = 'preview-row-text';
+
+      span.innerHTML = convertFormula(autoCapitalize(line));
+
+      row.appendChild(btn);
+
+      row.appendChild(span);
+
+    }
+
+
+
+    preT.appendChild(row);
+
+  });
+
+}
+
+
+
+async function copyToClipboard() {
+
+  if (!currentHtml) return;
+
+  const val = document.getElementById('input').value;
+
+  // フィールドコード行を一括コピーから除外
+
+  const normalLines = val.split('\n').filter(line => !isFieldCodeLine(line));
+
+  const normalVal = normalLines.join('\n');
+
+  const plain = capitalizeML(normalVal);
+
+  const html  = `<html><body><p style="font-family:Calibri,sans-serif;font-size:11pt">${convertML(normalVal)}</p></body></html>`;
+
+  const btn   = document.getElementById('copy-btn');
+
+  try {
+
+    await navigator.clipboard.write([new ClipboardItem({
+
+      'text/html' : new Blob([html],  {type:'text/html'}),
+
+      'text/plain': new Blob([plain], {type:'text/plain'}),
+
+    })]);
+
+  } catch { await navigator.clipboard.writeText(plain).catch(()=>{}); }
+
+  btn.classList.add('done'); btn.textContent = '✓ コピー完了！';
+
+  setTimeout(() => { btn.classList.remove('done'); btn.textContent = '📋 Word 用にコピー'; }, 2000);
+
+}
+
+
+
+// ── 化学式ボタン管理 ─────────────────────────────────────────
+
+const STORAGE_KEY = 'chemscript_buttons';
+
+let buttons = [];
+
+
+
+const DEFAULT_BUTTONS = [
+
+  {formula:'MnO4^-'},
+
+  {formula:'SO42-'},
+
+  {formula:'HCO3^-'},
+
+  {formula:'CO32-'},
+
+  {formula:'Cr2O72-'},
+
+  {formula:'CH3COOH'},
+
+  {formula:'S2O32-'},
+
+  {formula:'[Cu(NH3)4]2+'},
+
+  {formula:'[Ag(NH3)2]+'},
+
+];
+
+
+
+function loadButtons() {
+
+  try {
+
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+    if (!saved) { buttons = [...DEFAULT_BUTTONS]; return; }
+
+    // 旧形式からの移行
+
+    buttons = saved.map(b => ({formula: b.formula})).filter(b => b.formula);
+
+    if (!buttons.length) buttons = [...DEFAULT_BUTTONS];
+
+  } catch { buttons = [...DEFAULT_BUTTONS]; }
+
+}
+
+function saveButtons() { localStorage.setItem(STORAGE_KEY, JSON.stringify(buttons)); }
+
+
+
+function renderButtons() {
+
+  const bar  = document.getElementById('example-bar');
+
+  const hint = document.getElementById('empty-hint');
+
+  if (hint) hint.remove();
+
+  bar.innerHTML = '';
+
+  if (!buttons.length) { hint.style.display = 'inline'; bar.appendChild(hint); return; }
+
+  buttons.forEach(btn => {
+
+    const b = document.createElement('button');
+
+    b.className = 'ex-btn';
+
+    // span でラップ → inline フロー内で sub/sup が正しく動作
+
+    const sp = document.createElement('span');
+
+    sp.innerHTML = convertFormula(autoCapitalize(btn.formula));
+
+    b.appendChild(sp);
+
+    b.onclick = () => addFormula(btn.formula);
+
+    bar.appendChild(b);
+
+  });
+
+}
+
+
+
+// カーソル位置にテキストを挿入する共通ヘルパー
+
+function insertAtCursor(text) {
+
+  const ta = document.getElementById('input');
+
+  ta.focus();
+
+  const start = ta.selectionStart ?? ta.value.length;
+
+  const end   = ta.selectionEnd   ?? start;
+
+  const before = ta.value.slice(0, start);
+
+  const after  = ta.value.slice(end);
+
+  ta.value = before + text + after;
+
+  const pos = start + text.length;
+
+  ta.setSelectionRange(pos, pos);
+
+  update();
+
+}
+
+
+
+function addFormula(formula) {
+
+  insertAtCursor(formula);
+
+}
+
+
+
+// ── モーダル ─────────────────────────────────────────────────
+
+let dragSrcIdx = null;
+
+
+
+function openModal() {
+
+  renderEditTable(buttons.map(b => ({...b})));
+
+  document.getElementById('modal-overlay').classList.add('open');
+
+}
+
+function closeModal() {
+
+  document.getElementById('modal-overlay').classList.remove('open');
+
+  renderButtons();
+
+}
+
+function handleOverlayClick(e) {
+
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+
+}
+
+
+
+function renderEditTable(draft) {
+
+  const tbody = document.getElementById('edit-tbody');
+
+  tbody.innerHTML = '';
+
+  draft.forEach((item, i) => {
+
+    const tr = document.createElement('tr');
+
+    tr.draggable = true;
+
+    const previewHtml = item.formula ? convertFormula(autoCapitalize(item.formula)) : '';
+
+    tr.innerHTML = `
+
+      <td><span class="drag-handle" title="ドラッグで並び替え">⠿</span></td>
+
+      <td><input class="tbl-input" data-field="formula" value="${esc(item.formula)}" placeholder="例: SO42-"></td>
+
+      <td class="tbl-preview"><span>${previewHtml}</span></td>
+
+      <td style="white-space:nowrap">
+
+        <button class="tbl-move" onclick="moveRow(${i},-1)" ${i===0?'disabled':''}>▲</button>
+
+        <button class="tbl-move" onclick="moveRow(${i}, 1)" ${i===draft.length-1?'disabled':''}>▼</button>
+
+      </td>
+
+      <td><button class="tbl-del" onclick="deleteRow(${i})">✕</button></td>`;
+
+    // プレーン入力 → プレビューをリアルタイム更新
+
+    const fInput   = tr.querySelector('[data-field="formula"]');
+
+    const fPreview = tr.querySelector('.tbl-preview span');
+
+    fInput.addEventListener('input', () => {
+
+      fPreview.innerHTML = fInput.value.trim()
+
+        ? convertFormula(autoCapitalize(fInput.value))
+
+        : '';
+
+    });
+
+    tr.addEventListener('dragstart', e => {
+
+      dragSrcIdx = i; e.dataTransfer.effectAllowed = 'move';
+
+      setTimeout(() => tr.style.opacity = '.4', 0);
+
+    });
+
+    tr.addEventListener('dragend',   () => tr.style.opacity = '');
+
+    tr.addEventListener('dragover',  e => { e.preventDefault(); tr.classList.add('drag-over'); });
+
+    tr.addEventListener('dragleave', () => tr.classList.remove('drag-over'));
+
+    tr.addEventListener('drop', e => {
+
+      e.preventDefault(); tr.classList.remove('drag-over');
+
+      if (dragSrcIdx == null || dragSrcIdx === i) return;
+
+      const d = readDraft(), [m] = d.splice(dragSrcIdx, 1);
+
+      d.splice(i, 0, m); renderEditTable(d);
+
+    });
+
+    tbody.appendChild(tr);
+
+  });
+
+}
+
+
+
+function readDraft() {
+
+  return Array.from(document.querySelectorAll('#edit-tbody tr')).map(tr => ({
+
+    formula: tr.querySelector('[data-field="formula"]').value.trim(),
+
+  }));
+
+}
+
+function addRow() {
+
+  const d = readDraft(); d.push({formula:''});
+
+  renderEditTable(d);
+
+  document.querySelectorAll('#edit-tbody [data-field="formula"]').item(d.length-1)?.focus();
+
+}
+
+function deleteRow(i) { const d = readDraft(); d.splice(i,1); renderEditTable(d); }
+
+function moveRow(i, dir) {
+
+  const d = readDraft(), j = i + dir;
+
+  if (j < 0 || j >= d.length) return;
+
+  [d[i], d[j]] = [d[j], d[i]]; renderEditTable(d);
+
+}
+
+function saveAll() {
+
+  buttons = readDraft().filter(b => b.formula);
+
+  saveButtons(); closeModal();
+
+}
+
+function esc(s) {
+
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+}
+
+
+
+// ── JSON エクスポート・インポート ─────────────────────────────
+
+function exportJSON() {
+
+  const exportData = {
+
+    buttons: buttons,
+
+    stock: stock
+
+  };
+
+  const a = Object.assign(document.createElement('a'), {
+
+    href: URL.createObjectURL(new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'})),
+
+    download: 'chemscript_data.json',
+
+  });
+
+  a.click(); URL.revokeObjectURL(a.href);
+
+}
+
+
+
+function importJSON(ev) {
+
+  const file = ev.target.files[0]; if (!file) return;
+
+  const fr = new FileReader();
+
+  fr.onload = e => {
+
+    try {
+
+      const d = JSON.parse(e.target.result);
+
+      let newButtons = buttons;
+
+      let newStock = stock;
+
+      let msg = '';
+
+
+
+      if (Array.isArray(d)) {
+
+        // 旧形式（ボタン配列のみのファイル）からの読み込み
+
+        if (!d.every(x => typeof x.formula === 'string'))
+
+          return alert('形式が正しくありません。{"formula":"化学式"} の配列JSONを読み込んでください。');
+
+        msg = `${d.length}件のボタン設定を読み込みます。`;
+
+        newButtons = d;
+
+      } else if (d && typeof d === 'object') {
+
+        // 新形式（ボタン設定＋ストック）からの読み込み
+
+        msg = 'ボタン設定と反応式ストックのデータを読み込みます。';
+
+        if (Array.isArray(d.buttons)) newButtons = d.buttons;
+
+        if (Array.isArray(d.stock)) newStock = d.stock;
+
+      } else {
+
+        return alert('形式が正しくありません。');
+
+      }
+
+
+
+      if (!confirm(`${msg}\n現在の内容は上書きされます。よろしいですか？`)) return;
+
+      
+
+      buttons = newButtons;
+
+      stock = newStock;
+
+      saveButtons();
+
+      saveStock();
+
+      renderButtons();
+
+      renderStock();
+
+    } catch { alert('JSONの読み込みに失敗しました。'); }
+
+  };
+
+  fr.readAsText(file); ev.target.value = '';
+
+}
+
+
+
+// ── 反応式ストック ──────────────────────────────────────────
+
+const STOCK_KEY = 'chemscript_stock';
+
+let stock = [];
+
+
+
+const DEFAULT_STOCK = [
+
+  'n2+3h2<>2nh3',
+
+  'ag2o+4nh3+h2o>2[ag(nh3)2]++2oh-',
+
+  'cr2o72-+14h++6e->2cr3++7h2o',
+
+  '6c(s+3h2(g>c6h6(l',
+
+  'nacl(s+aq>na+aq+cl-aq',
+
+  'h=-394',
+
+  'h=6.0/',
+
+];
+
+
+
+function loadStock() {
+
+  try {
+
+    const saved = JSON.parse(localStorage.getItem(STOCK_KEY));
+
+    stock = Array.isArray(saved) ? saved.filter(s => typeof s === 'string' && s) : [];
+
+    if (!stock.length) stock = [...DEFAULT_STOCK];
+
+  } catch { stock = [...DEFAULT_STOCK]; }
+
+}
+
+function saveStock() { localStorage.setItem(STOCK_KEY, JSON.stringify(stock)); }
+
+
+
+let stockDragSrcIdx = null;
+
+
+
+function renderStock() {
+
+  const bar = document.getElementById('stock-bar');
+
+  bar.innerHTML = '';
+
+  if (!stock.length) {
+
+    const hint = document.createElement('span');
+
+    hint.className = 'stock-empty-hint';
+
+    hint.textContent = '画びょうボタンで反応式を保存できます。';
+
+    bar.appendChild(hint);
+
+    return;
+
+  }
+
+  stock.forEach((formula, i) => {
+
+    const item = document.createElement('div');
+
+    item.className = 'stock-item';
+
+    item.draggable = true;
+
+    const handle = document.createElement('span');
+
+    handle.className = 'stock-drag-handle';
+
+    handle.textContent = '\u28FF';
+
+    handle.title = 'ドラッグで並び替え';
+
+    const btn = document.createElement('button');
+
+    btn.className = 'stock-btn';
+
+    const sp = document.createElement('span');
+
+    sp.innerHTML = convertFormula(autoCapitalize(formula));
+
+    btn.appendChild(sp);
+
+    btn.onclick = () => insertStock(formula);
+
+    const del = document.createElement('button');
+
+    del.className = 'stock-del';
+
+    del.textContent = '\u2715';
+
+    del.title = '削除';
+
+    del.onclick = e => { e.stopPropagation(); deleteStock(i); };
+
+    item.appendChild(handle);
+
+    item.appendChild(btn);
+
+    item.appendChild(del);
+
+    item.addEventListener('dragstart', e => {
+
+      stockDragSrcIdx = i; e.dataTransfer.effectAllowed = 'move';
+
+      setTimeout(() => item.style.opacity = '.4', 0);
+
+    });
+
+    item.addEventListener('dragend', () => item.style.opacity = '');
+
+    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
+
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+
+    item.addEventListener('drop', e => {
+
+      e.preventDefault(); item.classList.remove('drag-over');
+
+      if (stockDragSrcIdx == null || stockDragSrcIdx === i) return;
+
+      const [moved] = stock.splice(stockDragSrcIdx, 1);
+
+      stock.splice(i, 0, moved);
+
+      saveStock(); renderStock();
+
+    });
+
+    bar.appendChild(item);
+
+  });
+
+}
+
+
+
+function pinFormula(rawLine) {
+
+  const f = rawLine.trim();
+
+  if (!f || stock.includes(f)) return;
+
+  stock.push(f);
+
+  saveStock();
+
+  renderStock();
+
+}
+
+
+
+function insertStock(formula) {
+
+  const ta = document.getElementById('input');
+
+  ta.focus();
+
+  const start  = ta.selectionStart ?? ta.value.length;
+
+  const before = ta.value.slice(0, start);
+
+  const needsNewline = before.length > 0 && !before.endsWith('\n');
+
+  insertAtCursor(needsNewline ? '\n' + formula : formula);
+
+}
+
+
+
+function deleteStock(i) {
+
+  stock.splice(i, 1);
+
+  saveStock();
+
+  renderStock();
+
+}
+
+
+
+let stockCollapsed = false;
+
+function toggleStock() {
+
+  stockCollapsed = !stockCollapsed;
+
+  document.getElementById('stock-bar').classList.toggle('hidden', stockCollapsed);
+
+  document.getElementById('stock-toggle').textContent = stockCollapsed ? '▼' : '▲';
+
+  document.getElementById('stock-header').classList.toggle('collapsed', stockCollapsed);
+
+}
+
+
+
+// ── 初期化モーダル ────────────────────────────────────────────
+
+function openResetModal() {
+
+  document.getElementById('reset-buttons').checked = true;
+
+  document.getElementById('reset-stock').checked = true;
+
+  updateResetBtn();
+
+  document.getElementById('reset-modal-overlay').classList.add('open');
+
+  setTimeout(() => document.getElementById('reset-cancel-btn').focus(), 50);
+
+}
+
+function closeResetModal() {
+
+  document.getElementById('reset-modal-overlay').classList.remove('open');
+
+}
+
+function handleResetOverlayClick(e) {
+
+  if (e.target === document.getElementById('reset-modal-overlay')) closeResetModal();
+
+}
+
+function updateResetBtn() {
+
+  const any = document.getElementById('reset-buttons').checked
+
+           || document.getElementById('reset-stock').checked;
+
+  document.getElementById('reset-exec-btn').disabled = !any;
+
+}
+
+function execReset() {
+
+  if (document.getElementById('reset-buttons').checked) {
+
+    buttons = [...DEFAULT_BUTTONS];
+
+    saveButtons();
+
+    renderButtons();
+
+  }
+
+  if (document.getElementById('reset-stock').checked) {
+
+    stock = [...DEFAULT_STOCK];
+
+    saveStock();
+
+    renderStock();
+
+  }
+
+  closeResetModal();
+
+}
+
+
+
+// ── 初期プレビュー ──────────────────────────────────────────
+
+function renderDefaultPreview() {
+
+  const lines = [
+
+    'n2+3h2<>2nh3',
+
+    'ag2o+4nh3+h2o>2[ag(nh3)2]++2oh-',
+
+    'cr2o72-+14h++6e->2cr3++7h2o',
+
+    '6c(s+3h2(g>c6h6(l',
+
+  ];
+
+  document.getElementById('preview-empty').innerHTML =
+
+    lines.map(l => convertFormula(autoCapitalize(l))).join('<br>');
+
+}
+
+
+
+// 初期化
+
+loadButtons();
+
+renderButtons();
+
+loadStock();
+
+renderStock();
+
+renderDefaultPreview();
+
+</script>
+
+
+
+</body>
+
+</html>
