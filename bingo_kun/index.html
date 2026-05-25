@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>元素ビンゴくん</title>
+    <title>元素記号ビンゴ</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;700&family=IBM+Plex+Sans:wght@400;700;800&display=swap" rel="stylesheet">
@@ -172,31 +172,10 @@
             max-width: 9.5em; 
         }
 
-        /* -------------------------------------------
-           化学式の文字位置調整
-        ------------------------------------------- */
-        sub, sup {
-            position: relative; 
-            vertical-align: baseline; 
-        }
-        sub { 
-            font-size: 0.45em; 
-            bottom: -0.1em; 
-        }
-        sup { 
-            font-size: 0.45em; 
-            top: -1.2em; 
-        }
-        .subscript-number { 
-            position: relative; 
-            font-size: 0.45em; 
-            top: 0.1em; 
-            margin-right: 0.05em; 
-        }
-        .history-item .subscript-number { 
-            font-size: 0.5em; 
-        }
-        /* ------------------------------------------- */
+        sub { font-size: 0.45em; bottom: -0.25em; }
+        sup { font-size: 0.45em; top: -0.4em; }
+        .subscript-number { position: relative; font-size: 0.45em; top: 0.15em; margin-right: 0.05em; }
+        .history-item .subscript-number { font-size: 0.5em; }
 
         .action-btn {
             padding: 20px 50px;
@@ -415,28 +394,28 @@
         }
 
         table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: #f1f3f5; position: sticky; top: 0; z-index: 10; padding: 8px 6px; border-bottom: 2px solid #dee2e6; font-size: 14px; white-space: nowrap; }
-        td { padding: 6px 6px; border-bottom: 1px solid #eee; }
+        th { background: #f1f3f5; position: sticky; top: 0; z-index: 10; padding: 8px 7px; border-bottom: 2px solid #dee2e6; font-size: 14px; white-space: nowrap; }
+        td { padding: 6px 7px; border-bottom: 1px solid #eee; }
         
         /* ★ヘッダーセルのズレ防止（Flexbox化） */
         .th-content { display: flex; flex-direction: column; gap: 5px; }
 
         /* ★入力枠（通常） */
-        td input[type="text"] { 
-            min-width: 65px; 
-            padding: 6px 2px 6px 6px; 
+td input[type="text"] { 
+            width: 100%;
+            min-width: 80px; 
+            padding: 6px; 
             border: 1px solid #ccc; 
             border-radius: 4px; 
             box-sizing: border-box; 
             font-size: 14px; 
-            transition: all 0.2s; 
+            transition: all 0.2s;
         }
         /* ヘッダー/カード入力欄はJSで自動幅調整 */
-        .head-input {
-            width: 80px;
-            min-width: 65px;
-            max-width: 420px;
-            padding: 6px 2px 6px 6px;
+.head-input {
+            width: 100%;
+            min-width: 80px;
+            padding: 6px;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
@@ -445,10 +424,9 @@
             margin-left: 0;
             align-self: flex-start;
         }
-        .item-input {
-            width: 64px;
-            min-width: 56px;
-            max-width: 260px;
+.item-input {
+            width: 100%;
+            min-width: 80px;
         }
         
         input[readonly] { background-color: #f8f9fa; color: #6c757d; }
@@ -485,6 +463,35 @@
             border-style: solid;
             border-color: rgba(30, 30, 30, 0.9) transparent transparent transparent;
         }
+
+        /* ドロップダウンメニュー */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%; left: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 1px solid #eee;
+            display: none;
+            flex-direction: column;
+            min-width: 200px;
+            z-index: 3000;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #444;
+            transition: background 0.1s;
+        }
+        .dropdown-item:hover { background: #f8f9fa; color: var(--primary-color); }
+        .dropdown-item svg { width: 16px; height: 16px; }
 
         /* 並べ替えモーダル */
         .sort-list-container {
@@ -523,7 +530,7 @@
             height: 50vh;
             min-height: 300px;
         }
-        .import-list-pane { flex: 1; border-right: 1px solid #eee; padding-right: 15px; overflow-y: auto; display: flex; flex-direction: column; }
+        .import-list-pane { flex: 1; border-right: 1px solid #eee; padding-right: 15px; overflow-y: auto; }
         .import-detail-pane { flex: 1.5; overflow-y: auto; padding-left: 5px; }
         .import-set-item {
             display: flex;
@@ -652,10 +659,20 @@
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 </button>
                 
-                <div class="relative-wrap">
+                <div class="relative-wrap" id="export-dropdown-wrapper">
                     <button class="icon-btn" id="btn-export" data-tooltip="ファイルへエクスポート">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     </button>
+                    <div class="dropdown-menu" id="export-menu">
+                        <div class="dropdown-item" id="export-single">
+                            <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                            現在のセットのみ書き出し
+                        </div>
+                        <div class="dropdown-item" id="export-all">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            全データをバックアップ
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grow-spacer"></div>
@@ -1312,7 +1329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.appendChild(tr);
     }
 
-    // キーボードによるセル移動
+    // キーボードによるセル移動（案A）
     tbody.addEventListener('keydown', (e) => {
         if (e.isComposing) return; // IME変換中は無視
         
@@ -1346,6 +1363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ★ 賢いエラーシミュレーションと動的チップ
     function evaluateCellMetrics(rawValue) {
         const val = rawValue || "";
         let totalPt = 0;
@@ -1394,6 +1412,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ============================
     // 機能別モジュール定義
+    // （単一HTML内で責務を分けるための構造化）
     // ============================
     const ValidationModule = Object.freeze({
         evaluateCellMetrics,
@@ -1404,7 +1423,8 @@ document.addEventListener('DOMContentLoaded', () => {
         adjustScaleToFit
     });
     const ImportExportModule = Object.freeze({
-        downloadJSON
+        downloadJSON,
+        showImportPreviewModal
     });
 
     const inputWidthMeasureEl = document.createElement('span');
@@ -1416,17 +1436,18 @@ document.addEventListener('DOMContentLoaded', () => {
     inputWidthMeasureEl.style.whiteSpace = 'pre';
     document.body.appendChild(inputWidthMeasureEl);
 
-    function getInputTargetWidth(input) {
+function getInputTargetWidth(input) {
         if (!input) return;
         const cs = getComputedStyle(input);
         inputWidthMeasureEl.style.font = cs.font;
         inputWidthMeasureEl.textContent = input.value || input.placeholder || '';
         const measuredWidth = Math.ceil(inputWidthMeasureEl.getBoundingClientRect().width);
 
-        const minW = parseFloat(cs.minWidth) || 65;
-        const maxW = parseFloat(cs.maxWidth) || 420;
-        const horizontalPadding = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + 2;
-        return Math.max(minW, Math.min(measuredWidth + horizontalPadding, maxW));
+        const minW = parseFloat(cs.minWidth) || 80;
+        // 左右のpaddingに加えて、入力時のキャレット（カーソル）が見切れないよう8pxのマージンを確保
+        const horizontalPadding = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + 8;
+        
+        return Math.max(minW, measuredWidth + horizontalPadding);
     }
 
     function getDeckColumnIndex(input) {
@@ -1618,7 +1639,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, errCnt>0 ? "エラーのまま取り込んで修正" : "この内容で上書き", "キャンセル", true, true);
     });
 
-    // ★ エクスポート機能の改修（ドロップダウン廃止、モーダル選択化）
+    const exportMenu = document.getElementById('export-menu');
+    document.getElementById('btn-export').onclick = (e) => { e.stopPropagation(); exportMenu.classList.toggle('show'); };
+    document.addEventListener('click', () => exportMenu.classList.remove('show'));
+
     function downloadJSON(dataObj, filename) {
         const payload = {
             appIdentifier: APP_IDENTIFIER,
@@ -1631,57 +1655,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
         URL.revokeObjectURL(url);
     }
-
-    document.getElementById('btn-export').onclick = () => {
-        let html = `
-            <div style="text-align: left; max-height: 60vh; overflow-y: auto;">
-                <div style="margin-bottom: 15px;">
-                    <label style="font-weight:bold; cursor:pointer;"><input type="checkbox" id="export-check-all" checked> すべて選択/解除</label>
-                </div>
-                <div id="export-list-container" style="display:flex; flex-direction:column; gap:8px;"></div>
-            </div>
-        `;
-        
-        customConfirm(html, yes => {
-            if(yes) {
-                const selectedSets = [];
-                document.querySelectorAll('.export-chk-item').forEach((chk, i) => {
-                    if (chk.checked) selectedSets.push(config.sets[i]);
-                });
-                if(selectedSets.length === 0) {
-                    customAlert("書き出すセットが選択されていません。");
-                    return;
-                }
-                const exportData = { activeIndex: 0, sets: selectedSets };
-                const filename = selectedSets.length === 1 
-                    ? `ElementBingo_${selectedSets[0].title}.json` 
-                    : `ElementBingo_Export.json`;
-                
-                downloadJSON(exportData, filename);
-            }
-        }, "選択したセットをエクスポート", "キャンセル", true);
-
-        const container = document.getElementById('export-list-container');
-        const checkAll = document.getElementById('export-check-all');
-
-        config.sets.forEach((set, i) => {
-            const div = document.createElement('div');
-            div.innerHTML = `<label style="cursor:pointer;"><input type="checkbox" class="export-chk-item" checked> ${set.title} ${set.isProtected ? '<span style="font-size:12px;color:#999;">(保護)</span>' : ''}</label>`;
-            container.appendChild(div);
-        });
-
-        checkAll.addEventListener('change', (e) => {
-            document.querySelectorAll('.export-chk-item').forEach(chk => chk.checked = e.target.checked);
-        });
-
-        container.addEventListener('change', (e) => {
-            if(e.target.classList.contains('export-chk-item')) {
-                const allChks = document.querySelectorAll('.export-chk-item');
-                const checkedCount = Array.from(allChks).filter(c => c.checked).length;
-                checkAll.checked = (checkedCount === allChks.length && allChks.length > 0);
-            }
-        });
-    };
+    document.getElementById('export-single').onclick = () => ImportExportModule.downloadJSON(config.sets[editingIndex], `ElementBingo_${config.sets[editingIndex].title}.json`);
+    document.getElementById('export-all').onclick = () => ImportExportModule.downloadJSON(config, `ElementBingo_AllBackup.json`);
 
     const fileInput = document.getElementById('import-file-input');
     document.getElementById('btn-import').onclick = () => { fileInput.value = ''; fileInput.click(); };
@@ -1694,22 +1669,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(parsed.appIdentifier !== APP_IDENTIFIER) { customAlert("このアプリの対応データではありません。"); return; }
                 const data = parsed.data;
                 const importSets = data.sets ? data.sets : [data]; 
-                showImportPreviewModal(importSets);
+                ImportExportModule.showImportPreviewModal(importSets);
             } catch(err) { customAlert("ファイルの読み込みに失敗しました。"); }
         };
         reader.readAsText(file);
     };
 
-    // ★ インポート機能の改修（「すべて選択」チェックボックスの追加とプレビュー挙動の改善）
     function showImportPreviewModal(importSets) {
         let html = `
             <div class="import-preview-container">
-                <div class="import-list-pane">
-                    <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                        <label style="font-weight:bold; cursor:pointer;"><input type="checkbox" id="import-check-all" checked> すべて選択/解除</label>
-                    </div>
-                    <div id="import-list-container"></div>
-                </div>
+                <div class="import-list-pane" id="import-list-pane"></div>
                 <div class="import-detail-pane">
                     <p class="import-preview-note">プレビュー (左で選択したセットのカード一覧)</p>
                     <div class="preview-cards" id="import-preview-cards">左のリストからセットを選択してください</div>
@@ -1721,8 +1690,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if(yes) {
                 const selections = document.querySelectorAll('.import-set-item');
                 selections.forEach((itemDom, i) => {
-                    const chk = itemDom.querySelector('input[type="checkbox"].imp-chk-item');
-                    if(chk && chk.checked) {
+                    const chk = itemDom.querySelector('input[type="checkbox"]');
+                    if(chk.checked) {
                         const action = itemDom.querySelector('.conflict-action')?.value || 'add';
                         const targetSet = importSets[i];
                         targetSet.id = generateId(); 
@@ -1739,35 +1708,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, "選択したセットをインポート", "キャンセル", true, true);
 
-        const listContainer = document.getElementById('import-list-container');
+        const listPane = document.getElementById('import-list-pane');
         const prevCards = document.getElementById('import-preview-cards');
-        const checkAll = document.getElementById('import-check-all');
-
-        function updateCheckAllState() {
-            const allChks = document.querySelectorAll('.imp-chk-item');
-            const checkedCount = Array.from(allChks).filter(c => c.checked).length;
-            checkAll.checked = (checkedCount === allChks.length && allChks.length > 0);
-        }
-
-        function showPreview(index) {
-            const set = importSets[index];
-            document.querySelectorAll('.import-set-item').forEach(el => el.classList.remove('selected-for-preview'));
-            if(listContainer.children[index]) listContainer.children[index].classList.add('selected-for-preview');
-            
-            const validModeIdx = set.modes.findIndex(m => m.trim() !== "");
-            const idxToUse = validModeIdx !== -1 ? validModeIdx : 0;
-            prevCards.innerHTML = '';
-            set.items.filter(item=>item.active).forEach(item => {
-                const v = item.values[idxToUse];
-                if(v) prevCards.innerHTML += `<div class="preview-card">${formatChemicalFormula(v)}</div>`;
-            });
-        }
 
         importSets.forEach((set, i) => {
             const isConflict = config.sets.some(s => s.title === set.title);
             const div = document.createElement('div'); div.className = 'import-set-item';
             
-            let inner = `<input type="checkbox" id="imp-chk-${i}" class="imp-chk-item" checked> <label for="imp-chk-${i}" class="import-set-label">${set.title}</label>`;
+            let inner = `<input type="checkbox" id="imp-chk-${i}" checked> <label for="imp-chk-${i}" class="import-set-label">${set.title}</label>`;
             if(isConflict) {
                 inner += `<div class="conflict-warn">⚠️重複 <select class="conflict-action"><option value="add">別名で追加</option><option value="overwrite">上書き</option></select></div>`;
             }
@@ -1775,22 +1723,22 @@ document.addEventListener('DOMContentLoaded', () => {
             
             div.addEventListener('click', (e) => {
                 if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'LABEL') {
-                    const chk = div.querySelector('input[type="checkbox"].imp-chk-item'); 
-                    chk.checked = !chk.checked;
-                    updateCheckAllState();
-                } else if (e.target.tagName === 'INPUT') {
-                    updateCheckAllState();
+                    const chk = div.querySelector('input'); chk.checked = !chk.checked;
                 }
-                showPreview(i);
+                document.querySelectorAll('.import-set-item').forEach(el => el.classList.remove('selected-for-preview'));
+                div.classList.add('selected-for-preview');
+                
+                const validModeIdx = set.modes.findIndex(m => m.trim() !== "");
+                const idxToUse = validModeIdx !== -1 ? validModeIdx : 0;
+                prevCards.innerHTML = '';
+                set.items.filter(item=>item.active).forEach(item => {
+                    const v = item.values[idxToUse];
+                    if(v) prevCards.innerHTML += `<div class="preview-card">${formatChemicalFormula(v)}</div>`;
+                });
             });
-            listContainer.appendChild(div);
+            listPane.appendChild(div);
         });
-
-        checkAll.addEventListener('change', (e) => {
-            document.querySelectorAll('.imp-chk-item').forEach(chk => chk.checked = e.target.checked);
-        });
-
-        if(importSets.length > 0) showPreview(0);
+        if(importSets.length > 0) listPane.firstElementChild.click();
     }
 
     document.getElementById('open-settings-btn').onclick = () => { editingIndex = config.activeIndex; populateSettingsUI(); settingsOverlay.style.display = 'flex'; };
