@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ベンゼン共鳴構造くん</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            /* 動的なビューポート高さを優先的に使用 */
+            height: 100vh;
+            height: 100dvh;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #ffffff;
+            color: #111111;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #app-container {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+            width: 100vw;
+            background: #ffffff;
+        }
+
+        /* スマホ縦画面用のレスポンシブ設定 */
+        @media (max-width: 768px) {
+            #app-container {
+                flex-direction: column;
+            }
+            
+            #side-controls {
+                flex-direction: row !important;
+                padding: 10px 20px 30px 20px !important;
+                gap: 20px !important;
+                justify-content: center;
+                background: #ffffff;
+                box-shadow: 0 -5px 15px rgba(0,0,0,0.02);
+            }
+
+            #main-svg {
+                /* スマホでは横幅を基準に大きく表示 */
+                width: 90vw !important;
+                height: 50vh !important;
+                max-height: 50vh;
+            }
+
+            #slider-container {
+                padding: 10px 20px !important;
+            }
+        }
+
+        #app-container:fullscreen,
+        #app-container:-webkit-full-screen {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #app-container.pseudo-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+        }
+
+        #main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 0; /* Flex内の縮小を許可 */
+        }
+
+        #svg-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #main-svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: 75vh;
+            height: 75vh;
+            pointer-events: none;
+        }
+
+        .bond-layer {
+            transition-property: opacity;
+            transition-timing-function: ease-in-out;
+        }
+
+        #slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+            padding: 0 20px 30px 20px;
+            box-sizing: border-box;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            max-width: 500px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        #freq-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            min-width: 70px;
+            text-align: left;
+            margin-left: 10px;
+        }
+
+        #side-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 25px;
+            padding: 20px 30px;
+            background: transparent;
+        }
+
+        .icon-btn {
+            width: 56px;
+            height: 56px;
+            padding: 0;
+            border: 3px solid #111;
+            background: #ffffff;
+            color: #111;
+            cursor: pointer;
+            border-radius: 50%;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        /* スマホでのボタンサイズ微調整 */
+        @media (max-width: 480px) {
+            .icon-btn {
+                width: 50px;
+                height: 50px;
+            }
+            #freq-display {
+                font-size: 1.4rem;
+                min-width: 60px;
+            }
+        }
+
+        .icon-btn:hover { background: #f0f0f0; transform: translateY(-2px); }
+        .icon-btn:active { transform: translateY(0); box-shadow: 0 2px 3px rgba(0,0,0,0.1); }
+        .icon-btn.active-state { background: #111111; color: #ffffff; }
+
+        #btn-sound.sound-off { 
+            border-color: #ccc; 
+            color: #ccc; 
+            box-shadow: none; 
+        }
+
+        .icon-btn svg {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            min-height: 28px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="main-area">
+        <div id="svg-container" title="クリックまたはスペースキーで再生・停止">
+            <svg id="main-svg" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
+                <g transform="translate(250, 250)">
+                    <polygon points="0,-200 173.2,-100 173.2,100 0,200 -173.2,100 -173.2,-100" 
+                             fill="none" stroke="#111" stroke-width="12" stroke-linejoin="round"/>
+                    
+                    <g id="pattern-a" class="bond-layer">
+                        <line x1="143.2" y1="-75" x2="143.2" y2="75" stroke="#111" stroke-width="12" stroke-linecap="round"/>
+                        <line x1="143.2" y1="-75" x2="143.2" y2="75" stroke="#111" stroke-width="12" stroke-linecap="round" transform="rotate(120)"/>
+                        <line x1="143.2" y1="-75" x2="143.2" y2="75" stroke="#111" stroke-width="12" stroke-linecap="round" transform="rotate(240)"/>
+                    </g>
+
+                    <g id="pattern-b" class="bond-layer" style="opacity: 0;">
+                        <line x1="143.2" y1="-75" x2="143.2" y2="75" stroke="#111" stroke-width="12" stroke-linecap="round" transform="rotate(60)"/>
+                        <line x1="143.2" y1="-75" x2="143.2" y2="75" stroke="#111" stroke-width="12" stroke-linecap="round" transform="rotate(180)"/>
+                        <line x1="143.2" y1="-75" x2="143.2" y2="75" stroke="#111" stroke-width="12" stroke-linecap="round" transform="rotate(300)"/>
+                    </g>
+
+                    <g id="hybrid-group" style="opacity: 0;">
+                        <circle id="hybrid-1" cx="0" cy="0" r="145" fill="none" stroke="#111" stroke-width="12" stroke-dasharray="45 45" />
+                        <circle id="hybrid-2" cx="0" cy="0" r="145" fill="none" stroke="#111" stroke-width="12" stroke-dasharray="45 45" stroke-dashoffset="45" style="opacity: 0;"/>
+                    </g>
+                </g>
+            </svg>
+        </div>
+
+        <div id="slider-container">
+            <button id="btn-freq-down" class="icon-btn" title="周波数を下げる">
+                <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <input type="range" id="freq-slider" min="1" max="40" step="1" value="1">
+            <button id="btn-freq-up" class="icon-btn" title="周波数を上げる">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <div id="freq-display"><span id="freq-val">1</span>Hz</div>
+        </div>
+    </div>
+
+    <div id="side-controls">
+        <button id="btn-sound" class="icon-btn active-state" title="サウンドON/OFF">
+            <svg viewBox="0 0 24 24">
+                <g id="grp-sound-on">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </g>
+                <g id="grp-sound-off" style="display: none;">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                </g>
+            </svg>
+        </button>
+        <button id="btn-hybrid" class="icon-btn" title="非局在化モード">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-dasharray="4 4"></circle></svg>
+        </button>
+        <button id="btn-full" class="icon-btn" title="全画面表示">
+            <svg viewBox="0 0 24 24">
+                <g id="grp-full-enter">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                </g>
+                <g id="grp-full-exit" style="display: none;">
+                    <polyline points="4 14 10 14 10 20"></polyline>
+                    <polyline points="20 10 14 10 14 4"></polyline>
+                    <line x1="14" y1="10" x2="21" y2="3"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                </g>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<script>
+    // ロジック部分は変更なし
+    const svgContainer = document.getElementById('svg-container');
+    const svgA = document.getElementById('pattern-a');
+    const svgB = document.getElementById('pattern-b');
+    const svgHGroup = document.getElementById('hybrid-group');
+    const svgH1 = document.getElementById('hybrid-1');
+    const svgH2 = document.getElementById('hybrid-2');
+    
+    const slider = document.getElementById('freq-slider');
+    const freqVal = document.getElementById('freq-val');
+    const btnFreqDown = document.getElementById('btn-freq-down');
+    const btnFreqUp = document.getElementById('btn-freq-up');
+    
+    const btnSound = document.getElementById('btn-sound');
+    const grpSoundOn = document.getElementById('grp-sound-on');
+    const grpSoundOff = document.getElementById('grp-sound-off');
+    
+    const btnHybrid = document.getElementById('btn-hybrid');
+    
+    const btnFull = document.getElementById('btn-full');
+    const grpFullEnter = document.getElementById('grp-full-enter');
+    const grpFullExit = document.getElementById('grp-full-exit');
+    
+    const appContainer = document.getElementById('app-container');
+
+    let isRunning = false;
+    let isHybrid = false;
+    let isPatternA = true;
+    let isSoundOn = true;
+    
+    let mainTimeoutId = null;
+    let hybridTimeoutId = null;
+    let isHybridState1 = true;
+
+    // Web Audio API
+    let audioCtx = null;
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playBeep() {
+        if (!isSoundOn || !audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function updateTransitions() {
+        const freq = parseInt(slider.value);
+        const durationMs = 1000 / freq; 
+        const cssDuration = (durationMs * 0.3) + 'ms';
+        svgA.style.transitionDuration = cssDuration;
+        svgB.style.transitionDuration = cssDuration;
+    }
+
+    function toggleBonds() {
+        if (!isRunning || isHybrid) return;
+        const freq = parseInt(slider.value);
+        const intervalMs = 1000 / freq; 
+
+        isPatternA = !isPatternA;
+        svgA.style.opacity = isPatternA ? '1' : '0';
+        svgB.style.opacity = isPatternA ? '0' : '1';
+        
+        playBeep();
+        mainTimeoutId = setTimeout(toggleBonds, intervalMs);
+    }
+
+    function toggleHybridAnimation() {
+        if (!isRunning || !isHybrid) return;
+        const freq = parseInt(slider.value);
+        const intervalMs = 1000 / freq;
+
+        isHybridState1 = !isHybridState1;
+        svgH1.style.opacity = isHybridState1 ? '1' : '0';
+        svgH2.style.opacity = isHybridState1 ? '0' : '1';
+
+        playBeep();
+        hybridTimeoutId = setTimeout(toggleHybridAnimation, intervalMs);
+    }
+
+    function updateFrequency(newFreq) {
+        let f = Math.round(newFreq);
+        f = Math.min(Math.max(f, 1), 40);
+        slider.value = f;
+        freqVal.textContent = f;
+        updateTransitions();
+    }
+
+    function decreaseFrequency() {
+        let current = parseInt(slider.value);
+        let next = Math.round(current / 1.4);
+        if (next === current && current > 1) next = current - 1;
+        updateFrequency(next);
+    }
+
+    function increaseFrequency() {
+        let current = parseInt(slider.value);
+        let next = Math.round(current * 1.4);
+        if (next === current && current < 40) next = current + 1;
+        updateFrequency(next);
+    }
+
+    slider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        freqVal.textContent = val;
+        updateTransitions();
+    });
+
+    btnFreqDown.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        decreaseFrequency();
+    });
+
+    btnFreqUp.addEventListener('click', (e) => {
+        e.stopPropagation();
+        increaseFrequency();
+    });
+
+    function togglePlayPause() {
+        initAudio(); 
+        isRunning = !isRunning;
+        
+        if (isRunning) {
+            if (isHybrid) {
+                toggleHybridAnimation();
+            } else {
+                toggleBonds();
+            }
+        } else {
+            clearTimeout(mainTimeoutId);
+            clearTimeout(hybridTimeoutId);
+        }
+    }
+
+    svgContainer.addEventListener('click', togglePlayPause);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.key === ' ') {
+            e.preventDefault(); 
+            togglePlayPause();
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+            e.preventDefault(); 
+            increaseFrequency();
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+            e.preventDefault(); 
+            decreaseFrequency();
+        }
+    });
+
+    btnSound.addEventListener('click', (e) => {
+        e.stopPropagation();
+        initAudio();
+        isSoundOn = !isSoundOn;
+        if (isSoundOn) {
+            btnSound.classList.add('active-state');
+            btnSound.classList.remove('sound-off');
+            grpSoundOn.style.display = '';
+            grpSoundOff.style.display = 'none';
+        } else {
+            btnSound.classList.remove('active-state');
+            btnSound.classList.add('sound-off');
+            grpSoundOn.style.display = 'none';
+            grpSoundOff.style.display = '';
+        }
+    });
+
+    btnHybrid.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isHybrid = !isHybrid;
+        
+        clearTimeout(mainTimeoutId);
+        clearTimeout(hybridTimeoutId);
+
+        if (isHybrid) {
+            btnHybrid.classList.add('active-state');
+            svgA.style.opacity = '0';
+            svgB.style.opacity = '0';
+            svgHGroup.style.opacity = '1';
+            
+            if (isRunning) {
+                toggleHybridAnimation();
+            } else {
+                svgH1.style.opacity = '1';
+                svgH2.style.opacity = '0';
+            }
+        } else {
+            btnHybrid.classList.remove('active-state');
+            svgHGroup.style.opacity = '0';
+            
+            svgA.style.opacity = isPatternA ? '1' : '0';
+            svgB.style.opacity = isPatternA ? '0' : '1';
+            
+            if (isRunning) {
+                toggleBonds();
+            }
+        }
+    });
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (appContainer.requestFullscreen) {
+                appContainer.requestFullscreen().catch(() => appContainer.classList.add('pseudo-fullscreen'));
+            } else if (appContainer.webkitRequestFullscreen) {
+                appContainer.webkitRequestFullscreen();
+            } else {
+                appContainer.classList.add('pseudo-fullscreen');
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+            appContainer.classList.remove('pseudo-fullscreen');
+        }
+    }
+
+    btnFull.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFullscreen();
+    });
+
+    const updateFullscreenButton = () => {
+        if (document.fullscreenElement || document.webkitFullscreenElement || appContainer.classList.contains('pseudo-fullscreen')) {
+            btnFull.classList.add('active-state');
+            grpFullEnter.style.display = 'none';
+            grpFullExit.style.display = '';
+        } else {
+            btnFull.classList.remove('active-state');
+            grpFullEnter.style.display = '';
+            grpFullExit.style.display = 'none';
+        }
+    };
+
+    document.addEventListener('fullscreenchange', updateFullscreenButton);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+
+    updateTransitions();
+</script>
+
+</body>
+</html>
