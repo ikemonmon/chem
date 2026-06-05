@@ -4656,16 +4656,114 @@ function swapEvalStudent(student, preparedById) {
     });
 }
 
-function buildSwapScoreWorsenHint(beforeDetails, afterDetails) {
-    const parts = [];
-    if (afterDetails.scoreFront > beforeDetails.scoreFront) parts.push('前列重複');
-    if (afterDetails.scoreBack > beforeDetails.scoreBack) parts.push('後列重複');
-    if (afterDetails.scorePair > beforeDetails.scorePair) parts.push('過去ペア');
-    if (afterDetails.scoreWindow > beforeDetails.scoreWindow) parts.push('窓側');
-    if (afterDetails.scoreCorridor > beforeDetails.scoreCorridor) parts.push('廊下側');
-    if (afterDetails.scoreSeat > beforeDetails.scoreSeat) parts.push('過去座席');
-    if (!parts.length) return '';
-    return parts.join('・') + 'などのペナルティが増加しました。';
+const SWAP_SCORE_CATEGORY_SPECS = [
+    { scoreKey: 'scoreFront', label: '前列重複', rowsKey: 'frontDupRows' },
+    { scoreKey: 'scoreBack', label: '後列重複', rowsKey: 'backDupRows' },
+    { scoreKey: 'scorePair', label: '過去ペア', strKey: 'pastPairStrs' },
+    { scoreKey: 'scoreWindow', label: '窓側', rowsKey: 'windowDupRows', needsWindow: true },
+    { scoreKey: 'scoreCorridor', label: '廊下側', rowsKey: 'corridorDupRows', needsCorridor: true },
+    { scoreKey: 'scoreSeat', label: '過去座席', strKey: 'pastSeatStrs' }
+];
+
+function swapDetailLineInvolvesStudents(line, studentIds) {
+    if (!studentIds || studentIds.size === 0) return true;
+    for (const id of studentIds) {
+        if (!id) continue;
+        if (line.includes(`[${id} `)) return true;
+    }
+    return false;
+}
+
+function diffScoredDupRows(beforeRows, afterRows) {
+    const beforeByText = new Map();
+    (beforeRows || []).forEach(row => {
+        if (!row || !row.scored) return;
+        const prev = beforeByText.get(row.displayText);
+        if (prev == null || row.sortScore > prev) beforeByText.set(row.displayText, row.sortScore);
+    });
+    const out = [];
+    (afterRows || []).forEach(row => {
+        if (!row || !row.scored || !row.displayText) return;
+        const prev = beforeByText.get(row.displayText);
+        if (prev == null || row.sortScore > prev) out.push(row.displayText);
+    });
+    return out;
+}
+
+function diffNewStrings(beforeArr, afterArr) {
+    const beforeSet = new Set(beforeArr || []);
+    return (afterArr || []).filter(s => s && !beforeSet.has(s));
+}
+
+function buildSwapScoreWorsenMessage(beforeDetails, afterDetails, swapStudents) {
+    const studentIds = new Set(
+        (swapStudents || []).filter(Boolean).map(s => (s.id || '').trim()).filter(Boolean)
+    );
+    const sections = [];
+
+    const catLines = [];
+    for (const spec of SWAP_SCORE_CATEGORY_SPECS) {
+        if (spec.needsWindow && !boardHasWindowEdge()) continue;
+        if (spec.needsCorridor && !boardHasCorridorEdge()) continue;
+        const b = Number(beforeDetails[spec.scoreKey]) || 0;
+        const a = Number(afterDetails[spec.scoreKey]) || 0;
+        const d = a - b;
+        if (d > 0) catLines.push(`・${spec.label}: +${d}点（${b} → ${a}）`);
+    }
+    if (catLines.length) {
+        sections.push('【増加した項目】\n' + catLines.join('\n'));
+    }
+
+    const detailSet = new Set();
+    const detailLines = [];
+    const addDetail = (line, swapOnly) => {
+        if (!line || detailSet.has(line)) return;
+        if (swapOnly && studentIds.size > 0 && !swapDetailLineInvolvesStudents(line, studentIds)) return;
+        detailSet.add(line);
+        detailLines.push(line);
+    };
+
+    for (const spec of SWAP_SCORE_CATEGORY_SPECS) {
+        const b = Number(beforeDetails[spec.scoreKey]) || 0;
+        const a = Number(afterDetails[spec.scoreKey]) || 0;
+        if (a <= b) continue;
+        if (spec.rowsKey) {
+            diffScoredDupRows(beforeDetails[spec.rowsKey], afterDetails[spec.rowsKey])
+                .forEach(line => addDetail(line, true));
+        }
+        if (spec.strKey) {
+            diffNewStrings(beforeDetails[spec.strKey], afterDetails[spec.strKey])
+                .forEach(line => addDetail(line, true));
+        }
+    }
+
+    if (detailLines.length === 0 && catLines.length > 0) {
+        for (const spec of SWAP_SCORE_CATEGORY_SPECS) {
+            const b = Number(beforeDetails[spec.scoreKey]) || 0;
+            const a = Number(afterDetails[spec.scoreKey]) || 0;
+            if (a <= b) continue;
+            if (spec.rowsKey) {
+                diffScoredDupRows(beforeDetails[spec.rowsKey], afterDetails[spec.rowsKey])
+                    .forEach(line => addDetail(line, false));
+            }
+            if (spec.strKey) {
+                diffNewStrings(beforeDetails[spec.strKey], afterDetails[spec.strKey])
+                    .forEach(line => addDetail(line, false));
+            }
+        }
+    }
+
+    const MAX_DETAIL_LINES = 12;
+    if (detailLines.length) {
+        const shown = detailLines.slice(0, MAX_DETAIL_LINES);
+        let block = '【該当の詳細】\n' + shown.map(l => `・${l}`).join('\n');
+        if (detailLines.length > MAX_DETAIL_LINES) {
+            block += `\n…他 ${detailLines.length - MAX_DETAIL_LINES} 件`;
+        }
+        sections.push(block);
+    }
+
+    return sections.join('\n\n');
 }
 
 function evaluateSwapBeforeConfirm(assignment, idx1, idx2) {
@@ -4692,9 +4790,10 @@ function evaluateSwapBeforeConfirm(assignment, idx1, idx2) {
     const afterScore = afterDetails.totalScore;
 
     if (afterScore > beforeScore) {
-        let message = `スコアが悪化します（${beforeScore}点 → ${afterScore}点）。`;
-        const hint = buildSwapScoreWorsenHint(beforeDetails, afterDetails);
-        if (hint) message += '\n' + hint;
+        const delta = afterScore - beforeScore;
+        let message = `スコアが悪化します（${beforeScore}点 → ${afterScore}点、+${delta}点）。`;
+        const detailBlock = buildSwapScoreWorsenMessage(beforeDetails, afterDetails, [s1, s2]);
+        if (detailBlock) message += '\n\n' + detailBlock;
         return { kind: 'soft', message };
     }
     return { kind: 'ok' };
