@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>委員会決めアプリ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #FBF8F3;
+    --paper-deep: #F3EDE2;
+    --ink: #2E2A24;
+    --ink-soft: #6B6255;
+    --sakura: #E7A9B6;
+    --sakura-deep: #D6899C;
+    --leaf: #6F8F55;
+    --leaf-bg: #EAF1E1;
+    --amber: #C98A2E;
+    --amber-bg: #FBF0DC;
+    --indigo: #3E4C63;
+    --indigo-deep: #2E3A4D;
+    --rule: #E3D9CB;
+    --danger: #B4544A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans JP', sans-serif;
+    min-height:100vh;
+    line-height:1.6;
+  }
+  h1,h2,h3{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    margin:0 0 .5em 0;
+    letter-spacing:.02em;
+  }
+  .app-header{
+    position:relative;
+    padding:28px clamp(16px,4vw,48px) 22px;
+    background:linear-gradient(180deg, var(--paper-deep) 0%, var(--paper) 100%);
+    border-bottom:1px solid var(--rule);
+    overflow:hidden;
+  }
+  .petal{
+    position:absolute;
+    width:130px;height:130px;
+    border-radius:0% 60% 60% 60%;
+    background:var(--sakura);
+    opacity:.16;
+    top:-50px; right:-30px;
+    transform:rotate(20deg);
+  }
+  .petal.small{
+    width:70px;height:70px;
+    top:20px; right:90px;
+    opacity:.22;
+    transform:rotate(-10deg);
+  }
+  .app-header h1{
+    font-size:clamp(22px,3vw,30px);
+    color:var(--ink);
+    position:relative;
+  }
+  .app-header .sub{
+    color:var(--ink-soft);
+    font-size:14px;
+    position:relative;
+  }
+  main{
+    max-width:960px;
+    margin:0 auto;
+    padding:clamp(16px,4vw,40px);
+  }
+  .card{
+    background:#fff;
+    border:1px solid var(--rule);
+    border-radius:14px;
+    padding:clamp(18px,3vw,32px);
+    margin-bottom:24px;
+    box-shadow:0 1px 3px rgba(46,42,36,.04);
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    font-weight:500;
+  }
+  input[type=text], input[type=number], input[type=password], select{
+    width:100%;
+    padding:12px 14px;
+    font-size:16px;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  input:focus, select:focus{
+    outline:2px solid var(--sakura-deep);
+    outline-offset:1px;
+  }
+  .field{ margin-bottom:16px; }
+  .row{ display:flex; gap:16px; flex-wrap:wrap; }
+  .row > .field{ flex:1; min-width:160px; }
+  button{
+    font-family:inherit;
+    font-size:15px;
+    font-weight:700;
+    padding:12px 22px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    background:var(--sakura-deep);
+    color:#fff;
+    transition:transform .08s ease, opacity .15s ease;
+  }
+  button:hover{ opacity:.9; }
+  button:active{ transform:scale(.98); }
+  button.secondary{
+    background:transparent;
+    color:var(--indigo);
+    border:1.5px solid var(--indigo);
+  }
+  button.ghost{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--rule);
+    font-weight:500;
+  }
+  button.danger{ background:var(--danger); }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  .teacher-mode button{ background:var(--indigo); }
+  .teacher-mode button.danger{ background:var(--danger); }
+
+  .msg{
+    padding:14px 16px;
+    border-radius:10px;
+    font-size:14px;
+    margin:14px 0;
+  }
+  .msg.error{ background:#FBEAE8; color:var(--danger); border:1px solid #EFC9C4; }
+  .msg.success{ background:var(--leaf-bg); color:var(--leaf); border:1px solid #D3E3C4; }
+  .msg.info{ background:var(--amber-bg); color:var(--amber); border:1px solid #F0DBB1; }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  th, td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--rule);
+  }
+  th{
+    font-weight:700;
+    color:var(--ink-soft);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    position:sticky; top:0;
+    background:#fff;
+  }
+  .scroll-box{
+    max-height:60vh;
+    overflow-y:auto;
+    border:1px solid var(--rule);
+    border-radius:10px;
+  }
+  .pill{
+    display:inline-block;
+    padding:3px 12px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+  }
+  .pill.ok{ background:var(--leaf-bg); color:var(--leaf); }
+  .pill.wait{ background:var(--amber-bg); color:var(--amber); }
+
+  .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .tab-btn{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--rule);
+    border-radius:999px;
+    padding:8px 18px;
+    font-size:13px;
+  }
+  .tab-btn.active{
+    background:var(--indigo);
+    color:#fff;
+    border-color:var(--indigo);
+  }
+  .hidden{ display:none !important; }
+
+  .committee-row-input{
+    display:flex; gap:10px; align-items:center; margin-bottom:8px;
+  }
+  .committee-row-input input[type=text]{ flex:2; }
+  .committee-row-input input[type=number]{ flex:1; }
+  .committee-row-input button{ padding:8px 14px; font-size:13px; }
+
+  .confirmed-block, .open-block{
+    margin-bottom:22px;
+  }
+  .confirmed-block h3{ color:var(--leaf); font-size:16px; }
+  .open-block h3{ color:var(--amber); font-size:16px; }
+
+  .status-big{
+    text-align:center;
+    padding:28px 16px;
+  }
+  .status-big .name{
+    font-size:22px;
+    font-family:'Shippori Mincho', serif;
+    margin:10px 0 4px;
+  }
+  .status-big .committee{
+    font-size:28px;
+    font-weight:900;
+    color:var(--leaf);
+  }
+  footer{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:12px;
+    padding:20px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="petal"></div>
+  <div class="petal small"></div>
+  <h1 id="headerTitle">委員会決め</h1>
+  <div class="sub" id="headerSub">出席番号とひらがな姓で希望を入力してください</div>
+</div>
+
+<main id="app"></main>
+
+<footer>委員会決めアプリ</footer>
+
+<script>
+/* ============ 設定 ============ */
+// ここに、Google Apps Scriptをウェブアプリとしてデプロイした際に発行されるURLを設定してください
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyvpoqd-5lr9PZNClW_RdXSXot_vRsSc0PWVsNZZljCfqUgz68rFzYXp3eY8P-ektwEOQ/exec";
+
+/* ============ 共通API呼び出し ============ */
+async function callApi(action, payload, method) {
+  method = method || 'POST';
+  if (method === 'GET') {
+    const params = new URLSearchParams(Object.assign({ action }, payload || {}));
+    const res = await fetch(GAS_URL + '?' + params.toString());
+    return res.json();
+  } else {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, payload: payload || {} })
+    });
+    return res.json();
+  }
+}
+
+/* ============ ルーティング ============ */
+const params = new URLSearchParams(location.search);
+const role = params.get('role') === 'teacher' ? 'teacher' : 'student';
+
+const app = document.getElementById('app');
+const headerTitle = document.getElementById('headerTitle');
+const headerSub = document.getElementById('headerSub');
+
+if (GAS_URL.indexOf('PUT_YOUR_WEB_APP_URL_HERE') !== -1) {
+  app.innerHTML = `<div class="card"><div class="msg error">
+    まだ接続先(GAS_URL)が設定されていません。index.html内の GAS_URL に、
+    デプロイしたGoogle Apps ScriptウェブアプリのURLを設定してください。
+  </div></div>`;
+} else if (role === 'teacher') {
+  document.body.classList.add('teacher-mode');
+  headerTitle.textContent = '委員会決め - 教員画面';
+  headerSub.textContent = '委員会の設定・希望状況の確認・確定処理を行います';
+  renderTeacherGate();
+} else {
+  renderStudent();
+}
+
+/* ============================================================
+   生徒画面
+   ============================================================ */
+function renderStudent() {
+  app.innerHTML = `
+    <div class="card" id="loginCard">
+      <h2>希望の入力・確認</h2>
+      <div class="row">
+        <div class="field">
+          <label>出席番号</label>
+          <input type="text" inputmode="numeric" id="studentId" placeholder="例: 12">
+        </div>
+        <div class="field">
+          <label>ひらがな姓</label>
+          <input type="text" id="studentName" placeholder="例: たなか">
+        </div>
+      </div>
+      <button id="loginBtn">希望を入力する / 確認する</button>
+      <div id="loginMsg"></div>
+    </div>
+    <div id="studentBody"></div>
+  `;
+  document.getElementById('loginBtn').onclick = studentLogin;
+}
+
+async function studentLogin() {
+  const studentId = document.getElementById('studentId').value.trim();
+  const name = document.getElementById('studentName').value.trim();
+  const msgBox = document.getElementById('loginMsg');
+  msgBox.innerHTML = '';
+
+  if (!studentId || !name) {
+    msgBox.innerHTML = '<div class="msg error">出席番号とひらがな姓を入力してください</div>';
+    return;
+  }
+
+  const statusRes = await callApi('getMyStatus', { studentId }, 'GET');
+  if (!statusRes.success) {
+    msgBox.innerHTML = `<div class="msg error">${statusRes.error}</div>`;
+    return;
+  }
+
+  const status = statusRes.data;
+  const body = document.getElementById('studentBody');
+
+  if (status.found && status.confirmed) {
+    body.innerHTML = `
+      <div class="card status-big">
+        <div>あなたの委員会が確定しました</div>
+        <div class="name">${escapeHtml(status.name)} さん</div>
+        <div class="committee">${escapeHtml(status.confirmedCommittee)}</div>
+      </div>`;
+    return;
+  }
+
+  const [cfgRes, committeesRes] = await Promise.all([
+    callApi('getConfigPublic', {}, 'GET'),
+    callApi('getCommittees', { includeConfirmed: 'false' }, 'GET')
+  ]);
+
+  if (!cfgRes.success || !committeesRes.success) {
+    body.innerHTML = `<div class="msg error">データの取得に失敗しました</div>`;
+    return;
+  }
+
+  const maxChoices = cfgRes.data.maxChoices;
+  const committees = committeesRes.data;
+  const prevPrefs = (status.found && status.preferences) ? status.preferences : [];
+
+  if (committees.length === 0) {
+    body.innerHTML = `<div class="card"><div class="msg info">現在、選択できる委員会がありません。しばらくお待ちください。</div></div>`;
+    return;
+  }
+
+  let selectsHtml = '';
+  for (let i = 0; i < maxChoices; i++) {
+    selectsHtml += `
+      <div class="field">
+        <label>第${i + 1}希望</label>
+        <select class="prefSelect" data-idx="${i}">
+          <option value="">選択してください</option>
+          ${committees.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}（定員${c.capacity}）</option>`).join('')}
+        </select>
+      </div>`;
+  }
+
+  body.innerHTML = `
+    <div class="card">
+      <h2>希望の入力</h2>
+      <div class="msg info">第1希望から順に、できるだけ多く入力してください（最大 第${maxChoices}希望まで）。同じ委員会は選べません。</div>
+      ${selectsHtml}
+      <button id="submitPrefBtn">この内容で送信する</button>
+      <div id="submitMsg"></div>
+    </div>`;
+
+  // 前回の入力を復元
+  const selects = document.querySelectorAll('.prefSelect');
+  selects.forEach((sel, i) => {
+    if (prevPrefs[i]) sel.value = prevPrefs[i];
+  });
+
+  document.getElementById('submitPrefBtn').onclick = async () => {
+    const choices = Array.from(document.querySelectorAll('.prefSelect'))
+      .map(s => s.value).filter(v => v !== '');
+    const submitMsg = document.getElementById('submitMsg');
+
+    const uniq = new Set(choices);
+    if (uniq.size !== choices.length) {
+      submitMsg.innerHTML = '<div class="msg error">同じ委員会を複数選ぶことはできません</div>';
+      return;
+    }
+    if (choices.length === 0) {
+      submitMsg.innerHTML = '<div class="msg error">希望を1つ以上選んでください</div>';
+      return;
+    }
+
+    const res = await callApi('submitPreference', { studentId, name, choices });
+    if (res.success) {
+      submitMsg.innerHTML = '<div class="msg success">送信しました。教員の集約状況の画面を確認してください。</div>';
+    } else {
+      submitMsg.innerHTML = `<div class="msg error">${res.error}</div>`;
+    }
+  };
+}
+
+/* ============================================================
+   教員画面 - PINゲート
+   ============================================================ */
+let TEACHER_PIN_OK = false;
+
+function renderTeacherGate() {
+  app.innerHTML = `
+    <div class="card" style="max-width:360px;margin:40px auto;">
+      <h2>教員画面ログイン</h2>
+      <div class="field">
+        <label>4桁のPIN</label>
+        <input type="password" id="pinInput" inputmode="numeric" maxlength="4" placeholder="••••">
+      </div>
+      <button id="pinBtn">ログイン</button>
+      <div id="pinMsg"></div>
+    </div>`;
+  document.getElementById('pinBtn').onclick = async () => {
+    const pin = document.getElementById('pinInput').value.trim();
+    const res = await callApi('verifyPin', { pin }, 'GET');
+    const msg = document.getElementById('pinMsg');
+    if (res.success) {
+      TEACHER_PIN_OK = true;
+      window.__PIN = pin;
+      renderTeacherApp();
+    } else {
+      msg.innerHTML = `<div class="msg error">${res.error || 'PINが違います'}</div>`;
+    }
+  };
+  document.getElementById('pinInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('pinBtn').click();
+  });
+}
+
+/* ============================================================
+   教員画面 - 本体（タブ切り替え）
+   ============================================================ */
+function renderTeacherApp() {
+  app.innerHTML = `
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="committees">委員会設定</button>
+      <button class="tab-btn" data-tab="tally">希望状況・確定</button>
+      <button class="tab-btn" data-tab="results">確定状況一覧</button>
+      <button class="tab-btn" data-tab="settings">その他設定</button>
+    </div>
+    <div id="tabBody"></div>
+  `;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTab(btn.dataset.tab);
+    };
+  });
+  renderTab('committees');
+}
+
+function renderTab(tab) {
+  const body = document.getElementById('tabBody');
+  if (tab === 'committees') return renderCommitteesTab(body);
+  if (tab === 'tally') return renderTallyTab(body);
+  if (tab === 'results') return renderResultsTab(body);
+  if (tab === 'settings') return renderSettingsTab(body);
+}
+
+/* --- 委員会設定タブ --- */
+async function renderCommitteesTab(body) {
+  body.innerHTML = `<div class="card">読み込み中...</div>`;
+  const [committeesRes, cfgRes] = await Promise.all([
+    callApi('getCommittees', { includeConfirmed: 'true' }, 'GET'),
+    callApi('getConfigPublic', {}, 'GET')
+  ]);
+  const committees = committeesRes.data || [];
+  const maxChoices = cfgRes.data ? cfgRes.data.maxChoices : 5;
+
+  body.innerHTML = `
+    <div class="card">
+      <h2>委員会の登録</h2>
+      <div class="msg info">確定済みの委員会（緑のバッジ）は編集できません。それ以外の行は自由に編集・追加・削除できます。</div>
+      <div id="committeeRows"></div>
+      <button class="secondary" id="addRowBtn" type="button">＋ 委員会を追加</button>
+      <hr style="border:none;border-top:1px solid var(--rule);margin:20px 0;">
+      <div class="field" style="max-width:220px;">
+        <label>希望取得数（第何希望まで取るか）</label>
+        <input type="number" id="maxChoicesInput" min="1" value="${maxChoices}">
+      </div>
+      <button id="saveAllBtn">この内容を保存する</button>
+      <div id="saveMsg"></div>
+    </div>
+  `;
+
+  const rowsBox = document.getElementById('committeeRows');
+
+  function addRow(name, capacity, confirmed) {
+    const div = document.createElement('div');
+    div.className = 'committee-row-input';
+    div.innerHTML = `
+      <input type="text" class="c-name" placeholder="委員会名" value="${escapeHtml(name || '')}" ${confirmed ? 'disabled' : ''}>
+      <input type="number" class="c-capacity" placeholder="定員" min="1" value="${capacity || ''}" ${confirmed ? 'disabled' : ''}>
+      ${confirmed ? '<span class="pill ok">確定済み</span>' : '<button type="button" class="ghost remove-row">削除</button>'}
+    `;
+    if (!confirmed) {
+      div.querySelector('.remove-row').onclick = () => div.remove();
+    }
+    rowsBox.appendChild(div);
+  }
+
+  committees.forEach(c => addRow(c.name, c.capacity, c.confirmed));
+  if (committees.length === 0) addRow('', '', false);
+
+  document.getElementById('addRowBtn').onclick = () => addRow('', '', false);
+
+  document.getElementById('saveAllBtn').onclick = async () => {
+    const rows = Array.from(rowsBox.querySelectorAll('.committee-row-input'));
+    const list = rows
+      .filter(r => !r.querySelector('.c-name').disabled)
+      .map(r => ({
+        name: r.querySelector('.c-name').value.trim(),
+        capacity: Number(r.querySelector('.c-capacity').value)
+      }))
+      .filter(c => c.name && c.capacity > 0);
+
+    const saveMsg = document.getElementById('saveMsg');
+    const res = await callApi('saveCommittees', { pin: window.__PIN, committees: list });
+    if (!res.success) {
+      saveMsg.innerHTML = `<div class="msg error">${res.error}</div>`;
+      return;
+    }
+    const maxChoicesVal = Number(document.getElementById('maxChoicesInput').value);
+    const res2 = await callApi('setMaxChoices', { pin: window.__PIN, maxChoices: maxChoicesVal });
+    if (!res2.success) {
+      saveMsg.innerHTML = `<div class="msg error">${res2.error}</div>`;
+      return;
+    }
+    saveMsg.innerHTML = '<div class="msg success">保存しました</div>';
+    renderCommitteesTab(body);
+  };
+}
+
+/* --- 希望状況・確定タブ --- */
+async function renderTallyTab(body) {
+  body.innerHTML = `<div class="card">読み込み中...</div>`;
+  const cfgRes = await callApi('getConfigPublic', {}, 'GET');
+  let showNames = cfgRes.data ? cfgRes.data.showNames : false;
+
+  async function draw() {
+    const res = await callApi('getTally', { pin: window.__PIN, showNames }, 'GET');
+    if (!res.success) {
+      body.innerHTML = `<div class="card"><div class="msg error">${res.error}</div></div>`;
+      return;
+    }
+    const d = res.data;
+    body.innerHTML = `
+      <div class="card">
+        <div class="row" style="align-items:center;justify-content:space-between;">
+          <h2 style="margin:0;">希望状況（現在の集約結果）</h2>
+          <button class="secondary" id="toggleNamesBtn" type="button">
+            氏名表示: ${d.showNames ? 'あり' : 'なし'}（クリックで切替）
+          </button>
+        </div>
+        <div class="scroll-box" style="margin-top:12px;">
+          <table>
+            <thead><tr><th>委員会</th><th>定員</th><th>希望者数</th><th>判定</th>${d.showNames ? '<th>希望者</th>' : ''}</tr></thead>
+            <tbody>
+              ${d.committees.map(c => `
+                <tr>
+                  <td>${escapeHtml(c.name)}</td>
+                  <td>${c.capacity}</td>
+                  <td>${c.count}</td>
+                  <td>${c.count === 0 ? '<span class="pill wait">希望0</span>' : (c.withinCapacity ? '<span class="pill ok">定員以内</span>' : '<span class="pill wait">定員オーバー</span>')}</td>
+                  ${d.showNames ? `<td>${(c.members || []).map(m => escapeHtml(m.name)).join('、') || '-'}</td>` : ''}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ${d.unresolvedCount > 0 ? `<div class="msg info" style="margin-top:14px;">希望が確定委員会のみで埋まってしまった生徒が ${d.unresolvedCount} 名います${d.showNames && d.unresolved ? '：' + d.unresolved.map(u => escapeHtml(u.name)).join('、') : ''}。再入力が必要です。</div>` : ''}
+        <button id="finalizeBtn" style="margin-top:18px;">この内容で確定する（定員以内の委員会を確定します）</button>
+        <div id="finalizeMsg"></div>
+      </div>
+    `;
+    document.getElementById('toggleNamesBtn').onclick = () => {
+      showNames = !showNames;
+      draw();
+    };
+    document.getElementById('finalizeBtn').onclick = async () => {
+      if (!confirm('現在の希望状況をもとに確定処理を行います。よろしいですか？')) return;
+      const fres = await callApi('finalizeRound', { pin: window.__PIN });
+      const fmsg = document.getElementById('finalizeMsg');
+      if (!fres.success) {
+        fmsg.innerHTML = `<div class="msg error">${fres.error}</div>`;
+        return;
+      }
+      const fd = fres.data;
+      fmsg.innerHTML = `<div class="msg success">
+        確定した委員会: ${fd.confirmed.length}件 / まだ確定していない委員会: ${fd.stillOpen.length}件<br>
+        再入力が必要な生徒: ${fd.unresolvedStudentIds.length}名
+      </div>`;
+      draw();
+    };
+  }
+  draw();
+}
+
+/* --- 確定状況一覧タブ --- */
+async function renderResultsTab(body) {
+  body.innerHTML = `<div class="card">読み込み中...</div>`;
+  const res = await callApi('getResults', {}, 'GET');
+  if (!res.success) {
+    body.innerHTML = `<div class="card"><div class="msg error">${res.error}</div></div>`;
+    return;
+  }
+  const d = res.data;
+  body.innerHTML = `
+    <div class="card">
+      <h2>確定状況一覧</h2>
+      <div class="scroll-box" style="max-height:65vh;">
+        <div class="confirmed-block">
+          <h3>確定した委員会（${d.confirmedCommittees.length}件）</h3>
+          <table>
+            <thead><tr><th>委員会</th><th>定員</th><th>メンバー</th></tr></thead>
+            <tbody>
+              ${d.confirmedCommittees.map(c => `
+                <tr>
+                  <td>${escapeHtml(c.name)}</td>
+                  <td>${c.capacity}</td>
+                  <td>${c.members.map(m => escapeHtml(m.name)).join('、') || '-'}</td>
+                </tr>`).join('') || '<tr><td colspan="3">まだありません</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        <div class="open-block">
+          <h3>まだ確定していない委員会（${d.openCommittees.length}件）</h3>
+          <table>
+            <thead><tr><th>委員会</th><th>定員</th><th>現在の希望者数</th></tr></thead>
+            <tbody>
+              ${d.openCommittees.map(c => `
+                <tr>
+                  <td>${escapeHtml(c.name)}</td>
+                  <td>${c.capacity}</td>
+                  <td>${c.currentCount}</td>
+                </tr>`).join('') || '<tr><td colspan="3">すべて確定しました</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* --- その他設定タブ（PIN変更・リセット） --- */
+function renderSettingsTab(body) {
+  body.innerHTML = `
+    <div class="card">
+      <h2>PINの変更</h2>
+      <div class="row">
+        <div class="field"><label>現在のPIN</label><input type="password" id="curPin" maxlength="4"></div>
+        <div class="field"><label>新しいPIN（4桁）</label><input type="password" id="newPin" maxlength="4"></div>
+      </div>
+      <button id="changePinBtn">PINを変更する</button>
+      <div id="pinChangeMsg"></div>
+    </div>
+    <div class="card">
+      <h2>データのリセット</h2>
+      <div class="msg info">全生徒の入力データと、委員会の確定状態をリセットします（委員会名・定員は残ります）。年度の切り替え等でご利用ください。</div>
+      <button class="danger" id="resetBtn">リセットする</button>
+      <div id="resetMsg"></div>
+    </div>
+  `;
+  document.getElementById('changePinBtn').onclick = async () => {
+    const currentPin = document.getElementById('curPin').value.trim();
+    const newPin = document.getElementById('newPin').value.trim();
+    const res = await callApi('setPin', { currentPin, newPin });
+    const msg = document.getElementById('pinChangeMsg');
+    if (res.success) {
+      window.__PIN = newPin;
+      msg.innerHTML = '<div class="msg success">PINを変更しました</div>';
+    } else {
+      msg.innerHTML = `<div class="msg error">${res.error}</div>`;
+    }
+  };
+  document.getElementById('resetBtn').onclick = async () => {
+    if (!confirm('本当にすべての入力データをリセットしますか？この操作は取り消せません。')) return;
+    const res = await callApi('resetAll', { pin: window.__PIN });
+    const msg = document.getElementById('resetMsg');
+    msg.innerHTML = res.success
+      ? '<div class="msg success">リセットしました</div>'
+      : `<div class="msg error">${res.error}</div>`;
+  };
+}
+
+/* ============ ユーティリティ ============ */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
