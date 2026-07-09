@@ -198,16 +198,81 @@
             pointer-events: none;
         }
 
+        #portrait-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a0a;
+            color: #fff;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        #portrait-warning svg {
+            width: 48px;
+            height: 48px;
+            stroke: #deff9a;
+            margin-bottom: 20px;
+            fill: none;
+            stroke-width: 1.5;
+        }
+        #portrait-warning p {
+            font-size: 14px;
+            letter-spacing: 1px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* 縦画面時の吸着と警告 */
+        @media (max-width: 768px) and (orientation: portrait) {
+            #portrait-warning {
+                display: flex;
+            }
+            #control-panel {
+                bottom: 0;
+                width: 100vw;
+                border-radius: 20px 20px 0 0;
+                border-bottom: none;
+                transform: translateX(-50%) scale(0.9);
+                transform-origin: bottom center;
+            }
+        }
+
+        /* ★モバイル横画面時の左側縦並び配置 */
         @media (max-width: 1024px) and (orientation: landscape) {
             #control-panel {
-                bottom: 10px;
-                padding: 6px 14px;
-                gap: 8px;
-                border-radius: 20px;
+                bottom: auto;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%) scale(0.85);
+                transform-origin: left center;
+                flex-direction: column;
+                padding: 12px 10px;
+                gap: 12px;
+                border-radius: 0 24px 24px 0;
+                border-left: none;
             }
             .ui-group {
-                gap: 4px;
-                padding-right: 6px;
+                flex-direction: column;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                padding-right: 0;
+                padding-bottom: 10px;
+                gap: 8px;
+            }
+            .ui-group:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            #search-container {
+                flex-direction: row;
+                width: 150px;
             }
             #search-input {
                 width: 100px;
@@ -219,6 +284,14 @@
 </head>
 <body>
     <div id="app-container">
+        <div id="portrait-warning">
+            <svg viewBox="0 0 24 24">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                <path d="M12 18h.01"/>
+                <path d="M17 6H7"/>
+            </svg>
+            <p>立体視の表示最適化のため、端末を横向き（Landscape）に回転してください。</p>
+        </div>
         <div id="toast-notification"></div>
         <div id="center-divider"></div>
         <div id="label-left" class="view-label">L-cysteine</div>
@@ -245,7 +318,6 @@
                 </div>
             </div>
 
-            <!-- 立体視モード -->
             <div class="ui-group">
                 <button class="icon-btn active" id="btn-parallel" title="Parallel Method (平行法) [s]">
                     <svg viewBox="0 0 24 24">
@@ -267,7 +339,6 @@
                 </button>
             </div>
 
-            <!-- 表現モード -->
             <div class="ui-group">
                 <button class="icon-btn active" id="btn-ballstick" title="Ball and Stick [m]">
                     <svg viewBox="0 0 24 24">
@@ -284,7 +355,6 @@
                 </button>
             </div>
 
-            <!-- 背景色 -->
             <div class="ui-group">
                 <button class="icon-btn active" id="btn-bg" title="Background: Gray [b]">
                     <svg viewBox="0 0 24 24">
@@ -293,7 +363,6 @@
                 </button>
             </div>
 
-            <!-- 機能制御 -->
             <div class="ui-group">
                 <button class="icon-btn" id="btn-gloss" title="Toggle Gloss [g]">
                     <svg viewBox="0 0 24 24">
@@ -339,7 +408,6 @@
         const DEPTH_TITLES = ['Depth: Normal [d]', 'Depth: Deep [d]', 'Depth: Very Deep [d]'];
         let currentDepthIndex = 0;
 
-        // ★ カスタム自動回転のための設定 (度/秒)
         const ROTATE_SPEEDS = [0, 18.0, 30.0]; 
         const ROTATE_TITLES = ['Auto-Rotate: OFF [r]', 'Auto-Rotate: 10s/180° [r]', 'Auto-Rotate: 6s/180° [r]'];
         let currentRotateIndex = 0;
@@ -354,7 +422,6 @@
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(BG_COLORS[currentBgMode]);
 
-        // ★ 分子群をまとめる専用グループ（ローカル軸回転用）
         const moleculeGroup = new THREE.Group();
         scene.add(moleculeGroup);
 
@@ -376,17 +443,17 @@
             controls.dampingFactor = 0.05;
             controls.enablePan = false; 
             
-            // ★ 極点でのブレ・フリップを完全に防止するための制限緩和 (0.01 -> 0.08)
             controls.minPolarAngle = 0.08;
             controls.maxPolarAngle = Math.PI - 0.08;
             
-            controls.autoRotate = false; // 標準のautoRotateは完全無効化
+            controls.autoRotate = false; 
             
             if (THREE.MOUSE) {
                 controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null };
             }
+            // ★ 自前でズームとパンを計算するため、OrbitControlsの2本指(ズーム)イベントを無効化する
             if (THREE.TOUCH) {
-                controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY };
+                controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: null };
             }
         } catch (e) {
             controls = { update: () => {}, target: new THREE.Vector3() };
@@ -453,7 +520,6 @@
         }
 
         function buildMoleculeGeometry(data, keepOffset = false) {
-            // ★ グループ単位でのクリア処理
             moleculeSceneObjects.forEach(obj => {
                 moleculeGroup.remove(obj);
                 if(obj.geometry) obj.geometry.dispose();
@@ -569,8 +635,11 @@
             if (!keepOffset) {
                 offsetX = 0;
                 offsetY = 0;
-                moleculeGroup.rotation.set(0, 0, 0); // 回転角のリセット
+                moleculeGroup.rotation.set(0, 0, 0);
                 controls.target.set(0, 0, 0);
+                // ズームのリセット
+                const dir = new THREE.Vector3().subVectors(mainCamera.position, controls.target).normalize();
+                mainCamera.position.copy(controls.target).add(dir.multiplyScalar(15));
             }
         }
 
@@ -647,7 +716,6 @@
 
             controls.update();
 
-            // ★ 画面に対する垂直軸（カメラのローカルY軸）を中心としたカスタム自動回転
             if (isAutoRotating) {
                 const angle = THREE.MathUtils.degToRad(currentRotateSpeed) * delta;
                 const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(mainCamera.quaternion).normalize();
@@ -684,6 +752,7 @@
         let isTwoFingerDragging = false;
         let lastPointerX = 0;
         let lastPointerY = 0;
+        let lastPinchDistance = 0; // ★ ピンチズーム距離記録用
         const activeTouches = new Map();
 
         renderer.domElement.addEventListener('pointerdown', (e) => {
@@ -699,6 +768,8 @@
                     const pts = Array.from(activeTouches.values());
                     lastPointerX = (pts[0].x + pts[1].x) / 2;
                     lastPointerY = (pts[0].y + pts[1].y) / 2;
+                    // ★ 2本指の初期距離を記録
+                    lastPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
                 }
             }
         });
@@ -718,10 +789,26 @@
                     const pts = Array.from(activeTouches.values());
                     const cx = (pts[0].x + pts[1].x) / 2;
                     const cy = (pts[0].y + pts[1].y) / 2;
+                    const currentDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+
+                    // ★ パン（平行移動）の計算
                     offsetX += cx - lastPointerX;
                     offsetY += cy - lastPointerY;
                     lastPointerX = cx;
                     lastPointerY = cy;
+
+                    // ★ ピンチズーム（拡大縮小）の計算とカメラ距離の適用
+                    if (lastPinchDistance > 0) {
+                        const zoomDelta = currentDistance - lastPinchDistance;
+                        const dir = new THREE.Vector3().subVectors(mainCamera.position, controls.target);
+                        const dist = dir.length();
+                        dir.normalize();
+                        
+                        // 距離の制限（近すぎず、遠すぎず）
+                        const newDist = Math.max(2.0, Math.min(60.0, dist - zoomDelta * 0.08));
+                        mainCamera.position.copy(controls.target).add(dir.multiplyScalar(newDist));
+                    }
+                    lastPinchDistance = currentDistance;
                 }
             }
         });
@@ -734,6 +821,7 @@
                 activeTouches.delete(e.pointerId);
                 if (activeTouches.size < 2) {
                     isTwoFingerDragging = false;
+                    lastPinchDistance = 0;
                 }
             }
         };
