@@ -105,6 +105,7 @@
             border-radius: 20px;
             padding: 2px 6px 2px 14px;
             position: relative;
+            transition: all 0.3s ease;
         }
         #search-input {
             background: transparent;
@@ -114,6 +115,7 @@
             outline: none;
             width: 140px;
             padding-right: 24px;
+            transition: width 0.3s ease;
         }
         #search-input::placeholder {
             color: rgba(255, 255, 255, 0.3);
@@ -229,22 +231,13 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* 縦画面時の吸着と警告 */
         @media (max-width: 768px) and (orientation: portrait) {
             #portrait-warning {
                 display: flex;
             }
-            #control-panel {
-                bottom: 0;
-                width: 100vw;
-                border-radius: 20px 20px 0 0;
-                border-bottom: none;
-                transform: translateX(-50%) scale(0.9);
-                transform-origin: bottom center;
-            }
         }
 
-        /* ★モバイル横画面時の左側縦並び配置 */
+        /* ★モバイル横画面時の特殊レイアウト (検索窓の下部分離) */
         @media (max-width: 1024px) and (orientation: landscape) {
             #control-panel {
                 bottom: auto;
@@ -257,6 +250,7 @@
                 gap: 12px;
                 border-radius: 0 24px 24px 0;
                 border-left: none;
+                /* パネル自体の背景は維持 */
             }
             .ui-group {
                 flex-direction: column;
@@ -270,12 +264,45 @@
                 border-bottom: none;
                 padding-bottom: 0;
             }
+
+            /* ★検索窓が入っているグループのみを、フローから外して下部中央に固定 */
+            .ui-group:first-child {
+                position: fixed;
+                bottom: 15px;
+                left: 50vw;
+                transform: translateX(-50%) scale(1.15); /* スマホで押しやすいように少し拡大 */
+                border-bottom: none;
+                padding: 0;
+                margin: 0;
+                z-index: 2000;
+            }
+
             #search-container {
                 flex-direction: row;
-                width: 150px;
+                width: 180px;
+                background: rgba(15, 15, 15, 0.4); /* 通常時は透明度を高く（奥の分子が見えるように） */
+                backdrop-filter: blur(4px);
+                opacity: 0.6; /* 視覚的干渉を軽減 */
+                border-radius: 20px;
+                padding: 4px 8px 4px 14px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             }
+            
             #search-input {
-                width: 100px;
+                width: 130px;
+            }
+
+            /* ★フォーカス時（文字入力時）のアニメーション */
+            #search-container:focus-within {
+                opacity: 1.0; /* クッキリ表示 */
+                background: rgba(15, 15, 15, 0.95);
+                backdrop-filter: blur(10px);
+                width: 220px; /* 入力しやすいように横に広がる */
+                box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            }
+            
+            #search-container:focus-within #search-input {
+                width: 170px;
             }
         }
     </style>
@@ -451,7 +478,6 @@
             if (THREE.MOUSE) {
                 controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null };
             }
-            // ★ 自前でズームとパンを計算するため、OrbitControlsの2本指(ズーム)イベントを無効化する
             if (THREE.TOUCH) {
                 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: null };
             }
@@ -637,7 +663,6 @@
                 offsetY = 0;
                 moleculeGroup.rotation.set(0, 0, 0);
                 controls.target.set(0, 0, 0);
-                // ズームのリセット
                 const dir = new THREE.Vector3().subVectors(mainCamera.position, controls.target).normalize();
                 mainCamera.position.copy(controls.target).add(dir.multiplyScalar(15));
             }
@@ -752,7 +777,7 @@
         let isTwoFingerDragging = false;
         let lastPointerX = 0;
         let lastPointerY = 0;
-        let lastPinchDistance = 0; // ★ ピンチズーム距離記録用
+        let lastPinchDistance = 0; 
         const activeTouches = new Map();
 
         renderer.domElement.addEventListener('pointerdown', (e) => {
@@ -768,7 +793,6 @@
                     const pts = Array.from(activeTouches.values());
                     lastPointerX = (pts[0].x + pts[1].x) / 2;
                     lastPointerY = (pts[0].y + pts[1].y) / 2;
-                    // ★ 2本指の初期距離を記録
                     lastPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
                 }
             }
@@ -791,20 +815,17 @@
                     const cy = (pts[0].y + pts[1].y) / 2;
                     const currentDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
 
-                    // ★ パン（平行移動）の計算
                     offsetX += cx - lastPointerX;
                     offsetY += cy - lastPointerY;
                     lastPointerX = cx;
                     lastPointerY = cy;
 
-                    // ★ ピンチズーム（拡大縮小）の計算とカメラ距離の適用
                     if (lastPinchDistance > 0) {
                         const zoomDelta = currentDistance - lastPinchDistance;
                         const dir = new THREE.Vector3().subVectors(mainCamera.position, controls.target);
                         const dist = dir.length();
                         dir.normalize();
                         
-                        // 距離の制限（近すぎず、遠すぎず）
                         const newDist = Math.max(2.0, Math.min(60.0, dist - zoomDelta * 0.08));
                         mainCamera.position.copy(controls.target).add(dir.multiplyScalar(newDist));
                     }
