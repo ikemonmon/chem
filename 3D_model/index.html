@@ -250,7 +250,6 @@
                 gap: 12px;
                 border-radius: 0 24px 24px 0;
                 border-left: none;
-                /* パネル自体の背景は維持 */
             }
             .ui-group {
                 flex-direction: column;
@@ -265,12 +264,11 @@
                 padding-bottom: 0;
             }
 
-            /* ★検索窓が入っているグループのみを、フローから外して下部中央に固定 */
             .ui-group:first-child {
                 position: fixed;
                 bottom: 15px;
                 left: 50vw;
-                transform: translateX(-50%) scale(1.15); /* スマホで押しやすいように少し拡大 */
+                transform: translateX(-50%) scale(1.15); 
                 border-bottom: none;
                 padding: 0;
                 margin: 0;
@@ -280,9 +278,9 @@
             #search-container {
                 flex-direction: row;
                 width: 180px;
-                background: rgba(15, 15, 15, 0.4); /* 通常時は透明度を高く（奥の分子が見えるように） */
+                background: rgba(15, 15, 15, 0.4); 
                 backdrop-filter: blur(4px);
-                opacity: 0.6; /* 視覚的干渉を軽減 */
+                opacity: 0.6; 
                 border-radius: 20px;
                 padding: 4px 8px 4px 14px;
                 box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -292,12 +290,11 @@
                 width: 130px;
             }
 
-            /* ★フォーカス時（文字入力時）のアニメーション */
             #search-container:focus-within {
-                opacity: 1.0; /* クッキリ表示 */
+                opacity: 1.0; 
                 background: rgba(15, 15, 15, 0.95);
                 backdrop-filter: blur(10px);
-                width: 220px; /* 入力しやすいように横に広がる */
+                width: 220px; 
                 box-shadow: 0 10px 25px rgba(0,0,0,0.7);
             }
             
@@ -511,7 +508,7 @@
         }
 
         function parseSDF(sdfText) {
-            const lines = sdfText.split(/\r?\n/);
+            const lines = sdfText.split(/\\r?\\n/);
             if (lines.length < 4) throw new Error("Invalid SDF format");
 
             const countsLine = lines[3];
@@ -670,7 +667,7 @@
 
         async function fetchMoleculeData(query) {
             let cleanQuery = query.trim();
-            const hasJapanese = /[぀-ゟ゠-ヿ一-鿿]/.test(cleanQuery);
+            const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleanQuery);
             
             if (hasJapanese) {
                 try {
