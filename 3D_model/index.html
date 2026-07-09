@@ -237,7 +237,6 @@
             }
         }
 
-        /* ★モバイル横画面時の特殊レイアウト (検索窓の下部分離) */
         @media (max-width: 1024px) and (orientation: landscape) {
             #control-panel {
                 bottom: auto;
@@ -268,7 +267,7 @@
                 position: fixed;
                 bottom: 15px;
                 left: 50vw;
-                transform: translateX(-50%) scale(1.15); 
+                transform: translateX(-50%) scale(1.15);
                 border-bottom: none;
                 padding: 0;
                 margin: 0;
@@ -278,9 +277,9 @@
             #search-container {
                 flex-direction: row;
                 width: 180px;
-                background: rgba(15, 15, 15, 0.4); 
+                background: rgba(15, 15, 15, 0.4);
                 backdrop-filter: blur(4px);
-                opacity: 0.6; 
+                opacity: 0.6;
                 border-radius: 20px;
                 padding: 4px 8px 4px 14px;
                 box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -291,10 +290,10 @@
             }
 
             #search-container:focus-within {
-                opacity: 1.0; 
+                opacity: 1.0;
                 background: rgba(15, 15, 15, 0.95);
                 backdrop-filter: blur(10px);
-                width: 220px; 
+                width: 220px;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.7);
             }
             
@@ -508,7 +507,7 @@
         }
 
         function parseSDF(sdfText) {
-            const lines = sdfText.split(/\\r?\\n/);
+            const lines = sdfText.split(/\r?\n/);
             if (lines.length < 4) throw new Error("Invalid SDF format");
 
             const countsLine = lines[3];
