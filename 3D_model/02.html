@@ -620,7 +620,15 @@
                 const elementInfo = ELEMENT_DATA[atom.element] || ELEMENT_DATA['DEFAULT'];
                 
                 if (currentRenderMode === 'ballstick' || currentRenderMode === 'ghost') {
-                    const radius = elementInfo.radius * 0.35;
+                    let radius = elementInfo.radius * 0.35;
+                    
+                    // スケール変更の適用
+                    if (currentRenderMode === 'ballstick') {
+                        radius *= 0.85; 
+                    } else if (currentRenderMode === 'ghost') {
+                        radius *= 0.5; 
+                    }
+                    
                     const sphereGeom = new THREE.SphereGeometry(radius, 32, 32);
                     const sphereMat = new THREE.MeshStandardMaterial({
                         color: elementInfo.color,
@@ -698,7 +706,6 @@
             }
 
             // 原子（半透明部分: Ghostモードの外殻）の描画
-            // ※半透明オブジェクトの描画順序起因のアーティファクトを防ぐため、不透明要素の後に描画キューへ追加
             if (currentRenderMode === 'ghost') {
                 data.atoms.forEach((atom, index) => {
                     const elementInfo = ELEMENT_DATA[atom.element] || ELEMENT_DATA['DEFAULT'];
