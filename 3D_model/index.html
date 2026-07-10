@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Molecule 3D Viewer</title>
     <style>
+        :root {
+            --bg-dark-panel: rgba(15, 15, 15, 0.85);
+            --border-light: rgba(255, 255, 255, 0.1);
+            --border-light-focus: rgba(255, 255, 255, 0.15);
+            --text-active: #deff9a;
+            --text-active-lvl2: #ffde9a;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -56,15 +64,16 @@
         #label-left { left: 20px; }
         #label-right { display: none; }
 
+        /* UI基本レイアウト */
         #ui-wrapper {
             position: absolute;
-            bottom: 20px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             z-index: 1000;
             pointer-events: none;
             transition: all 0.3s ease;
@@ -72,15 +81,15 @@
 
         .ui-panel {
             pointer-events: auto;
-            background: rgba(15, 15, 15, 0.85);
+            background: var(--bg-dark-panel);
             backdrop-filter: blur(10px);
             border-radius: 30px;
-            padding: 10px 20px;
+            padding: 6px 16px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-light);
             transition: all 0.3s ease;
         }
 
@@ -95,8 +104,8 @@
         .ui-group {
             display: flex;
             align-items: center;
-            gap: 6px;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 8px;
+            border-right: 1px solid var(--border-light);
             padding-right: 12px;
         }
         .ui-group:last-child {
@@ -107,11 +116,13 @@
         #search-container {
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: var(--bg-dark-panel); /* 操作パネルと統一のダーク背景に変更し視認性を確保 */
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-light-focus);
             border-radius: 20px;
-            padding: 4px 6px 4px 14px;
+            padding: 6px 8px 6px 14px;
             gap: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
         }
         #search-input {
@@ -124,14 +135,14 @@
             transition: width 0.3s ease;
         }
         #search-input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.45); /* プレースホルダーのコントラストを微調整 */
         }
 
         #search-clear {
             background: transparent;
             border: none;
             cursor: pointer;
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.5);
             display: none; 
             align-items: center;
             justify-content: center;
@@ -167,7 +178,7 @@
             background: rgba(255, 255, 255, 0.1);
         }
         .icon-btn.active {
-            color: #deff9a;
+            color: var(--text-active);
             background: rgba(222, 255, 154, 0.15);
         }
         .icon-btn svg {
@@ -182,7 +193,7 @@
         }
 
         .icon-btn.level-2 {
-            color: #ffde9a;
+            color: var(--text-active-lvl2);
             background: rgba(255, 222, 154, 0.15);
         }
 
@@ -236,12 +247,14 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
+        /* 縦向き検出 */
         @media (max-width: 1024px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) {
             #portrait-warning {
                 display: flex;
             }
         }
 
+        /* モバイル・タブレット横向き環境への最適化 */
         @media (max-width: 1366px) and (orientation: landscape), (pointer: coarse) and (orientation: landscape) {
             #ui-wrapper {
                 bottom: 0;
@@ -258,7 +271,7 @@
                 transform: translateY(-50%) scale(0.85);
                 transform-origin: left center;
                 flex-direction: column;
-                padding: 12px 10px;
+                padding: 16px 8px;
                 gap: 12px;
                 border-radius: 0 24px 24px 0;
                 border-left: none;
@@ -266,9 +279,9 @@
             .ui-group {
                 flex-direction: column;
                 border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                border-bottom: 1px solid var(--border-light);
                 padding-right: 0;
-                padding-bottom: 10px;
+                padding-bottom: 12px;
                 gap: 8px;
             }
             .ui-group:last-child {
@@ -278,27 +291,26 @@
 
             #search-panel {
                 position: absolute;
-                bottom: 15px;
+                bottom: 24px; 
                 left: 50vw;
-                transform: translateX(-50%) scale(1.15);
+                transform: translateX(-50%); 
                 display: block;
             }
             #search-container {
-                background: rgba(15, 15, 15, 0.85);
-                backdrop-filter: blur(10px);
-                opacity: 0.6;
+                opacity: 0.85; 
                 box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                padding: 6px 8px 6px 14px; 
             }
             #search-input {
-                width: 130px;
+                width: 140px;
+                font-size: 14px;
             }
             #search-container:focus-within {
                 opacity: 1.0;
-                width: 220px;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.7);
             }
             #search-container:focus-within #search-input {
-                width: 170px;
+                width: 180px; 
             }
         }
     </style>
@@ -343,7 +355,6 @@
 
             <div id="control-panel" class="ui-panel">
                 <div class="ui-group">
-                    <!-- ★ステレオモード切り替え統合ボタン -->
                     <button class="icon-btn active" id="btn-stereo" title="Stereo Mode: Cross-eyed [s]">
                         <svg viewBox="0 0 24 24"><line x1="5" y1="3" x2="19" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="3" x2="5" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     </button>
@@ -391,6 +402,9 @@
     </div>
 
     <script>
+        // ==========================================
+        // 定数・システム設定データ
+        // ==========================================
         const ELEMENT_DATA = {
             'H':  { color: 0xffffff, radius: 1.20 },
             'C':  { color: 0x555555, radius: 1.70 },
@@ -411,30 +425,36 @@
             'blue': 0xeaf4ff
         };
 
-        // ★修正2：デフォルトの立体モード順序を変更 0:交差法(Cross), 1:平行法(Parallel), 2:モデルひとつ(Single)
-        let currentStereoIndex = 0; 
         const STEREO_TITLES = ['Stereo: Cross-eyed [s]', 'Stereo: Parallel [s]', 'Stereo: Single [s]'];
+        const DEPTH_VALUES = [0.28, 0.55, 0.85];
+        const DEPTH_TITLES = ['Depth: Normal [d]', 'Depth: Deep [d]', 'Depth: Very Deep [d]'];
+        const ROTATE_SPEEDS = [0, 18.0, 30.0]; 
+        const ROTATE_TITLES = ['Auto-Rotate: OFF [r]', 'Auto-Rotate: 10s/180° [r]', 'Auto-Rotate: 6s/180° [r]'];
+        const MODEL_TITLES = { 'ballstick': 'Model: Ball and Stick [m]', 'spacefilling': 'Model: Space Filling [m]' };
 
+        const SVG_BALLSTICK = `<svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><line x1="8.12" y1="8.12" x2="15.88" y2="15.88"/></svg>`;
+        const SVG_SPACEFILLING = `<svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><circle cx="15" cy="15" r="5"/></svg>`;
+
+        // ==========================================
+        // アプリケーション状態変数
+        // ==========================================
+        let currentStereoIndex = 0; 
         let currentRenderMode = 'ballstick';
         let currentBgMode = 'gray';
         let currentGlossMode = false;
-        
-        const DEPTH_VALUES = [0.28, 0.55, 0.85];
-        const DEPTH_TITLES = ['Depth: Normal [d]', 'Depth: Deep [d]', 'Depth: Very Deep [d]'];
         let currentDepthIndex = 0;
-
-        const ROTATE_SPEEDS = [0, 18.0, 30.0]; 
-        const ROTATE_TITLES = ['Auto-Rotate: OFF [r]', 'Auto-Rotate: 10s/180° [r]', 'Auto-Rotate: 6s/180° [r]'];
         let currentRotateIndex = 0;
         let isAutoRotating = false;
         let currentRotateSpeed = 0;
 
         let wakeLock = null;
-
         let moleculeSceneObjects = [];
         let offsetX = 0;
         let offsetY = 0;
 
+        // ==========================================
+        // Three.js 描画コアシステムの構築
+        // ==========================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(BG_COLORS[currentBgMode]);
@@ -473,6 +493,7 @@
             controls = { update: () => {}, target: new THREE.Vector3() };
         }
 
+        // ライティング設定
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
@@ -484,6 +505,9 @@
         dirLight2.position.set(-10, -15, -10);
         scene.add(dirLight2);
 
+        // ==========================================
+        // ロジック・処理関数群
+        // ==========================================
         let toastTimeout;
         function showNotification(message) {
             const toast = document.getElementById('toast-notification');
@@ -530,7 +554,6 @@
                 bonds.push({ a, b, order });
             }
 
-            // ★修正3：パース処理を0始まりの全走査にすることで、行ズレによる分子式未取得バグを完全解消
             let formula = null;
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i].includes('PUBCHEM_MOLECULAR_FORMULA')) {
@@ -540,7 +563,6 @@
                     break;
                 }
             }
-
             return { atoms, bonds, formula };
         }
 
@@ -623,7 +645,6 @@
 
                     const midPoint = new THREE.Vector3().addVectors(pA, pB).multiplyScalar(0.5);
                     const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-
                     const radius = 0.08;
 
                     const createCylinderMesh = (offsetVector) => {
@@ -735,6 +756,9 @@
             cameraR.lookAt(target);
         }
 
+        // ==========================================
+        // メインアニメーションループ
+        // ==========================================
         const clock = new THREE.Clock();
         const controlPanelElement = document.getElementById('control-panel');
         const searchPanelElement = document.getElementById('search-panel');
@@ -775,7 +799,7 @@
             renderer.clear();
 
             if (currentStereoIndex === 2) {
-                // 状態2：単一画面モード
+                // 単一画面モード
                 const aspect = renderWidth / height;
                 mainCamera.aspect = aspect;
                 mainCamera.updateProjectionMatrix();
@@ -787,9 +811,8 @@
                 renderer.setScissor(panelWidth, 0, renderWidth, height);
                 renderer.setScissorTest(true);
                 renderer.render(scene, mainCamera);
-
             } else {
-                // 状態0(Cross) / 状態1(Parallel)：ステレオ2画面モード
+                // ステレオ2画面モード (0: Cross, 1: Parallel)
                 const halfWidth = renderWidth / 2;
                 const aspect = halfWidth / height;
                 
@@ -818,6 +841,9 @@
             }
         }
 
+        // ==========================================
+        // マウス・タッチポインターイベントハンドリング
+        // ==========================================
         let isRightDragging = false;
         let isTwoFingerDragging = false;
         let lastPointerX = 0;
@@ -845,7 +871,6 @@
 
         window.addEventListener('pointermove', (e) => {
             if (e.pointerType === 'mouse' && isRightDragging) {
-                // ★修正1：上下パン方向の反転（減算から加算に変更。WebGL座標系と画面座標系のY軸反転を完全に解決）
                 offsetX -= e.clientX - lastPointerX;
                 offsetY += e.clientY - lastPointerY; 
                 lastPointerX = e.clientX;
@@ -861,7 +886,6 @@
                     const cy = (pts[0].y + pts[1].y) / 2;
                     const currentDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
 
-                    // ★修正1：2本指タッチ時の上下パン反転
                     offsetX -= cx - lastPointerX;
                     offsetY += cy - lastPointerY; 
                     lastPointerX = cx;
@@ -898,6 +922,9 @@
         window.addEventListener('pointercancel', handlePointerUp);
         container.addEventListener('contextmenu', e => e.preventDefault());
 
+        // ==========================================
+        // UI操作・入力系コントロールイベント
+        // ==========================================
         const searchInput = document.getElementById('search-input');
         const searchClear = document.getElementById('search-clear');
 
@@ -927,26 +954,20 @@
         });
 
         const btnStereo = document.getElementById('btn-stereo');
-        
         function updateStereoMode() {
             btnStereo.title = STEREO_TITLES[currentStereoIndex];
             btnStereo.classList.remove('active', 'level-2');
             
-            // ★修正2：立体トグルの状態インデックスに対応したアイコン更新
             if (currentStereoIndex === 2) {
-                // 単一モデルひとつ
                 btnStereo.innerHTML = `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
             } else if (currentStereoIndex === 0) {
-                // 交差法
                 btnStereo.classList.add('active');
                 btnStereo.innerHTML = `<svg viewBox="0 0 24 24"><line x1="5" y1="3" x2="19" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="3" x2="5" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
             } else if (currentStereoIndex === 1) {
-                // 平行法
                 btnStereo.classList.add('active', 'level-2');
                 btnStereo.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 21V3M16 21V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
             }
         }
-
         btnStereo.addEventListener('click', () => {
             currentStereoIndex = (currentStereoIndex + 1) % 3;
             updateStereoMode();
@@ -956,20 +977,12 @@
         btnDepth.addEventListener('click', () => {
             currentDepthIndex = (currentDepthIndex + 1) % 3;
             btnDepth.title = DEPTH_TITLES[currentDepthIndex];
-            
             btnDepth.classList.remove('active', 'level-2');
             if (currentDepthIndex === 1) btnDepth.classList.add('active');
             if (currentDepthIndex === 2) btnDepth.classList.add('active', 'level-2');
         });
 
         const btnModel = document.getElementById('btn-model');
-        const MODEL_TITLES = {
-            'ballstick': 'Model: Ball and Stick [m]',
-            'spacefilling': 'Model: Space Filling [m]'
-        };
-        const SVG_BALLSTICK = `<svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><line x1="8.12" y1="8.12" x2="15.88" y2="15.88"/></svg>`;
-        const SVG_SPACEFILLING = `<svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><circle cx="15" cy="15" r="5"/></svg>`;
-
         function updateModelMode() {
             btnModel.title = MODEL_TITLES[currentRenderMode];
             if (currentRenderMode === 'ballstick') {
@@ -980,7 +993,6 @@
                 btnModel.classList.add('level-2');
             }
         }
-
         btnModel.addEventListener('click', () => {
             currentRenderMode = (currentRenderMode === 'ballstick') ? 'spacefilling' : 'ballstick';
             updateModelMode();
@@ -989,7 +1001,6 @@
 
         const btnBg = document.getElementById('btn-bg');
         const bgIconRect = document.getElementById('bg-icon-rect');
-
         function updateBgMode(mode) {
             currentBgMode = mode;
             scene.background.setHex(BG_COLORS[mode]);
@@ -1010,7 +1021,6 @@
 
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true); 
         }
-
         btnBg.addEventListener('click', () => {
             if (currentBgMode === 'gray') updateBgMode('white');
             else if (currentBgMode === 'white') updateBgMode('blue');
@@ -1018,22 +1028,16 @@
         });
 
         const btnGloss = document.getElementById('btn-gloss');
-        
         if(currentGlossMode) btnGloss.classList.add('active');
         else btnGloss.classList.remove('active');
-
         btnGloss.addEventListener('click', () => {
             currentGlossMode = !currentGlossMode;
-            if (currentGlossMode) {
-                btnGloss.classList.add('active');
-            } else {
-                btnGloss.classList.remove('active');
-            }
+            if (currentGlossMode) btnGloss.classList.add('active');
+            else btnGloss.classList.remove('active');
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true); 
         });
 
         const btnAutoRotate = document.getElementById('btn-autorotate');
-        
         async function updateWakeLock() {
             if ('wakeLock' in navigator) {
                 if (isAutoRotating && !wakeLock) {
@@ -1043,9 +1047,7 @@
                         console.warn('Wake Lock request failed:', err);
                     }
                 } else if (!isAutoRotating && wakeLock) {
-                    wakeLock.release().then(() => {
-                        wakeLock = null;
-                    });
+                    wakeLock.release().then(() => { wakeLock = null; });
                 }
             }
         }
@@ -1059,7 +1061,6 @@
         btnAutoRotate.addEventListener('click', () => {
             currentRotateIndex = (currentRotateIndex + 1) % 3;
             btnAutoRotate.title = ROTATE_TITLES[currentRotateIndex];
-            
             btnAutoRotate.classList.remove('active', 'level-2');
             
             if (currentRotateIndex === 0) {
@@ -1068,11 +1069,9 @@
             } else {
                 isAutoRotating = true;
                 currentRotateSpeed = ROTATE_SPEEDS[currentRotateIndex];
-                
                 if (currentRotateIndex === 1) btnAutoRotate.classList.add('active'); 
                 if (currentRotateIndex === 2) btnAutoRotate.classList.add('active', 'level-2'); 
             }
-            
             updateWakeLock();
         });
 
@@ -1080,24 +1079,12 @@
             if (document.activeElement === searchInput) return;
 
             switch (e.key.toLowerCase()) {
-                case 's':
-                    btnStereo.click();
-                    break;
-                case 'd':
-                    btnDepth.click();
-                    break;
-                case 'm':
-                    btnModel.click(); 
-                    break;
-                case 'b':
-                    btnBg.click(); 
-                    break;
-                case 'g':
-                    btnGloss.click();
-                    break;
-                case 'r':
-                    btnAutoRotate.click();
-                    break;
+                case 's': btnStereo.click(); break;
+                case 'd': btnDepth.click(); break;
+                case 'm': btnModel.click(); break;
+                case 'b': btnBg.click(); break;
+                case 'g': btnGloss.click(); break;
+                case 'r': btnAutoRotate.click(); break;
             }
         });
 
@@ -1105,12 +1092,13 @@
             searchClear.style.display = 'inline-flex';
         }
 
-        // 初期化
+        // ==========================================
+        // アプリケーション初期化実行
+        // ==========================================
         updateStereoMode();
         updateModelMode();
         fetchMoleculeData('L-cysteine');
         animate();
-
     </script>
 </body>
 </html>
