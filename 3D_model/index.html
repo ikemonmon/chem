@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Molecule 3D Viewer</title>
     <style>
         :root {
@@ -23,7 +23,7 @@
             color: #f0f0f0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow: hidden;
-            height: 100vh;
+            height: 100dvh; /* スマホのUI変動に対応するためdvhに変更 */
             width: 100vw;
             transition: background-color 0.3s ease;
         }
@@ -31,7 +31,7 @@
         #app-container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100dvh; /* スマホのUI変動に対応するためdvhに変更 */
             width: 100vw;
             position: relative;
         }
@@ -116,7 +116,7 @@
         #search-container {
             display: flex;
             align-items: center;
-            background: var(--bg-dark-panel); /* 操作パネルと統一のダーク背景に変更し視認性を確保 */
+            background: var(--bg-dark-panel); 
             backdrop-filter: blur(10px);
             border: 1px solid var(--border-light-focus);
             border-radius: 20px;
@@ -135,7 +135,7 @@
             transition: width 0.3s ease;
         }
         #search-input::placeholder {
-            color: rgba(255, 255, 255, 0.45); /* プレースホルダーのコントラストを微調整 */
+            color: rgba(255, 255, 255, 0.45); 
         }
 
         #search-clear {
@@ -222,7 +222,7 @@
             top: 0;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            height: 100dvh; /* スマホのUI変動に対応するためdvhに変更 */
             background: #0a0a0a;
             color: #fff;
             z-index: 9999;
@@ -842,6 +842,13 @@
         }
 
         // ==========================================
+        // リサイズ・スクロール最適化
+        // ==========================================
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
         // マウス・タッチポインターイベントハンドリング
         // ==========================================
         let isRightDragging = false;
@@ -934,6 +941,10 @@
             } else {
                 searchClear.style.display = 'none';
             }
+        });
+
+        searchInput.addEventListener('blur', () => {
+            window.scrollTo(0, 0); // キーボード非表示時のスクロールリセット
         });
 
         searchClear.addEventListener('click', () => {
