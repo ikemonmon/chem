@@ -319,7 +319,7 @@
 </head>
 <body>
     <div id="app-container">
-        <!-- ★スクリーンセーバー解除用バリア（イベント遮断用） -->
+        <!-- ★修正: スクリーンセーバー解除用バリア（イベント遮断用） -->
         <div id="ss-exit-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 1500; cursor: pointer;"></div>
 
         <div id="portrait-warning">
@@ -637,8 +637,6 @@
         let ssCurrentIndex = 0;
         let ssFailCount = 0;
         let previousState = {};
-        let ssClickCount = 0;
-        let ssClickTimer = null;
 
         const SS_VALS = {
             bg: ['blue', 'gray', 'white'],
@@ -648,10 +646,15 @@
         function startScreenSaver() {
             if (ssActive) return;
             ssActive = true;
-            ssClickCount = 0;
             
-            // ★解除時のイベント遮断用バリアを展開し、フルスクリーンをリクエスト
-            document.getElementById('ss-exit-overlay').style.display = 'block';
+            // ★完全防壁: 解除用バリアを展開して背面へのイベント伝達を完全にブロックする
+            const ssOverlay = document.getElementById('ss-exit-overlay');
+            ssOverlay.style.display = 'block';
+            ssOverlay.dataset.exiting = "false";
+            ssPointersDown = 0;
+            ssClickCount = 0;
+
+            // フルスクリーン化
             if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(err => {
                     console.warn(`Fullscreen API Error: ${err.message}`);
@@ -685,8 +688,10 @@
             clearTimeout(ssTimer);
             ssTimer = null;
             
-            // ★バリアを解除し、フルスクリーンから復帰
+            // ★防壁を消去（指が完全に離れた後にここが発火する）
             document.getElementById('ss-exit-overlay').style.display = 'none';
+
+            // フルスクリーン解除
             if (document.fullscreenElement && document.exitFullscreen) {
                 document.exitFullscreen().catch(err => {
                     console.warn(`Exit Fullscreen API Error: ${err.message}`);
@@ -728,6 +733,9 @@
             
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true);
             updateWakeLock();
+
+            // フルスクリーン解除等で画面サイズが変わる場合のフェールセーフ
+            setTimeout(() => { renderer.setSize(window.innerWidth, window.innerHeight); }, 100);
         }
 
         function loadNextSSMolecule() {
@@ -1245,10 +1253,20 @@
         window.addEventListener('pointercancel', handlePointerUp);
         container.addEventListener('contextmenu', e => e.preventDefault());
 
-        // ★修正: SS解除のポインター監視を専用オーバーレイに変更
-        document.getElementById('ss-exit-overlay').addEventListener('pointerdown', (e) => {
+
+        // ==========================================
+        // ★完全防壁: SS解除の「遅延解除バリア」処理
+        // ==========================================
+        let ssPointersDown = 0;
+        let ssClickCount = 0;
+        let ssClickTimer = null;
+        const ssOverlay = document.getElementById('ss-exit-overlay');
+
+        ssOverlay.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            ssPointersDown++;
+
             if (!ssActive) return;
             
             if (ssSettings.exitMode === 'strict') {
@@ -1256,12 +1274,36 @@
                 if (ssClickCount === 1) ssClickTimer = setTimeout(() => { ssClickCount = 0; }, 500);
                 else if (ssClickCount >= 2) {
                     clearTimeout(ssClickTimer);
-                    stopScreenSaver();
+                    ssOverlay.dataset.exiting = "true";
                 }
             } else {
-                stopScreenSaver();
+                ssOverlay.dataset.exiting = "true";
             }
         });
+
+        ssOverlay.addEventListener('pointermove', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        const handleSSPointerUp = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (ssPointersDown > 0) ssPointersDown--;
+            
+            // 指がすべて画面から離れた瞬間にのみバリアを解除し、キャンバス操作を復帰させる
+            if (ssPointersDown <= 0) {
+                ssPointersDown = 0; 
+                if (ssOverlay.dataset.exiting === "true") {
+                    ssOverlay.dataset.exiting = "false";
+                    stopScreenSaver();
+                }
+            }
+        };
+
+        ssOverlay.addEventListener('pointerup', handleSSPointerUp);
+        ssOverlay.addEventListener('pointercancel', handleSSPointerUp);
+
 
         // ==========================================
         // UI操作・入力系コントロールイベント
@@ -1469,7 +1511,9 @@
             if (ssActive) {
                 if (ssSettings.exitMode === 'strict') {
                     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') stopScreenSaver();
-                } else stopScreenSaver();
+                } else {
+                    stopScreenSaver();
+                }
                 return;
             }
             if (document.activeElement === searchInput) return;
