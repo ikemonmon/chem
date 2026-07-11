@@ -421,7 +421,7 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:6px; width:100%;">
-                <label style="font-size:11px; color:rgba(255,255,255,0.6);">化合物の英語名リスト (カンマ区切り)</label>
+                <label style="font-size:11px; color:rgba(255,255,255,0.6);">化合物の名前リスト (日本語可、カンマ区切り)</label>
                 <textarea id="ss-compounds" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-light); color:#fff; border-radius:12px; padding:10px; font-size:12px; outline:none; resize:none; height:70px; width:100%; font-family:monospace;"></textarea>
             </div>
 
@@ -434,8 +434,13 @@
             </div>
             
             <div class="ss-row">
-                <label>表示時間(秒)</label>
+                <label>表示時間 (秒)</label>
                 <input type="number" id="ss-interval" style="width:60px; background:rgba(255,255,255,0.1); border:none; color:#fff; border-radius:8px; padding:4px 8px; text-align:center; font-size:13px; outline:none;">
+            </div>
+
+            <div class="ss-row">
+                <label>回転速度 (度/秒)</label>
+                <input type="number" id="ss-speed" style="width:60px; background:rgba(255,255,255,0.1); border:none; color:#fff; border-radius:8px; padding:4px 8px; text-align:center; font-size:13px; outline:none;">
             </div>
             
             <div class="ss-row">
@@ -447,7 +452,7 @@
             </div>
 
             <div class="ss-row">
-                <label>グローバル背景</label>
+                <label>背景</label>
                 <div class="ss-segment" data-key="bg" id="seg-bg">
                     <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     <button class="icon-btn" data-val="blue" title="Blue"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#eaf4ff" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -457,7 +462,7 @@
             </div>
 
             <div class="ss-row">
-                <label>グローバルモデル</label>
+                <label>モデル</label>
                 <div class="ss-segment" data-key="model" id="seg-model">
                     <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     <button class="icon-btn" data-val="ballstick" title="Ball&Stick"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><line x1="8.12" y1="8.12" x2="15.88" y2="15.88" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -467,7 +472,7 @@
             </div>
 
             <div class="ss-row">
-                <label>グローバル立体視</label>
+                <label>立体視</label>
                 <div class="ss-segment" data-key="stereo" id="seg-stereo">
                     <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     <button class="icon-btn" data-val="0" title="Cross"><svg viewBox="0 0 24 24"><line x1="5" y1="3" x2="19" y2="21" stroke="currentColor" stroke-width="2"/><line x1="19" y1="3" x2="5" y2="21" stroke="currentColor" stroke-width="2"/></svg></button>
@@ -477,7 +482,17 @@
             </div>
 
             <div class="ss-row">
-                <label>グローバル光沢</label>
+                <label>深度</label>
+                <div class="ss-segment" data-key="depth" id="seg-depth">
+                    <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" data-val="0" title="Normal"><span style="font-size:12px;font-weight:bold;pointer-events:none;">N</span></button>
+                    <button class="icon-btn" data-val="1" title="Deep"><span style="font-size:12px;font-weight:bold;pointer-events:none;">D</span></button>
+                    <button class="icon-btn" data-val="2" title="Very Deep"><span style="font-size:12px;font-weight:bold;pointer-events:none;">VD</span></button>
+                </div>
+            </div>
+
+            <div class="ss-row">
+                <label>光沢</label>
                 <div class="ss-segment" data-key="gloss" id="seg-gloss">
                     <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     <button class="icon-btn" data-val="true" title="ON"><svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
@@ -602,17 +617,17 @@
         // ==========================================
         // スクリーンセーバー(自動再生)システム管理
         // ==========================================
-        let ssSettings = JSON.parse(localStorage.getItem('ss_settings')) || {
-            compounds: "cubane, adamantane, caffeine, cholesterol, morphine, strychnine, sucrose, camphor, porphine, penicillin v",
-            order: "sequential",
-            interval: 15,
-            exitMode: "normal",
-            bg: "random",
-            model: "random",
-            stereo: "random",
-            depth: "random",
-            gloss: "random"
-        };
+        let ssSettings = JSON.parse(localStorage.getItem('ss_settings')) || {};
+        if (!ssSettings.compounds) ssSettings.compounds = "cubane, adamantane, caffeine, cholesterol, morphine, strychnine, sucrose, camphor, porphine, penicillin v";
+        if (!ssSettings.order) ssSettings.order = "sequential";
+        if (typeof ssSettings.interval === 'undefined') ssSettings.interval = 15;
+        if (typeof ssSettings.speed === 'undefined') ssSettings.speed = 18;
+        if (!ssSettings.exitMode) ssSettings.exitMode = "normal";
+        if (!ssSettings.bg) ssSettings.bg = "random";
+        if (!ssSettings.model) ssSettings.model = "random";
+        if (!ssSettings.stereo) ssSettings.stereo = "random";
+        if (!ssSettings.depth) ssSettings.depth = "random";
+        if (!ssSettings.gloss) ssSettings.gloss = "random";
         
         let ssActive = false;
         let ssTimer = null;
@@ -624,10 +639,7 @@
 
         const SS_VALS = {
             bg: ['blue', 'gray', 'white'],
-            model: ['ballstick', 'spacefilling', 'ghost'],
-            stereo: [0, 1, 2],
-            depth: [0, 1, 2],
-            gloss: [true, false]
+            model: ['ballstick', 'spacefilling', 'ghost']
         };
 
         function startScreenSaver() {
@@ -650,7 +662,7 @@
             };
             
             isAutoRotating = true;
-            currentRotateSpeed = ROTATE_SPEEDS[1];
+            currentRotateSpeed = ssSettings.speed;
             updateWakeLock();
             
             loadNextSSMolecule();
@@ -719,7 +731,6 @@
                 ssCurrentIndex++;
             }
             
-            // Randomize Settings
             currentBgMode = (ssSettings.bg === 'random') ? SS_VALS.bg[Math.floor(Math.random()*3)] : ssSettings.bg;
             currentRenderMode = (ssSettings.model === 'random') ? SS_VALS.model[Math.floor(Math.random()*3)] : ssSettings.model;
             currentStereoIndex = (ssSettings.stereo === 'random') ? Math.floor(Math.random()*3) : parseInt(ssSettings.stereo);
@@ -1020,7 +1031,7 @@
             } catch (error) {
                 if (isSS) {
                     ssFailCount++;
-                    ssTimer = setTimeout(loadNextSSMolecule, 1000); // すぐに次へ
+                    ssTimer = setTimeout(loadNextSSMolecule, 1000); 
                 } else {
                     showNotification(error.message);
                 }
@@ -1064,6 +1075,12 @@
                 const angle = THREE.MathUtils.degToRad(currentRotateSpeed) * delta;
                 const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(mainCamera.quaternion).normalize();
                 moleculeGroup.rotateOnWorldAxis(cameraUp, angle);
+                
+                // スクリーンセーバー実行中は斜め(縦成分追加)回転による多角的な鑑賞
+                if (ssActive) {
+                    const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(mainCamera.quaternion).normalize();
+                    moleculeGroup.rotateOnWorldAxis(cameraRight, angle * 0.35);
+                }
             }
 
             updateStereoCameras();
@@ -1386,6 +1403,7 @@
         function openSSModal() {
             document.getElementById('ss-compounds').value = ssSettings.compounds;
             document.getElementById('ss-interval').value = ssSettings.interval;
+            document.getElementById('ss-speed').value = ssSettings.speed;
             
             const updateSeg = (id, val) => {
                 const seg = document.getElementById(id);
@@ -1397,7 +1415,8 @@
             
             updateSeg('seg-order', ssSettings.order); updateSeg('seg-exit', ssSettings.exitMode);
             updateSeg('seg-bg', ssSettings.bg); updateSeg('seg-model', ssSettings.model);
-            updateSeg('seg-stereo', ssSettings.stereo); updateSeg('seg-gloss', ssSettings.gloss);
+            updateSeg('seg-stereo', ssSettings.stereo); updateSeg('seg-depth', ssSettings.depth); 
+            updateSeg('seg-gloss', ssSettings.gloss);
             
             document.getElementById('ss-overlay').style.display = 'block';
             document.getElementById('ss-modal').style.display = 'flex';
@@ -1413,6 +1432,7 @@
 
         document.getElementById('ss-compounds').addEventListener('change', (e) => { ssSettings.compounds = e.target.value; saveSSSettings(); });
         document.getElementById('ss-interval').addEventListener('change', (e) => { ssSettings.interval = parseInt(e.target.value) || 15; saveSSSettings(); });
+        document.getElementById('ss-speed').addEventListener('change', (e) => { ssSettings.speed = parseFloat(e.target.value) || 18; saveSSSettings(); });
         
         document.querySelectorAll('.ss-segment').forEach(seg => {
             seg.addEventListener('click', (e) => {
