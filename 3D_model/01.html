@@ -319,6 +319,9 @@
 </head>
 <body>
     <div id="app-container">
+        <!-- ★スクリーンセーバー解除用バリア（イベント遮断用） -->
+        <div id="ss-exit-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 1500; cursor: pointer;"></div>
+
         <div id="portrait-warning">
             <svg viewBox="0 0 24 24">
                 <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
@@ -647,12 +650,13 @@
             ssActive = true;
             ssClickCount = 0;
             
-            // ★バグ修正：タッチ状態のリセットとコントロールの一時無効化
-            controls.enabled = false;
-            activeTouches.clear();
-            isTwoFingerDragging = false;
-            isRightDragging = false;
-            lastPinchDistance = 0;
+            // ★解除時のイベント遮断用バリアを展開し、フルスクリーンをリクエスト
+            document.getElementById('ss-exit-overlay').style.display = 'block';
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.warn(`Fullscreen API Error: ${err.message}`);
+                });
+            }
             
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '0';
@@ -681,12 +685,13 @@
             clearTimeout(ssTimer);
             ssTimer = null;
             
-            // ★バグ修正：コントロールの復帰とタッチ状態のリセット
-            controls.enabled = true;
-            activeTouches.clear();
-            isTwoFingerDragging = false;
-            isRightDragging = false;
-            lastPinchDistance = 0;
+            // ★バリアを解除し、フルスクリーンから復帰
+            document.getElementById('ss-exit-overlay').style.display = 'none';
+            if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(err => {
+                    console.warn(`Exit Fullscreen API Error: ${err.message}`);
+                });
+            }
             
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '1';
@@ -1240,10 +1245,11 @@
         window.addEventListener('pointercancel', handlePointerUp);
         container.addEventListener('contextmenu', e => e.preventDefault());
 
-        // SS解除のポインター監視
-        document.addEventListener('pointerdown', (e) => {
+        // ★修正: SS解除のポインター監視を専用オーバーレイに変更
+        document.getElementById('ss-exit-overlay').addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (!ssActive) return;
-            if (e.target.closest('#ss-modal') || e.target.closest('#ss-overlay')) return;
             
             if (ssSettings.exitMode === 'strict') {
                 ssClickCount++;
