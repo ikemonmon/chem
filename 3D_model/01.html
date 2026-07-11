@@ -13,26 +13,29 @@
             --text-active-lvl2: #ffde9a;
         }
 
-        * {
-            box-sizing: border-box;
+        /* ★スクロール破綻を物理的に防ぐ完全固定スタイル */
+        html, body {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            overscroll-behavior: none;
             margin: 0;
             padding: 0;
-        }
-        body {
             background-color: #eaf4ff;
             color: #f0f0f0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            overflow: hidden;
-            height: 100dvh; 
-            width: 100vw;
             transition: background-color 0.3s ease;
         }
         
         #app-container {
             display: flex;
             flex-direction: column;
-            height: 100dvh; 
-            width: 100vw;
+            width: 100%;
+            height: 100%;
             position: relative;
         }
         
@@ -43,6 +46,7 @@
             position: relative;
             z-index: 1;
             touch-action: none;
+            overflow: hidden; /* はみ出し防止 */
         }
 
         .view-label {
@@ -319,7 +323,7 @@
 </head>
 <body>
     <div id="app-container">
-        <!-- ★修正: スクリーンセーバー解除用バリア（イベント遮断用） -->
+        <!-- スクリーンセーバー解除用バリア（イベント遮断用） -->
         <div id="ss-exit-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 1500; cursor: pointer;"></div>
 
         <div id="portrait-warning">
@@ -401,7 +405,6 @@
                     </button>
                 </div>
 
-                <!-- ★スクリーンセーバー起動ボタン -->
                 <div class="ui-group">
                     <button class="icon-btn" id="btn-ss" title="Screen Saver [Long-press/Right-click for settings]">
                         <svg viewBox="0 0 24 24">
@@ -415,7 +418,6 @@
             </div>
         </div>
 
-        <!-- ★スクリーンセーバー設定モーダル -->
         <div id="ss-overlay"></div>
         <div id="ss-modal" class="ui-panel">
             <div style="width:100%; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-light); padding-bottom:10px;">
@@ -647,18 +649,21 @@
             if (ssActive) return;
             ssActive = true;
             
-            // ★完全防壁: 解除用バリアを展開して背面へのイベント伝達を完全にブロックする
+            // ★解除用バリアを展開
             const ssOverlay = document.getElementById('ss-exit-overlay');
             ssOverlay.style.display = 'block';
             ssOverlay.dataset.exiting = "false";
             ssPointersDown = 0;
             ssClickCount = 0;
 
-            // フルスクリーン化
-            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.warn(`Fullscreen API Error: ${err.message}`);
-                });
+            // ★フルスクリーン化 (クロスブラウザ対応)
+            const elem = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => { console.warn(`Fullscreen API Error: ${err.message}`); });
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                }
             }
             
             const uiWrapper = document.getElementById('ui-wrapper');
@@ -688,14 +693,16 @@
             clearTimeout(ssTimer);
             ssTimer = null;
             
-            // ★防壁を消去（指が完全に離れた後にここが発火する）
+            // ★防壁を消去
             document.getElementById('ss-exit-overlay').style.display = 'none';
 
-            // フルスクリーン解除
-            if (document.fullscreenElement && document.exitFullscreen) {
-                document.exitFullscreen().catch(err => {
-                    console.warn(`Exit Fullscreen API Error: ${err.message}`);
-                });
+            // ★フルスクリーン解除
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(err => { console.warn(`Exit Fullscreen API Error: ${err.message}`); });
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
             }
             
             const uiWrapper = document.getElementById('ui-wrapper');
@@ -734,8 +741,16 @@
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true);
             updateWakeLock();
 
-            // フルスクリーン解除等で画面サイズが変わる場合のフェールセーフ
-            setTimeout(() => { renderer.setSize(window.innerWidth, window.innerHeight); }, 100);
+            // ★タッチ変数の完全リセット（残留ゴースト防止）
+            activeTouches.clear();
+            isRightDragging = false;
+            isTwoFingerDragging = false;
+            lastPinchDistance = 0;
+
+            // ★キャンバスサイズの強制再計算を連打（iOSのリサイズ遅延対策）
+            setTimeout(resizeCanvas, 50);
+            setTimeout(resizeCanvas, 300);
+            setTimeout(resizeCanvas, 800);
         }
 
         function loadNextSSMolecule() {
@@ -1173,10 +1188,30 @@
         }
 
         // ==========================================
-        // リサイズ・スクロール・マウス操作最適化
+        // リサイズ・フルスクリーン検知の堅牢化
         // ==========================================
-        window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); });
+        function resizeCanvas() {
+            if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', resizeCanvas);
 
+        function handleFullscreenChange() {
+            setTimeout(resizeCanvas, 100);
+            setTimeout(resizeCanvas, 500);
+            setTimeout(resizeCanvas, 1000);
+            
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+            // ネイティブ機能(×ボタンなど)でフルスクリーンを解除された場合、SSも自動終了する
+            if (!isFullscreen && ssActive) {
+                stopScreenSaver();
+            }
+        }
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+        // ==========================================
+        // マウス・タッチポインターイベントハンドリング
+        // ==========================================
         let isRightDragging = false;
         let isTwoFingerDragging = false;
         let lastPointerX = 0;
