@@ -689,13 +689,25 @@
                     } else if (bond.order === 2) {
                         let upVector = new THREE.Vector3(0, 1, 0);
                         if (Math.abs(direction.dot(upVector)) > 0.95) { upVector.set(1, 0, 0); }
-                        const offsetDir = new THREE.Vector3().crossVectors(direction, upVector).normalize().multiplyScalar(0.12);
+                        
+                        // 基本のオフセット方向を計算（結合ベクトルと上方向の直交ベクトル）
+                        let baseOffset = new THREE.Vector3().crossVectors(direction, upVector).normalize();
+                        // ★90度ひねる（結合方向ベクトルを軸にして外積を取る）
+                        baseOffset.crossVectors(direction, baseOffset.clone()).normalize();
+                        
+                        const offsetDir = baseOffset.multiplyScalar(0.12);
                         createCylinderMesh(offsetDir);
                         createCylinderMesh(offsetDir.clone().negate());
                     } else if (bond.order === 3) {
                         let upVector = new THREE.Vector3(0, 1, 0);
                         if (Math.abs(direction.dot(upVector)) > 0.95) { upVector.set(1, 0, 0); }
-                        const offsetDir = new THREE.Vector3().crossVectors(direction, upVector).normalize().multiplyScalar(0.18);
+                        
+                        // 基本のオフセット方向を計算
+                        let baseOffset = new THREE.Vector3().crossVectors(direction, upVector).normalize();
+                        // ★90度ひねる（結合方向ベクトルを軸にして外積を取る）
+                        baseOffset.crossVectors(direction, baseOffset.clone()).normalize();
+                        
+                        const offsetDir = baseOffset.multiplyScalar(0.18);
                         createCylinderMesh(null);
                         createCylinderMesh(offsetDir);
                         createCylinderMesh(offsetDir.clone().negate());
@@ -1018,14 +1030,22 @@
             searchInput.focus();
         });
 
+        // ★修正: 検索実行と同時に blur() を呼び出しフォーカスを外す
         document.getElementById('search-submit').addEventListener('click', () => {
             const query = searchInput.value;
-            if (query) fetchMoleculeData(query);
+            if (query) {
+                fetchMoleculeData(query);
+                searchInput.blur();
+            }
         });
+        
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const query = searchInput.value;
-                if (query) fetchMoleculeData(query);
+                if (query) {
+                    fetchMoleculeData(query);
+                    searchInput.blur();
+                }
             }
         });
 
@@ -1185,3 +1205,4 @@
     </script>
 </body>
 </html>
+
