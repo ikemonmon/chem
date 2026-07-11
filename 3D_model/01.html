@@ -647,6 +647,13 @@
             ssActive = true;
             ssClickCount = 0;
             
+            // ★バグ修正：タッチ状態のリセットとコントロールの一時無効化
+            controls.enabled = false;
+            activeTouches.clear();
+            isTwoFingerDragging = false;
+            isRightDragging = false;
+            lastPinchDistance = 0;
+            
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '0';
             uiWrapper.style.pointerEvents = 'none';
@@ -673,6 +680,13 @@
             ssActive = false;
             clearTimeout(ssTimer);
             ssTimer = null;
+            
+            // ★バグ修正：コントロールの復帰とタッチ状態のリセット
+            controls.enabled = true;
+            activeTouches.clear();
+            isTwoFingerDragging = false;
+            isRightDragging = false;
+            lastPinchDistance = 0;
             
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '1';
@@ -1076,7 +1090,6 @@
                 const cameraUp = new THREE.Vector3(0, 1, 0).applyQuaternion(mainCamera.quaternion).normalize();
                 moleculeGroup.rotateOnWorldAxis(cameraUp, angle);
                 
-                // スクリーンセーバー実行中は斜め(縦成分追加)回転による多角的な鑑賞
                 if (ssActive) {
                     const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(mainCamera.quaternion).normalize();
                     moleculeGroup.rotateOnWorldAxis(cameraRight, angle * 0.35);
