@@ -59,7 +59,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 80vw;
-            transition: left 0.3s ease;
+            transition: opacity 0.5s ease, left 0.3s ease;
         }
         #label-left { left: 20px; }
         #label-right { display: none; }
@@ -76,7 +76,7 @@
             gap: 12px;
             z-index: 1000;
             pointer-events: none;
-            transition: all 0.3s ease;
+            transition: opacity 0.5s ease, transform 0.3s ease;
         }
 
         .ui-panel {
@@ -197,6 +197,30 @@
             background: rgba(255, 222, 154, 0.15);
         }
 
+        /* モーダル用CSS */
+        #ss-overlay {
+            display: none;
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            z-index: 1999; pointer-events: auto;
+        }
+        #ss-modal {
+            display: none;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 2000; flex-direction: column; padding: 20px 24px;
+            width: 90%; max-width: 380px; gap: 16px;
+        }
+        .ss-row {
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+        }
+        .ss-row label {
+            font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 500;
+        }
+        .ss-segment {
+            display: flex; gap: 4px; background: rgba(255,255,255,0.05);
+            padding: 4px; border-radius: 20px; border: 1px solid var(--border-light);
+        }
+
         #toast-notification {
             position: absolute;
             top: 20px;
@@ -208,7 +232,7 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: 500;
-            z-index: 1000;
+            z-index: 3000;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             opacity: 0;
             display: none;
@@ -247,67 +271,43 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* 縦向き検出 */
         @media (max-width: 1024px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) {
             #portrait-warning {
                 display: flex;
             }
         }
 
-        /* モバイル・タブレット横向き環境への最適化 */
         @media (max-width: 1366px) and (orientation: landscape), (pointer: coarse) and (orientation: landscape) {
             #ui-wrapper {
-                bottom: 0;
-                top: 0;
-                left: 0;
-                right: 0;
-                transform: none;
-                display: block;
+                bottom: 0; top: 0; left: 0; right: 0; transform: none; display: block;
             }
             #control-panel {
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%) scale(0.85);
-                transform-origin: left center;
-                flex-direction: column;
-                padding: 16px 8px;
-                gap: 12px;
-                border-radius: 0 24px 24px 0;
-                border-left: none;
+                position: absolute; left: 0; top: 50%;
+                transform: translateY(-50%) scale(0.85); transform-origin: left center;
+                flex-direction: column; padding: 16px 8px; gap: 12px;
+                border-radius: 0 24px 24px 0; border-left: none;
             }
             .ui-group {
-                flex-direction: column;
-                border-right: none;
+                flex-direction: column; border-right: none;
                 border-bottom: 1px solid var(--border-light);
-                padding-right: 0;
-                padding-bottom: 12px;
-                gap: 8px;
+                padding-right: 0; padding-bottom: 12px; gap: 8px;
             }
             .ui-group:last-child {
-                border-bottom: none;
-                padding-bottom: 0;
+                border-bottom: none; padding-bottom: 0;
             }
-
             #search-panel {
-                position: absolute;
-                bottom: 24px; 
-                left: 50vw;
-                transform: translateX(-50%); 
-                display: block;
+                position: absolute; bottom: 24px; left: 50vw;
+                transform: translateX(-50%); display: block;
             }
             #search-container {
-                opacity: 0.85; 
-                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                opacity: 0.85; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
                 padding: 6px 8px 6px 14px; 
             }
             #search-input {
-                width: 140px;
-                font-size: 14px;
+                width: 140px; font-size: 14px;
             }
             #search-container:focus-within {
-                opacity: 1.0;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+                opacity: 1.0; box-shadow: 0 10px 25px rgba(0,0,0,0.7);
             }
             #search-container:focus-within #search-input {
                 width: 180px; 
@@ -397,7 +397,94 @@
                         </svg>
                     </button>
                 </div>
+
+                <!-- ★スクリーンセーバー起動ボタン -->
+                <div class="ui-group">
+                    <button class="icon-btn" id="btn-ss" title="Screen Saver [Long-press/Right-click for settings]">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="3" y="5" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="12" cy="11" r="2.5" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
+        </div>
+
+        <!-- ★スクリーンセーバー設定モーダル -->
+        <div id="ss-overlay"></div>
+        <div id="ss-modal" class="ui-panel">
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-light); padding-bottom:10px;">
+                <span style="font-weight:600; font-size:13px; letter-spacing:1px; color:var(--text-active);">Screensaver Settings</span>
+                <button id="ss-close" class="icon-btn" style="padding:2px;"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px; width:100%;">
+                <label style="font-size:11px; color:rgba(255,255,255,0.6);">化合物の英語名リスト (カンマ区切り)</label>
+                <textarea id="ss-compounds" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-light); color:#fff; border-radius:12px; padding:10px; font-size:12px; outline:none; resize:none; height:70px; width:100%; font-family:monospace;"></textarea>
+            </div>
+
+            <div class="ss-row">
+                <label>順序</label>
+                <div class="ss-segment" data-key="order" id="seg-order">
+                    <button class="icon-btn" data-val="sequential" title="順番"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="12 5 19 12 12 19" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+            </div>
+            
+            <div class="ss-row">
+                <label>表示時間(秒)</label>
+                <input type="number" id="ss-interval" style="width:60px; background:rgba(255,255,255,0.1); border:none; color:#fff; border-radius:8px; padding:4px 8px; text-align:center; font-size:13px; outline:none;">
+            </div>
+            
+            <div class="ss-row">
+                <label>解除モード</label>
+                <div class="ss-segment" data-key="exitMode" id="seg-exit">
+                    <button class="icon-btn" data-val="normal" title="通常 (Tap)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>
+                    <button class="icon-btn" data-val="strict" title="厳格 (W-Tap / Ctrl+Shift+P)"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+                </div>
+            </div>
+
+            <div class="ss-row">
+                <label>グローバル背景</label>
+                <div class="ss-segment" data-key="bg" id="seg-bg">
+                    <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" data-val="blue" title="Blue"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#eaf4ff" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                    <button class="icon-btn" data-val="gray" title="Gray"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#dadada" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                    <button class="icon-btn" data-val="white" title="White"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#ffffff" stroke="#cccccc" stroke-width="1.5"/></svg></button>
+                </div>
+            </div>
+
+            <div class="ss-row">
+                <label>グローバルモデル</label>
+                <div class="ss-segment" data-key="model" id="seg-model">
+                    <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" data-val="ballstick" title="Ball&Stick"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><line x1="8.12" y1="8.12" x2="15.88" y2="15.88" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                    <button class="icon-btn" data-val="spacefilling" title="SpaceFilling"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><circle cx="15" cy="15" r="5"/></svg></button>
+                    <button class="icon-btn" data-val="ghost" title="Ghost Mode"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/></svg></button>
+                </div>
+            </div>
+
+            <div class="ss-row">
+                <label>グローバル立体視</label>
+                <div class="ss-segment" data-key="stereo" id="seg-stereo">
+                    <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" data-val="0" title="Cross"><svg viewBox="0 0 24 24"><line x1="5" y1="3" x2="19" y2="21" stroke="currentColor" stroke-width="2"/><line x1="19" y1="3" x2="5" y2="21" stroke="currentColor" stroke-width="2"/></svg></button>
+                    <button class="icon-btn" data-val="1" title="Parallel"><svg viewBox="0 0 24 24"><path d="M8 21V3M16 21V3" stroke="currentColor" stroke-width="2"/></svg></button>
+                    <button class="icon-btn" data-val="2" title="Single"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+                </div>
+            </div>
+
+            <div class="ss-row">
+                <label>グローバル光沢</label>
+                <div class="ss-segment" data-key="gloss" id="seg-gloss">
+                    <button class="icon-btn" data-val="random" title="ランダム"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" data-val="true" title="ON"><svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" data-val="false" title="OFF"><svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" opacity="0.3"/><line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2"/></svg></button>
+                </div>
+            </div>
+            
         </div>
     </div>
 
@@ -513,6 +600,139 @@
         scene.add(dirLight2);
 
         // ==========================================
+        // スクリーンセーバー(自動再生)システム管理
+        // ==========================================
+        let ssSettings = JSON.parse(localStorage.getItem('ss_settings')) || {
+            compounds: "cubane, adamantane, caffeine, cholesterol, morphine, strychnine, sucrose, camphor, porphine, penicillin v",
+            order: "sequential",
+            interval: 15,
+            exitMode: "normal",
+            bg: "random",
+            model: "random",
+            stereo: "random",
+            depth: "random",
+            gloss: "random"
+        };
+        
+        let ssActive = false;
+        let ssTimer = null;
+        let ssCurrentIndex = 0;
+        let ssFailCount = 0;
+        let previousState = {};
+        let ssClickCount = 0;
+        let ssClickTimer = null;
+
+        const SS_VALS = {
+            bg: ['blue', 'gray', 'white'],
+            model: ['ballstick', 'spacefilling', 'ghost'],
+            stereo: [0, 1, 2],
+            depth: [0, 1, 2],
+            gloss: [true, false]
+        };
+
+        function startScreenSaver() {
+            if (ssActive) return;
+            ssActive = true;
+            ssClickCount = 0;
+            
+            const uiWrapper = document.getElementById('ui-wrapper');
+            uiWrapper.style.opacity = '0';
+            uiWrapper.style.pointerEvents = 'none';
+            document.getElementById('label-left').style.opacity = '0.3';
+            
+            previousState = {
+                bg: currentBgMode,
+                model: currentRenderMode,
+                stereo: currentStereoIndex,
+                depth: currentDepthIndex,
+                gloss: currentGlossMode,
+                rotateIndex: currentRotateIndex
+            };
+            
+            isAutoRotating = true;
+            currentRotateSpeed = ROTATE_SPEEDS[1];
+            updateWakeLock();
+            
+            loadNextSSMolecule();
+        }
+
+        function stopScreenSaver() {
+            if (!ssActive) return;
+            ssActive = false;
+            clearTimeout(ssTimer);
+            ssTimer = null;
+            
+            const uiWrapper = document.getElementById('ui-wrapper');
+            uiWrapper.style.opacity = '1';
+            uiWrapper.style.pointerEvents = 'auto';
+            document.getElementById('label-left').style.opacity = '1';
+            
+            currentBgMode = previousState.bg;
+            currentRenderMode = previousState.model;
+            currentStereoIndex = previousState.stereo;
+            currentDepthIndex = previousState.depth;
+            currentGlossMode = previousState.gloss;
+            currentRotateIndex = previousState.rotateIndex;
+            
+            if (currentRotateIndex === 0) {
+                isAutoRotating = false;
+                currentRotateSpeed = 0;
+            } else {
+                isAutoRotating = true;
+                currentRotateSpeed = ROTATE_SPEEDS[currentRotateIndex];
+            }
+            
+            updateStereoMode();
+            updateModelMode();
+            updateBgMode(currentBgMode);
+            
+            const btnGloss = document.getElementById('btn-gloss');
+            if(currentGlossMode) btnGloss.classList.add('active');
+            else btnGloss.classList.remove('active');
+            
+            const btnAutoRotate = document.getElementById('btn-autorotate');
+            btnAutoRotate.classList.remove('active', 'level-2');
+            if (currentRotateIndex === 1) btnAutoRotate.classList.add('active');
+            if (currentRotateIndex === 2) btnAutoRotate.classList.add('active', 'level-2');
+            
+            if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true);
+            updateWakeLock();
+        }
+
+        function loadNextSSMolecule() {
+            if (!ssActive) return;
+            
+            const list = ssSettings.compounds.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0);
+            if (list.length === 0) list.push('benzene');
+            
+            if (ssFailCount >= list.length) {
+                ssFailCount = 0;
+                fetchMoleculeData('benzene', true); 
+                return;
+            }
+
+            let comp = '';
+            if (ssSettings.order === 'random') {
+                comp = list[Math.floor(Math.random() * list.length)];
+            } else {
+                comp = list[ssCurrentIndex % list.length];
+                ssCurrentIndex++;
+            }
+            
+            // Randomize Settings
+            currentBgMode = (ssSettings.bg === 'random') ? SS_VALS.bg[Math.floor(Math.random()*3)] : ssSettings.bg;
+            currentRenderMode = (ssSettings.model === 'random') ? SS_VALS.model[Math.floor(Math.random()*3)] : ssSettings.model;
+            currentStereoIndex = (ssSettings.stereo === 'random') ? Math.floor(Math.random()*3) : parseInt(ssSettings.stereo);
+            currentDepthIndex = (ssSettings.depth === 'random') ? Math.floor(Math.random()*3) : parseInt(ssSettings.depth);
+            currentGlossMode = (ssSettings.gloss === 'random') ? (Math.random() > 0.5) : (ssSettings.gloss === 'true');
+            
+            scene.background.setHex(BG_COLORS[currentBgMode]);
+            updateStereoCameras();
+            
+            fetchMoleculeData(comp, true);
+        }
+
+        // ==========================================
         // ロジック・処理関数群
         // ==========================================
         let toastTimeout;
@@ -615,19 +835,15 @@
             const roughnessValue = currentGlossMode ? 0.2 : 0.9;
             const metalnessValue = currentGlossMode ? 0.1 : 0.0;
 
-            // 原子（不透明部分: ballstick内殻 または spacefilling外殻）の描画
+            // 原子（不透明部分）の描画
             data.atoms.forEach((atom, index) => {
                 const elementInfo = ELEMENT_DATA[atom.element] || ELEMENT_DATA['DEFAULT'];
                 
                 if (currentRenderMode === 'ballstick' || currentRenderMode === 'ghost') {
                     let radius = elementInfo.radius * 0.35;
                     
-                    // スケール変更の適用
-                    if (currentRenderMode === 'ballstick') {
-                        radius *= 0.85; 
-                    } else if (currentRenderMode === 'ghost') {
-                        radius *= 0.5; 
-                    }
+                    if (currentRenderMode === 'ballstick') radius *= 0.85; 
+                    else if (currentRenderMode === 'ghost') radius *= 0.5; 
                     
                     const sphereGeom = new THREE.SphereGeometry(radius, 32, 32);
                     const sphereMat = new THREE.MeshStandardMaterial({
@@ -690,9 +906,7 @@
                         let upVector = new THREE.Vector3(0, 1, 0);
                         if (Math.abs(direction.dot(upVector)) > 0.95) { upVector.set(1, 0, 0); }
                         
-                        // 基本のオフセット方向を計算（結合ベクトルと上方向の直交ベクトル）
                         let baseOffset = new THREE.Vector3().crossVectors(direction, upVector).normalize();
-                        // ★90度ひねる（結合方向ベクトルを軸にして外積を取る）
                         baseOffset.crossVectors(direction, baseOffset.clone()).normalize();
                         
                         const offsetDir = baseOffset.multiplyScalar(0.12);
@@ -702,9 +916,7 @@
                         let upVector = new THREE.Vector3(0, 1, 0);
                         if (Math.abs(direction.dot(upVector)) > 0.95) { upVector.set(1, 0, 0); }
                         
-                        // 基本のオフセット方向を計算
                         let baseOffset = new THREE.Vector3().crossVectors(direction, upVector).normalize();
-                        // ★90度ひねる（結合方向ベクトルを軸にして外積を取る）
                         baseOffset.crossVectors(direction, baseOffset.clone()).normalize();
                         
                         const offsetDir = baseOffset.multiplyScalar(0.18);
@@ -761,7 +973,7 @@
             }
         }
 
-        async function fetchMoleculeData(query) {
+        async function fetchMoleculeData(query, isSS = false) {
             let cleanQuery = query.trim();
             const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleanQuery);
             
@@ -789,26 +1001,29 @@
             
             try {
                 const response = await fetch(url);
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error("指定された化合物・示性式が見つかりません。");
-                    } else {
-                        throw new Error("データ取得中にエラーが発生しました。");
-                    }
-                }
+                if (!response.ok) throw new Error("指定された化合物・示性式が見つかりません。");
+                
                 const sdfText = await response.text();
                 const parsedData = parseSDF(sdfText);
                 buildMoleculeGeometry(parsedData, false); 
                 window.currentSdfData = parsedData;
 
                 let labelText = cleanQuery;
-                if (parsedData.formula) {
-                    labelText += ` (${parsedData.formula})`;
-                }
+                if (parsedData.formula) labelText += ` (${parsedData.formula})`;
                 document.getElementById('label-left').textContent = labelText;
+                
+                if (isSS) {
+                    ssFailCount = 0;
+                    ssTimer = setTimeout(loadNextSSMolecule, ssSettings.interval * 1000);
+                }
 
             } catch (error) {
-                showNotification(error.message);
+                if (isSS) {
+                    ssFailCount++;
+                    ssTimer = setTimeout(loadNextSSMolecule, 1000); // すぐに次へ
+                } else {
+                    showNotification(error.message);
+                }
             }
         }
 
@@ -816,18 +1031,14 @@
             const target = controls.target; 
             const camPos = mainCamera.position;
 
-            // カメラの現在の回転情報（Quaternion）から直接、右方向（ローカルX軸）と上方向（ローカルY軸）を抽出
-            // これにより、真上・真下付近での外積計算の特異点を完全に回避
             const right = new THREE.Vector3(1, 0, 0).applyQuaternion(mainCamera.quaternion).normalize();
             const up = new THREE.Vector3(0, 1, 0).applyQuaternion(mainCamera.quaternion).normalize();
 
             const eyeSeparation = DEPTH_VALUES[currentDepthIndex];
 
-            // 左右のカメラを視差（眼幅）の分だけ右方向ベクトルに沿ってオフセット
             cameraL.position.copy(camPos).addScaledVector(right, -eyeSeparation / 2);
             cameraR.position.copy(camPos).addScaledVector(right, eyeSeparation / 2);
 
-            // 上方向ベクトルをメインカメラと厳密に同期
             cameraL.up.copy(up);
             cameraR.up.copy(up);
 
@@ -919,15 +1130,10 @@
         }
 
         // ==========================================
-        // リサイズ・スクロール最適化
+        // リサイズ・スクロール・マウス操作最適化
         // ==========================================
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); });
 
-        // ==========================================
-        // マウス・タッチポインターイベントハンドリング
-        // ==========================================
         let isRightDragging = false;
         let isTwoFingerDragging = false;
         let lastPointerX = 0;
@@ -990,9 +1196,7 @@
         });
 
         const handlePointerUp = (e) => {
-            if (e.pointerType === 'mouse' && e.button === 2) {
-                isRightDragging = false;
-            }
+            if (e.pointerType === 'mouse' && e.button === 2) isRightDragging = false;
             else if (e.pointerType === 'touch' || e.pointerType === 'pen') {
                 activeTouches.delete(e.pointerId);
                 if (activeTouches.size < 2) {
@@ -1006,6 +1210,23 @@
         window.addEventListener('pointercancel', handlePointerUp);
         container.addEventListener('contextmenu', e => e.preventDefault());
 
+        // SS解除のポインター監視
+        document.addEventListener('pointerdown', (e) => {
+            if (!ssActive) return;
+            if (e.target.closest('#ss-modal') || e.target.closest('#ss-overlay')) return;
+            
+            if (ssSettings.exitMode === 'strict') {
+                ssClickCount++;
+                if (ssClickCount === 1) ssClickTimer = setTimeout(() => { ssClickCount = 0; }, 500);
+                else if (ssClickCount >= 2) {
+                    clearTimeout(ssClickTimer);
+                    stopScreenSaver();
+                }
+            } else {
+                stopScreenSaver();
+            }
+        });
+
         // ==========================================
         // UI操作・入力系コントロールイベント
         // ==========================================
@@ -1013,16 +1234,11 @@
         const searchClear = document.getElementById('search-clear');
 
         searchInput.addEventListener('input', () => {
-            if (searchInput.value.length > 0) {
-                searchClear.style.display = 'inline-flex';
-            } else {
-                searchClear.style.display = 'none';
-            }
+            if (searchInput.value.length > 0) searchClear.style.display = 'inline-flex';
+            else searchClear.style.display = 'none';
         });
 
-        searchInput.addEventListener('blur', () => {
-            window.scrollTo(0, 0); 
-        });
+        searchInput.addEventListener('blur', () => { window.scrollTo(0, 0); });
 
         searchClear.addEventListener('click', () => {
             searchInput.value = '';
@@ -1030,22 +1246,15 @@
             searchInput.focus();
         });
 
-        // ★修正: 検索実行と同時に blur() を呼び出しフォーカスを外す
         document.getElementById('search-submit').addEventListener('click', () => {
             const query = searchInput.value;
-            if (query) {
-                fetchMoleculeData(query);
-                searchInput.blur();
-            }
+            if (query) { fetchMoleculeData(query); searchInput.blur(); }
         });
         
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const query = searchInput.value;
-                if (query) {
-                    fetchMoleculeData(query);
-                    searchInput.blur();
-                }
+                if (query) { fetchMoleculeData(query); searchInput.blur(); }
             }
         });
 
@@ -1064,10 +1273,7 @@
                 btnStereo.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 21V3M16 21V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
             }
         }
-        btnStereo.addEventListener('click', () => {
-            currentStereoIndex = (currentStereoIndex + 1) % 3;
-            updateStereoMode();
-        });
+        btnStereo.addEventListener('click', () => { currentStereoIndex = (currentStereoIndex + 1) % 3; updateStereoMode(); });
 
         const btnDepth = document.getElementById('btn-depth');
         btnDepth.addEventListener('click', () => {
@@ -1096,7 +1302,6 @@
             if (currentRenderMode === 'ballstick') currentRenderMode = 'spacefilling';
             else if (currentRenderMode === 'spacefilling') currentRenderMode = 'ghost';
             else currentRenderMode = 'ballstick';
-            
             updateModelMode();
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true); 
         });
@@ -1106,21 +1311,14 @@
         function updateBgMode(mode) {
             currentBgMode = mode;
             scene.background.setHex(BG_COLORS[mode]);
-            
             let fillHex = '#dadada';
             let titleText = 'Background: Gray [b]';
-            if (mode === 'white') {
-                fillHex = '#ffffff';
-                titleText = 'Background: White [b]';
-            } else if (mode === 'blue') {
-                fillHex = '#eaf4ff';
-                titleText = 'Background: Blue [b]';
-            }
+            if (mode === 'white') { fillHex = '#ffffff'; titleText = 'Background: White [b]'; } 
+            else if (mode === 'blue') { fillHex = '#eaf4ff'; titleText = 'Background: Blue [b]'; }
             
             btnBg.title = titleText;
             bgIconRect.setAttribute('fill', fillHex);
             bgIconRect.setAttribute('stroke', mode === 'white' ? '#cccccc' : 'currentColor');
-
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true); 
         }
         btnBg.addEventListener('click', () => {
@@ -1143,43 +1341,99 @@
         async function updateWakeLock() {
             if ('wakeLock' in navigator) {
                 if (isAutoRotating && !wakeLock) {
-                    try {
-                        wakeLock = await navigator.wakeLock.request('screen');
-                    } catch (err) {
-                        console.warn('Wake Lock request failed:', err);
-                    }
+                    try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
                 } else if (!isAutoRotating && wakeLock) {
                     wakeLock.release().then(() => { wakeLock = null; });
                 }
             }
         }
-
         document.addEventListener('visibilitychange', () => {
             if (wakeLock !== null && document.visibilityState === 'visible' && isAutoRotating) {
                 navigator.wakeLock.request('screen').then(wl => wakeLock = wl).catch(() => {});
             }
         });
-
         btnAutoRotate.addEventListener('click', () => {
             currentRotateIndex = (currentRotateIndex + 1) % 3;
             btnAutoRotate.title = ROTATE_TITLES[currentRotateIndex];
             btnAutoRotate.classList.remove('active', 'level-2');
             
             if (currentRotateIndex === 0) {
-                isAutoRotating = false;
-                currentRotateSpeed = 0;
+                isAutoRotating = false; currentRotateSpeed = 0;
             } else {
-                isAutoRotating = true;
-                currentRotateSpeed = ROTATE_SPEEDS[currentRotateIndex];
+                isAutoRotating = true; currentRotateSpeed = ROTATE_SPEEDS[currentRotateIndex];
                 if (currentRotateIndex === 1) btnAutoRotate.classList.add('active'); 
                 if (currentRotateIndex === 2) btnAutoRotate.classList.add('active', 'level-2'); 
             }
             updateWakeLock();
         });
 
-        document.addEventListener('keydown', (e) => {
-            if (document.activeElement === searchInput) return;
+        // SS UI & Modal logic
+        const btnSS = document.getElementById('btn-ss');
+        let ssPressTimer;
+        let isLongPress = false;
 
+        btnSS.addEventListener('click', () => { startScreenSaver(); });
+        btnSS.addEventListener('contextmenu', (e) => { e.preventDefault(); openSSModal(); });
+        btnSS.addEventListener('touchstart', (e) => {
+            isLongPress = false;
+            ssPressTimer = setTimeout(() => { isLongPress = true; openSSModal(); }, 500);
+        }, {passive: false});
+        btnSS.addEventListener('touchend', (e) => {
+            clearTimeout(ssPressTimer);
+            if (isLongPress) e.preventDefault(); 
+        });
+
+        function openSSModal() {
+            document.getElementById('ss-compounds').value = ssSettings.compounds;
+            document.getElementById('ss-interval').value = ssSettings.interval;
+            
+            const updateSeg = (id, val) => {
+                const seg = document.getElementById(id);
+                seg.querySelectorAll('.icon-btn').forEach(btn => {
+                    if (btn.dataset.val === String(val)) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            };
+            
+            updateSeg('seg-order', ssSettings.order); updateSeg('seg-exit', ssSettings.exitMode);
+            updateSeg('seg-bg', ssSettings.bg); updateSeg('seg-model', ssSettings.model);
+            updateSeg('seg-stereo', ssSettings.stereo); updateSeg('seg-gloss', ssSettings.gloss);
+            
+            document.getElementById('ss-overlay').style.display = 'block';
+            document.getElementById('ss-modal').style.display = 'flex';
+        }
+
+        function closeSSModal() {
+            document.getElementById('ss-overlay').style.display = 'none';
+            document.getElementById('ss-modal').style.display = 'none';
+        }
+        document.getElementById('ss-close').addEventListener('click', closeSSModal);
+        
+        function saveSSSettings() { localStorage.setItem('ss_settings', JSON.stringify(ssSettings)); }
+
+        document.getElementById('ss-compounds').addEventListener('change', (e) => { ssSettings.compounds = e.target.value; saveSSSettings(); });
+        document.getElementById('ss-interval').addEventListener('change', (e) => { ssSettings.interval = parseInt(e.target.value) || 15; saveSSSettings(); });
+        
+        document.querySelectorAll('.ss-segment').forEach(seg => {
+            seg.addEventListener('click', (e) => {
+                const btn = e.target.closest('.icon-btn');
+                if (!btn) return;
+                seg.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                ssSettings[seg.dataset.key] = btn.dataset.val;
+                saveSSSettings();
+            });
+        });
+
+        // Key bindings
+        document.addEventListener('keydown', (e) => {
+            if (ssActive) {
+                if (ssSettings.exitMode === 'strict') {
+                    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') stopScreenSaver();
+                } else stopScreenSaver();
+                return;
+            }
+            if (document.activeElement === searchInput) return;
             switch (e.key.toLowerCase()) {
                 case 's': btnStereo.click(); break;
                 case 'd': btnDepth.click(); break;
@@ -1190,9 +1444,7 @@
             }
         });
 
-        if (searchInput.value.length > 0) {
-            searchClear.style.display = 'inline-flex';
-        }
+        if (searchInput.value.length > 0) searchClear.style.display = 'inline-flex';
 
         // ==========================================
         // アプリケーション初期化実行
