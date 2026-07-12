@@ -765,7 +765,7 @@
                 isRightDragging, isTwoFingerDragging, lastPinchDistance // DEBUG
             }); // DEBUG
 
-            // ★キャンバスサイズの強制再計算を連打（iOSのリサイズ遅延対策）
+            // ★キャン আমের強制再計算を連打（iOSのリサイズ遅延対策）
             setTimeout(resizeCanvas, 50);
             setTimeout(resizeCanvas, 300);
             setTimeout(resizeCanvas, 800);
@@ -1255,6 +1255,10 @@
                     lastPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
                 }
             }
+        });
+
+        window.addEventListener('pointerdown', (e) => {
+            console.log('[DEBUG][C] window pointerdown, target=', e.target.id || e.target.tagName, 'fullscreenElement=', document.fullscreenElement); // DEBUG
         });
 
         window.addEventListener('pointermove', (e) => {
