@@ -213,6 +213,9 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             z-index: 2000; flex-direction: column; padding: 20px 24px;
             width: 90%; max-width: 380px; gap: 16px;
+            max-height: 90dvh; /* ★スマホ横向き等のために高さを制限 */
+            overflow-y: auto;  /* ★はみ出した場合はスクロール可能にする */
+            -webkit-overflow-scrolling: touch; /* 滑らかなスクロール */
         }
         .ss-row {
             display: flex; justify-content: space-between; align-items: center; width: 100%;
@@ -649,14 +652,12 @@
             if (ssActive) return;
             ssActive = true;
             
-            // ★解除用バリアを展開
             const ssOverlay = document.getElementById('ss-exit-overlay');
             ssOverlay.style.display = 'block';
             ssOverlay.dataset.exiting = "false";
             ssPointersDown = 0;
             ssClickCount = 0;
 
-            // ★フルスクリーン化 (クロスブラウザ対応)
             const elem = document.documentElement;
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 if (elem.requestFullscreen) {
@@ -693,10 +694,8 @@
             clearTimeout(ssTimer);
             ssTimer = null;
             
-            // ★防壁を消去
             document.getElementById('ss-exit-overlay').style.display = 'none';
 
-            // ★フルスクリーン解除
             if (document.fullscreenElement || document.webkitFullscreenElement) {
                 if (document.exitFullscreen) {
                     document.exitFullscreen().catch(err => { console.warn(`Exit Fullscreen API Error: ${err.message}`); });
@@ -741,13 +740,11 @@
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true);
             updateWakeLock();
 
-            // ★タッチ変数の完全リセット（残留ゴースト防止）
             activeTouches.clear();
             isRightDragging = false;
             isTwoFingerDragging = false;
             lastPinchDistance = 0;
 
-            // ★キャンバスサイズの強制再計算を連打（iOSのリサイズ遅延対策）
             setTimeout(resizeCanvas, 50);
             setTimeout(resizeCanvas, 300);
             setTimeout(resizeCanvas, 800);
@@ -1201,7 +1198,6 @@
             setTimeout(resizeCanvas, 1000);
             
             const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
-            // ネイティブ機能(×ボタンなど)でフルスクリーンを解除された場合、SSも自動終了する
             if (!isFullscreen && ssActive) {
                 stopScreenSaver();
             }
@@ -1326,7 +1322,6 @@
             e.stopPropagation();
             if (ssPointersDown > 0) ssPointersDown--;
             
-            // 指がすべて画面から離れた瞬間にのみバリアを解除し、キャンバス操作を復帰させる
             if (ssPointersDown <= 0) {
                 ssPointersDown = 0; 
                 if (ssOverlay.dataset.exiting === "true") {
