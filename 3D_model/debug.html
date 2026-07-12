@@ -659,6 +659,8 @@
             ssClickCount = 0;
 
             // ★フルスクリーン化 (クロスブラウザ対応)
+            // TEST: Fullscreen API無効化テストのため一時的にコメントアウト
+            /*
             const elem = document.documentElement;
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 if (elem.requestFullscreen) {
@@ -667,6 +669,7 @@
                     elem.webkitRequestFullscreen();
                 }
             }
+            */
             
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '0';
@@ -695,9 +698,14 @@
             clearTimeout(ssTimer);
             ssTimer = null;
             
+            // ★防壁を消去
+            document.getElementById('ss-exit-overlay').style.display = 'none';
+
             console.log('[DEBUG][A] stopScreenSaver: before exit, fullscreenElement=', document.fullscreenElement); // DEBUG
 
             // ★フルスクリーン解除
+            // TEST: Fullscreen API無効化テストのため一時的にコメントアウト
+            /*
             if (document.fullscreenElement || document.webkitFullscreenElement) {
                 if (document.exitFullscreen) {
                     document.exitFullscreen()
@@ -707,6 +715,7 @@
                     document.webkitExitFullscreen();
                 }
             }
+            */
             
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '1';
