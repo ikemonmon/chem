@@ -678,7 +678,13 @@
                 stereo: currentStereoIndex,
                 depth: currentDepthIndex,
                 gloss: currentGlossMode,
-                rotateIndex: currentRotateIndex
+                rotateIndex: currentRotateIndex,
+                sdfData: window.currentSdfData,
+                labelText: document.getElementById('label-left').textContent,
+                cameraPosition: mainCamera.position.clone(),
+                groupQuaternion: moleculeGroup.quaternion.clone(),
+                offsetX: offsetX,
+                offsetY: offsetY
             };
             
             isAutoRotating = true;
@@ -708,6 +714,10 @@
             uiWrapper.style.opacity = '1';
             uiWrapper.style.pointerEvents = 'none';
             document.getElementById('label-left').style.opacity = '1';
+
+            // ★分子データ・ラベルを元の分子に復元
+            window.currentSdfData = previousState.sdfData;
+            document.getElementById('label-left').textContent = previousState.labelText;
             
             currentBgMode = previousState.bg;
             currentRenderMode = previousState.model;
@@ -738,6 +748,13 @@
             if (currentRotateIndex === 2) btnAutoRotate.classList.add('active', 'level-2');
             
             if (window.currentSdfData) buildMoleculeGeometry(window.currentSdfData, true);
+
+            // ★カメラ位置・分子の向き・視点オフセットも元の状態に復元
+            mainCamera.position.copy(previousState.cameraPosition);
+            moleculeGroup.quaternion.copy(previousState.groupQuaternion);
+            offsetX = previousState.offsetX;
+            offsetY = previousState.offsetY;
+
             updateWakeLock();
 
             activeTouches.clear();
