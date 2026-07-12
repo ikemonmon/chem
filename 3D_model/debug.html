@@ -320,8 +320,6 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script> <!-- DEBUG: eruda -->
-    <script>eruda.init();</script> <!-- DEBUG: eruda -->
 </head>
 <body>
     <div id="app-container">
@@ -659,8 +657,6 @@
             ssClickCount = 0;
 
             // ★フルスクリーン化 (クロスブラウザ対応)
-            // TEST: Fullscreen API無効化テストのため一時的にコメントアウト
-            /*
             const elem = document.documentElement;
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 if (elem.requestFullscreen) {
@@ -669,7 +665,6 @@
                     elem.webkitRequestFullscreen();
                 }
             }
-            */
             
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '0';
@@ -701,25 +696,18 @@
             // ★防壁を消去
             document.getElementById('ss-exit-overlay').style.display = 'none';
 
-            console.log('[DEBUG][A] stopScreenSaver: before exit, fullscreenElement=', document.fullscreenElement); // DEBUG
-
             // ★フルスクリーン解除
-            // TEST: Fullscreen API無効化テストのため一時的にコメントアウト
-            /*
             if (document.fullscreenElement || document.webkitFullscreenElement) {
                 if (document.exitFullscreen) {
-                    document.exitFullscreen()
-                        .then(() => console.log('[DEBUG][A] exitFullscreen resolved, fullscreenElement=', document.fullscreenElement)) // DEBUG
-                        .catch(err => { console.warn(`Exit Fullscreen API Error: ${err.message}`); });
+                    document.exitFullscreen().catch(err => { console.warn(`Exit Fullscreen API Error: ${err.message}`); });
                 } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
                 }
             }
-            */
             
             const uiWrapper = document.getElementById('ui-wrapper');
             uiWrapper.style.opacity = '1';
-            uiWrapper.style.pointerEvents = 'auto';
+            uiWrapper.style.pointerEvents = 'none';
             document.getElementById('label-left').style.opacity = '1';
             
             currentBgMode = previousState.bg;
@@ -758,14 +746,8 @@
             isRightDragging = false;
             isTwoFingerDragging = false;
             lastPinchDistance = 0;
-            
-            console.log('[DEBUG][A] stopScreenSaver done. state=', { // DEBUG
-                fullscreenElement: document.fullscreenElement, // DEBUG
-                activeTouchesSize: activeTouches.size, // DEBUG
-                isRightDragging, isTwoFingerDragging, lastPinchDistance // DEBUG
-            }); // DEBUG
 
-            // ★キャン আমের強制再計算を連打（iOSのリサイズ遅延対策）
+            // ★キャンバスサイズの強制再計算を連打（iOSのリサイズ遅延対策）
             setTimeout(resizeCanvas, 50);
             setTimeout(resizeCanvas, 300);
             setTimeout(resizeCanvas, 800);
@@ -1219,7 +1201,6 @@
             setTimeout(resizeCanvas, 1000);
             
             const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
-            console.log('[DEBUG][A] fullscreenchange event fired. isFullscreen=', !!isFullscreen); // DEBUG
             // ネイティブ機能(×ボタンなど)でフルスクリーンを解除された場合、SSも自動終了する
             if (!isFullscreen && ssActive) {
                 stopScreenSaver();
@@ -1239,7 +1220,6 @@
         const activeTouches = new Map();
 
         renderer.domElement.addEventListener('pointerdown', (e) => {
-            console.log('[DEBUG][B] canvas pointerdown reached JS:', e.pointerType, e.pointerId, 'fullscreenElement=', document.fullscreenElement); // DEBUG
             if (e.pointerType === 'mouse' && e.button === 2) {
                 isRightDragging = true;
                 lastPointerX = e.clientX;
@@ -1255,10 +1235,6 @@
                     lastPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
                 }
             }
-        });
-
-        window.addEventListener('pointerdown', (e) => {
-            console.log('[DEBUG][C] window pointerdown, target=', e.target.id || e.target.tagName, 'fullscreenElement=', document.fullscreenElement); // DEBUG
         });
 
         window.addEventListener('pointermove', (e) => {
@@ -1298,7 +1274,6 @@
         });
 
         const handlePointerUp = (e) => {
-            console.log('[DEBUG][B] window', e.type, 'reached JS:', e.pointerType); // DEBUG
             if (e.pointerType === 'mouse' && e.button === 2) isRightDragging = false;
             else if (e.pointerType === 'touch' || e.pointerType === 'pen') {
                 activeTouches.delete(e.pointerId);
