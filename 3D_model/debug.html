@@ -6,7 +6,8 @@
     <title>Molecule 3D Viewer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Jost:wght@300&display=swap" rel="stylesheet">
+    <!-- フォントウェイトの不一致を解消 (Cormorant Garamondを600に統一) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=Jost:wght@300&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark-panel: rgba(15, 15, 15, 0.85);
@@ -16,7 +17,6 @@
             --text-active-lvl2: #ffde9a;
         }
 
-        /* ★スクロール破綻を物理的に防ぐ完全固定スタイル */
         html, body {
             position: fixed;
             top: 0;
@@ -49,7 +49,7 @@
             position: relative;
             z-index: 1;
             touch-action: none;
-            overflow: hidden; /* はみ出し防止 */
+            overflow: hidden; 
         }
 
         .view-label {
@@ -71,7 +71,6 @@
         #label-left { left: 20px; }
         #label-right { display: none; }
 
-        /* UI基本レイアウト */
         #ui-wrapper {
             position: absolute;
             bottom: 24px;
@@ -204,7 +203,6 @@
             background: rgba(255, 222, 154, 0.15);
         }
 
-        /* モーダル用CSS */
         #ss-overlay {
             display: none;
             position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
@@ -329,6 +327,7 @@
 </head>
 <body>
     <div id="app-container">
+        <!-- スクリーンセーバー解除用バリア（イベント遮断用） -->
         <div id="ss-exit-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 1500; cursor: pointer;"></div>
 
         <div id="portrait-warning">
@@ -454,10 +453,10 @@
             </div>
             
             <div class="ss-row">
-                <label>解除モード <span style="font-size:10px; color:rgba(255,255,255,0.4); margin-left:4px;">(通常 or Ctrl+Shift+P)</span></label>
+                <label>解除モード <span style="font-size:10px; color:rgba(255,255,255,0.4); margin-left:4px;">(通常 or Escのみ)</span></label>
                 <div class="ss-segment" data-key="exitMode" id="seg-exit">
                     <button class="icon-btn" data-val="normal" title="通常 (Tap)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>
-                    <button class="icon-btn" data-val="strict" title="厳格 (W-Tap / Ctrl+Shift+P)"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+                    <button class="icon-btn" data-val="strict" title="厳格 (W-Tap / Esc)"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
                 </div>
             </div>
 
@@ -510,19 +509,13 @@
                 </div>
             </div>
             
+            <!-- ★UIの3択統合 -->
             <div class="ss-row">
                 <label>化合物名表示</label>
                 <div class="ss-segment" data-key="nameDisplay" id="seg-namedisplay">
-                    <button class="icon-btn" data-val="on" title="ON"><span style="font-size:10px;font-weight:bold;pointer-events:none;">ON</span></button>
+                    <button class="icon-btn" data-val="sans" title="Sans (Jost)"><span style="font-family:'Jost', sans-serif; font-weight:300; font-size:12px; pointer-events:none;">Sans</span></button>
+                    <button class="icon-btn" data-val="serif" title="Serif (Cormorant Garamond)"><span style="font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:600; font-size:13px; pointer-events:none;">Serif</span></button>
                     <button class="icon-btn" data-val="off" title="OFF"><span style="font-size:10px;font-weight:bold;pointer-events:none;">OFF</span></button>
-                </div>
-            </div>
-
-            <div class="ss-row">
-                <label>名前フォント</label>
-                <div class="ss-segment" data-key="nameFont" id="seg-namefont">
-                    <button class="icon-btn" data-val="serif" title="Serif (Cormorant Garamond)" style="font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:600; font-size:15px; pointer-events:none;">Aa</button>
-                    <button class="icon-btn" data-val="sans" title="Sans (Jost)" style="font-family:'Jost', sans-serif; font-weight:300; font-size:14px; pointer-events:none;">Aa</button>
                 </div>
             </div>
 
@@ -654,8 +647,7 @@
         if (!ssSettings.stereo) ssSettings.stereo = "random";
         if (!ssSettings.depth) ssSettings.depth = "random";
         if (!ssSettings.gloss) ssSettings.gloss = "random";
-        if (typeof ssSettings.nameDisplay === 'undefined') ssSettings.nameDisplay = "on";
-        if (!ssSettings.nameFont) ssSettings.nameFont = "serif";
+        if (typeof ssSettings.nameDisplay === 'undefined') ssSettings.nameDisplay = "serif"; // ★デフォルト統合
         
         let ssActive = false;
         let ssTimer = null;
@@ -809,7 +801,7 @@
                     document.fonts.load(NAME_FONT_CSS.serif),
                     document.fonts.load(NAME_FONT_CSS.sans)
                 ]);
-            } catch (e) { /* フォント読み込み失敗時はデフォルトフォントで継続 */ }
+            } catch (e) { }
             nameFontsReady = true;
         }
 
@@ -863,12 +855,13 @@
 
         async function updateNameSprite(text) {
             removeNameSprite();
-            if (ssSettings.nameDisplay !== 'on') return;
+            if (ssSettings.nameDisplay === 'off') return;
 
             await ensureNameFontsLoaded();
             if (!ssActive) return; 
 
-            const { texture, aspect } = createNameTexture(text, ssSettings.nameFont);
+            // ★修正: UI統合により fontKey は nameDisplay をそのまま渡す
+            const { texture, aspect } = createNameTexture(text, ssSettings.nameDisplay);
             const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false });
             nameSprite = new THREE.Sprite(material);
 
@@ -977,7 +970,6 @@
             return { atoms, bonds, formula };
         }
 
-        // ★現在の描画領域（片目分）のアスペクト比を取得
         function getCurrentEyeAspect() {
             const isMobileLandscape = window.matchMedia("(max-width: 1366px) and (orientation: landscape), (pointer: coarse) and (orientation: landscape)").matches;
             const controlPanel = document.getElementById('control-panel');
@@ -986,10 +978,8 @@
             const height = window.innerHeight;
 
             if (currentStereoIndex === 2) {
-                // Singleモード：画面全体（左右分割なし）
                 return renderWidth / height;
             } else {
-                // Cross/Parallelモード：左右分割した片目分
                 return (renderWidth / 2) / height;
             }
         }
@@ -1283,7 +1273,9 @@
 
             if (nameSprite) {
                 nameClockTime += delta;
-                const bob = Math.sin(nameClockTime * 0.6) * 0.12;
+                // ★修正: 振幅を分子サイズに比例させ、揺れの速度を上昇
+                const amplitude = currentMoleculeRadius * 0.05;
+                const bob = Math.sin(nameClockTime * 1.5) * amplitude;
                 nameSprite.position.y = nameSpriteBaseY + bob;
 
                 nameOpacityState.current += (nameOpacityState.target - nameOpacityState.current) * 0.04;
@@ -1677,7 +1669,7 @@
             updateSeg('seg-bg', ssSettings.bg); updateSeg('seg-model', ssSettings.model);
             updateSeg('seg-stereo', ssSettings.stereo); updateSeg('seg-depth', ssSettings.depth); 
             updateSeg('seg-gloss', ssSettings.gloss);
-            updateSeg('seg-namedisplay', ssSettings.nameDisplay); updateSeg('seg-namefont', ssSettings.nameFont);
+            updateSeg('seg-namedisplay', ssSettings.nameDisplay);
             
             document.getElementById('ss-overlay').style.display = 'block';
             document.getElementById('ss-modal').style.display = 'flex';
@@ -1703,6 +1695,12 @@
                 btn.classList.add('active');
                 ssSettings[seg.dataset.key] = btn.dataset.val;
                 saveSSSettings();
+
+                // ★即時反映ロジック：フォント/表示切り替え時にリアルタイムでラベルを更新する
+                if (ssActive && seg.dataset.key === 'nameDisplay') {
+                    const labelText = document.getElementById('label-left').textContent;
+                    updateNameSprite(labelText);
+                }
             });
         });
 
