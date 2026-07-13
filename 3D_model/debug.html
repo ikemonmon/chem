@@ -213,9 +213,9 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             z-index: 2000; flex-direction: column; padding: 20px 24px;
             width: 90%; max-width: 380px; gap: 16px;
-            max-height: 90dvh; /* ★スマホ横向き等のために高さを制限 */
-            overflow-y: auto;  /* ★はみ出した場合はスクロール可能にする */
-            -webkit-overflow-scrolling: touch; /* 滑らかなスクロール */
+            max-height: 90dvh; 
+            overflow-y: auto;  
+            -webkit-overflow-scrolling: touch; 
         }
         .ss-row {
             display: flex; justify-content: space-between; align-items: center; width: 100%;
@@ -451,10 +451,10 @@
             </div>
             
             <div class="ss-row">
-                <label>解除モード <span style="font-size:10px; color:rgba(255,255,255,0.4); margin-left:4px;">(通常 or Ctrl+Shift+P)</span></label>
+                <label>解除モード <span style="font-size:10px; color:rgba(255,255,255,0.4); margin-left:4px;">(通常 or Escのみ)</span></label>
                 <div class="ss-segment" data-key="exitMode" id="seg-exit">
                     <button class="icon-btn" data-val="normal" title="通常 (Tap)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>
-                    <button class="icon-btn" data-val="strict" title="厳格 (W-Tap / Ctrl+Shift+P)"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+                    <button class="icon-btn" data-val="strict" title="厳格 (W-Tap / Esc)"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
                 </div>
             </div>
 
@@ -857,7 +857,7 @@
             return { atoms, bonds, formula };
         }
 
-        // ★修正2: 現在の描画領域（片目分）のアスペクト比を取得
+        // ★現在の描画領域（片目分）のアスペクト比を取得
         function getCurrentEyeAspect() {
             const isMobileLandscape = window.matchMedia("(max-width: 1366px) and (orientation: landscape), (pointer: coarse) and (orientation: landscape)").matches;
             const controlPanel = document.getElementById('control-panel');
@@ -1045,14 +1045,16 @@
                 moleculeGroup.rotation.set(0, 0, 0);
                 controls.target.set(0, 0, 0);
                 
-                // ★修正3: 縦方向と横方向の両方のFOVから必要な距離を計算し、厳しい方を採用
+                // 縦方向のfovから必要距離を計算
                 const vFovRad = (mainCamera.fov / 2) * THREE.MathUtils.DEG2RAD;
                 const distV = maxDistance / Math.sin(vFovRad);
 
+                // 実際のアスペクト比から横方向のfovを逆算し、必要距離を計算
                 const eyeAspect = getCurrentEyeAspect();
                 const hFovRad = Math.atan(Math.tan(vFovRad) * eyeAspect);
                 const distH = maxDistance / Math.sin(hFovRad);
 
+                // 縦横どちらでも収まるよう、より厳しい（遠い）方を採用
                 let targetDistance = Math.max(distV, distH) * 1.3;
                 targetDistance = Math.max(targetDistance, 10); 
                 
@@ -1578,7 +1580,7 @@
         document.addEventListener('keydown', (e) => {
             if (ssActive) {
                 if (ssSettings.exitMode === 'strict') {
-                    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') stopScreenSaver();
+                    if (e.key === 'Escape') stopScreenSaver();
                 } else {
                     stopScreenSaver();
                 }
