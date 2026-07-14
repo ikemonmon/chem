@@ -660,6 +660,7 @@
         let ssTimer = null;
         let ssCurrentIndex = 0;
         let ssFailCount = 0;
+        let ssFetchAbort = null;
         let previousState = {};
 
         // SS用：カメラ/ワールド混合 + 軸漂い回転
@@ -732,6 +733,9 @@
             currentRotateSpeed = ssSettings.speed;
             initSSRotateState();
             updateWakeLock();
+
+            if (ssFetchAbort) ssFetchAbort.abort();
+            ssFetchAbort = new AbortController();
             
             loadNextSSMolecule();
         }
@@ -741,6 +745,10 @@
             ssActive = false;
             clearTimeout(ssTimer);
             ssTimer = null;
+            if (ssFetchAbort) {
+                ssFetchAbort.abort();
+                ssFetchAbort = null;
+            }
             
             document.getElementById('ss-exit-overlay').style.display = 'none';
 
@@ -848,7 +856,7 @@
         }
 
         function createNameTexture(text, fontKey) {
-            const displayText = text.charAt(0).toUpperCase() + text.slice(1);
+            const displayText = text.toUpperCase();
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const fontCss = NAME_FONT_CSS[fontKey] || NAME_FONT_CSS.serif;
@@ -898,7 +906,14 @@
             const worldHeight = Math.max(currentMoleculeRadius * 0.256, 0.4);
             nameSprite.scale.set(worldHeight * aspect, worldHeight, 1);
 
-            nameSpriteBaseY = -(currentMoleculeRadius * 1.25 + 0.6);
+            // 分子の下に置きつつ、カメラ可視範囲の下端より上に収める（スマホのはみ出し対策）
+            const desiredY = -(currentMoleculeRadius * 1.25 + 0.6);
+            const camDist = mainCamera.position.distanceTo(controls.target);
+            const halfVisibleH = Math.tan(THREE.MathUtils.degToRad(mainCamera.fov / 2)) * camDist;
+            const margin = worldHeight * 0.6;
+            const shakePad = currentMoleculeRadius * 0.05;
+            const minY = -halfVisibleH + margin + shakePad;
+            nameSpriteBaseY = Math.max(desiredY, minY);
             nameSprite.position.set(0, nameSpriteBaseY, 0);
 
             scene.add(nameSprite);
@@ -1205,13 +1220,17 @@
         async function fetchMoleculeData(query, isSS = false) {
             let cleanQuery = query.trim();
             const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleanQuery);
+            const signal = isSS ? ssFetchAbort?.signal : undefined;
+            const isStaleSS = () => isSS && (!ssActive || (signal && signal.aborted));
             
             if (hasJapanese) {
                 try {
                     const wikiUrl = `https://ja.wikipedia.org/w/api.php?action=query&prop=langlinks&lllang=en&format=json&origin=*&redirects=1&titles=${encodeURIComponent(cleanQuery)}`;
-                    const wikiRes = await fetch(wikiUrl);
+                    const wikiRes = await fetch(wikiUrl, signal ? { signal } : undefined);
+                    if (isStaleSS()) return;
                     if (wikiRes.ok) {
                         const wikiData = await wikiRes.json();
+                        if (isStaleSS()) return;
                         const pages = wikiData.query.pages;
                         for (const id in pages) {
                             if (pages[id].langlinks && pages[id].langlinks.length > 0) {
@@ -1221,18 +1240,24 @@
                         }
                     }
                 } catch (e) {
+                    if (e.name === 'AbortError') return;
                     console.warn("Wikipedia translation bridge failed, falling back to original query.", e);
                 }
             }
+
+            if (isStaleSS()) return;
 
             const cleanQueryEncoded = encodeURIComponent(cleanQuery);
             const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${cleanQueryEncoded}/SDF?record_type=3d`;
             
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, signal ? { signal } : undefined);
+                if (isStaleSS()) return;
                 if (!response.ok) throw new Error("指定された化合物・示性式が見つかりません。");
                 
                 const sdfText = await response.text();
+                if (isStaleSS()) return;
+
                 const parsedData = parseSDF(sdfText);
                 buildMoleculeGeometry(parsedData, false); 
                 window.currentSdfData = parsedData;
@@ -1242,13 +1267,16 @@
                 document.getElementById('label-left').textContent = labelText;
                 
                 if (isSS) {
+                    if (!ssActive) return;
                     updateNameSprite(labelText);
                     ssFailCount = 0;
                     ssTimer = setTimeout(loadNextSSMolecule, ssSettings.interval * 1000);
                 }
 
             } catch (error) {
+                if (error.name === 'AbortError') return;
                 if (isSS) {
+                    if (!ssActive) return;
                     ssFailCount++;
                     ssTimer = setTimeout(loadNextSSMolecule, 1000); 
                 } else {
