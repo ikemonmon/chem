@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>炭化水素パズル</title>
+<style>
+  :root{
+    --bg:#f7f6f2;
+    --surface:#ffffff;
+    --border:#dcdad2;
+    --text:#1c1c1a;
+    --text-muted:#8f8c81;
+    --warning:#b7791f;
+    --accent:#2A9D8F;
+    --font-mono:'SFMono-Regular',Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#16171a; --surface:#1f2023; --border:#34353a;
+      --text:#eceae4; --text-muted:#8a8b90;
+      --warning:#d9a441; --accent:#4fc3b3;
+    }
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(var(--border) 1px, transparent 1px) 0 0/16px 16px,
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  #app{max-width:520px;margin:0 auto;padding:16px;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.02em;}
+  #reset-btn{
+    font-size:12px;color:var(--text-muted);background:var(--surface);
+    border:1px solid var(--border);border-radius:8px;padding:6px 10px;
+  }
+  .grid{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+    width:min(94vw,490px);margin:0 auto 16px;touch-action:none;
+  }
+  .cell{
+    position:relative;aspect-ratio:1;
+    border:1px dashed var(--border);border-radius:8px;background:var(--surface);
+  }
+  .cell.filled{border-style:solid;cursor:pointer;}
+  .cell.isolated{border-color:var(--warning);border-style:dashed;border-width:2px;}
+  .rotor{width:100%;height:100%;transition:transform 200ms cubic-bezier(.34,1.56,.64,1);transform-origin:50% 50%;-webkit-user-drag:none;}
+  .palette{
+    display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:12px;margin-bottom:12px;
+  }
+  .palette-card{width:64px;text-align:center;padding:6px 4px;touch-action:none;cursor:grab;}
+  .palette-card .icon{width:56px;height:56px;margin:0 auto;}
+  .palette-card .label{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .ghost{position:fixed;pointer-events:none;width:56px;height:56px;opacity:.85;z-index:999;}
+  .hint{font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:12px;}
+  .status{
+    font-family:var(--font-mono);font-size:12px;color:var(--text-muted);
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;line-height:1.7;white-space:pre-wrap;
+  }
+  .status .name{color:var(--text);font-size:15px;font-weight:600;font-family:inherit;}
+  .mode-tabs{display:flex;gap:6px;margin-bottom:12px;}
+  .mode-tab{flex:1;font-size:13px;padding:8px 4px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);}
+  .mode-tab.active{border-color:var(--accent);color:var(--accent);font-weight:600;}
+  .objective{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;text-align:center;line-height:1.6;}
+  .objective .name{font-size:16px;font-weight:600;color:var(--accent);}
+  .objective.success{background:var(--accent);}
+  .objective.success .name,.objective.success{color:#fff;}
+  .objective button{margin-top:8px;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #fff;background:transparent;color:inherit;}
+  .wordbank{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:4px;}
+  .wordbank .preview{font-size:16px;font-weight:600;min-height:24px;text-align:center;margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;color:var(--text-muted);}
+  .wordbank .preview .name{color:var(--text);}
+  .wordbank .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;}
+  .wordbank button{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);}
+  .wordbank button.secondary{color:var(--text-muted);}
+  .wordbank button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>炭化水素パズル</h1>
+    <button id="reset-btn">クリア</button>
+  </header>
+  <div class="mode-tabs" id="mode-tabs">
+    <button class="mode-tab active" data-mode="free">自由に組む</button>
+    <button class="mode-tab" data-mode="game1">①作る</button>
+    <button class="mode-tab" data-mode="game2">②答える</button>
+  </div>
+  <div class="objective" id="objective" style="display:none;"></div>
+  <div class="grid" id="grid"></div>
+  <div class="palette" id="palette"></div>
+  <p class="hint" id="hint">1タップ: 回転 / 2タップ: 逆回転 / 3タップ: 削除 / ドラッグ: 配置・移動</p>
+  <div class="status" id="status">パネルをグリッドに配置してください</div>
+  <div class="wordbank" id="wordbank" style="display:none;"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ============================================================
+  // 定数・方向ユーティリティ
+  // ============================================================
+  const ROWS = 5, COLS = 7;
+  const DIR_ORDER = ['N', 'E', 'S', 'W'];
+  const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
+  const DELTA = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] }; // [drow, dcol]
+  const VEC = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };   // SVG上の[dx, dy]
+
+  const PANEL_ARM_TABLE = { 1: ['E'], 2: ['N', 'S'], 3: ['N', 'E'], 4: ['N', 'W', 'E'], 5: ['N', 'E', 'S', 'W'] };
+  const PANEL_LABELS = { 1: '末端', 2: '直線', 3: 'かど', 4: '分岐', 5: '四級' };
+  const CHAIN_NAMES = ['', 'メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン'];
+  const SUBSTITUENT_NAME_BY_LENGTH = { 1: 'メチル', 2: 'エチル' };
+  const SUBSTITUENT_ORDER = { 'エチル': 0, 'メチル': 1 };
+  const MULTIPLIER_PREFIX = ['', '', 'ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']; // index = 同じ置換基の個数
+
+  function rotateCW(dir, times) {
+    const i = DIR_ORDER.indexOf(dir);
+    return DIR_ORDER[((i + times) % 4 + 4) % 4];
+  }
+  function getActiveDirections(panel) {
+    const base = PANEL_ARM_TABLE[panel.type];
+    const steps = (panel.rotation / 90) % 4;
+    return new Set(base.map((d) => rotateCW(d, steps)));
+  }
+  function toBaseDir(actualDir, rotationDeg) {
+    const steps = (rotationDeg / 90) % 4;
+    return rotateCW(actualDir, (4 - steps) % 4);
+  }
+
+  // ============================================================
+  // 命名エンジン(naming-engine.jsで検証済みのロジックと同一)
+  // ============================================================
+  function checkMismatches(grid) {
+    const mismatches = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const panel = grid[r][c];
+        if (!panel) continue;
+        const active = getActiveDirections(panel);
+        for (const dir of active) {
+          const [dr, dc] = DELTA[dir];
+          const nr = r + dr, nc = c + dc;
+          const inBounds = nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS;
+          const neighbor = inBounds ? grid[nr][nc] : null;
+          if (!neighbor) {
+            mismatches.push({ r, c, dir, reason: 'DANGLING_BOND' });
+            continue;
+          }
+          const neighborActive = getActiveDirections(neighbor);
+          if (!neighborActive.has(OPPOSITE[dir])) {
+            mismatches.push({ r, c, dir, reason: 'ONE_SIDED_BOND' });
+          }
+        }
+      }
+    }
+    return mismatches;
+  }
+
+  function buildGraph(grid) {
+    const adjacency = new Map();
+    const nodeIds = [];
+    const idOf = (r, c) => `${r},${c}`;
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c]) { nodeIds.push(idOf(r, c)); adjacency.set(idOf(r, c), new Set()); }
+      }
+    }
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const panel = grid[r][c];
+        if (!panel) continue;
+        for (const dir of getActiveDirections(panel)) {
+          const [dr, dc] = DELTA[dir];
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || !grid[nr][nc]) continue;
+          adjacency.get(idOf(r, c)).add(idOf(nr, nc));
+          adjacency.get(idOf(nr, nc)).add(idOf(r, c));
+        }
+      }
+    }
+    return { nodeIds, adjacency };
+  }
+
+  function checkConnectivity(graph) {
+    const { nodeIds, adjacency } = graph;
+    if (nodeIds.length === 0) return { allConnected: true, islands: [] };
+    const visited = new Set([nodeIds[0]]);
+    const queue = [nodeIds[0]];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const next of adjacency.get(cur)) {
+        if (!visited.has(next)) { visited.add(next); queue.push(next); }
+      }
+    }
+    return { allConnected: visited.size === nodeIds.length, islands: nodeIds.filter((id) => !visited.has(id)) };
+  }
+
+  function countEdges(graph) {
+    let sum = 0;
+    for (const n of graph.adjacency.values()) sum += n.size;
+    return sum / 2;
+  }
+  function classifyStructure(graph) {
+    const V = graph.nodeIds.length, E = countEdges(graph);
+    const cyclomatic = E - V + 1;
+    if (cyclomatic === 0) return 'ALKANE';
+    if (cyclomatic === 1) return 'CYCLOALKANE';
+    return 'UNSUPPORTED_MULTI_RING';
+  }
+
+  function bfsDistancesAndParents(adjacency, start) {
+    const dist = new Map([[start, 0]]);
+    const parent = new Map([[start, null]]);
+    const queue = [start];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const next of adjacency.get(cur)) {
+        if (!dist.has(next)) { dist.set(next, dist.get(cur) + 1); parent.set(next, cur); queue.push(next); }
+      }
+    }
+    return { dist, parent };
+  }
+  function reconstructPath(parent, from, to) {
+    const path = [to];
+    let cur = to;
+    while (cur !== from) { cur = parent.get(cur); path.push(cur); }
+    return path.reverse();
+  }
+
+  function extractSubstituents(graph, backboneSet) {
+    const substituents = [];
+    for (const node of backboneSet) {
+      for (const neighbor of graph.adjacency.get(node)) {
+        if (backboneSet.has(neighbor)) continue;
+        const subtreeNodes = new Set([neighbor]);
+        const queue = [neighbor];
+        let branchOk = true;
+        while (queue.length) {
+          const cur = queue.shift();
+          const nexts = [...graph.adjacency.get(cur)].filter((n) => n !== node && !backboneSet.has(n));
+          if (subtreeNodes.size > 1 && nexts.length > 1) branchOk = false;
+          for (const n of nexts) if (!subtreeNodes.has(n)) { subtreeNodes.add(n); queue.push(n); }
+        }
+        const length = subtreeNodes.size;
+        if (!branchOk || length > 2) throw new Error('UNSUPPORTED_SUBSTITUENT');
+        substituents.push({ backboneNode: node, length, name: SUBSTITUENT_NAME_BY_LENGTH[length] });
+      }
+    }
+    return substituents;
+  }
+
+  function buildName(baseName, locantedSubstituents) {
+    if (locantedSubstituents.length === 0) return baseName;
+    const groups = new Map();
+    for (const s of locantedSubstituents) {
+      if (!groups.has(s.name)) groups.set(s.name, []);
+      groups.get(s.name).push(s.locant);
+    }
+    const sortedNames = [...groups.keys()].sort((a, b) => SUBSTITUENT_ORDER[a] - SUBSTITUENT_ORDER[b]);
+    const parts = sortedNames.map((name) => {
+      const locants = groups.get(name).sort((a, b) => a - b);
+      const multiplier = MULTIPLIER_PREFIX[locants.length] || '';
+      return `${locants.join(',')}-${multiplier}${name}`;
+    });
+    return parts.join('-') + baseName;
+  }
+  function compareLocantArrays(a, b) {
+    const len = Math.max(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+      const av = a[i] ?? Infinity, bv = b[i] ?? Infinity;
+      if (av !== bv) return av - bv;
+    }
+    return 0;
+  }
+
+  function nameAlkane(graph) {
+    const { nodeIds, adjacency } = graph;
+    // メタン(C1)は不整合チェックの時点で弾かれるためここには到達しない(エタン以上のみ)
+    const leaves = nodeIds.filter((id) => adjacency.get(id).size === 1);
+    const distMaps = new Map();
+    for (const leaf of leaves) distMaps.set(leaf, bfsDistancesAndParents(adjacency, leaf));
+
+    let maxDist = -1, candidatePairs = [];
+    for (let i = 0; i < leaves.length; i++) {
+      for (let j = i + 1; j < leaves.length; j++) {
+        const d = distMaps.get(leaves[i]).dist.get(leaves[j]);
+        if (d > maxDist) { maxDist = d; candidatePairs = [[leaves[i], leaves[j]]]; }
+        else if (d === maxDist) candidatePairs.push([leaves[i], leaves[j]]);
+      }
+    }
+    if (maxDist + 1 > 10) throw new Error('UNSUPPORTED: 主鎖がデカンを超えています');
+
+    const candidatePaths = candidatePairs.map(([a, b]) => reconstructPath(distMaps.get(a).parent, a, b));
+    const scored = candidatePaths.map((path) => {
+      const pathSet = new Set(path);
+      let branchCount = 0;
+      for (const node of path) for (const n of adjacency.get(node)) if (!pathSet.has(n)) branchCount++;
+      return { path, branchCount };
+    });
+    const maxBranch = Math.max(...scored.map((s) => s.branchCount));
+    const filtered = scored.filter((s) => s.branchCount === maxBranch).map((s) => s.path);
+
+    let best = null;
+    for (const path of filtered) {
+      for (const reversed of [false, true]) {
+        const orderedPath = reversed ? [...path].reverse() : path;
+        const pathSet = new Set(orderedPath);
+        const rawSubstituents = extractSubstituents(graph, pathSet);
+        const locants = rawSubstituents.map((s) => orderedPath.indexOf(s.backboneNode) + 1).sort((a, b) => a - b);
+        if (best === null || compareLocantArrays(locants, best.locants) < 0) best = { orderedPath, rawSubstituents, locants };
+      }
+    }
+    const locantedSubstituents = best.rawSubstituents.map((s) => ({ locant: best.orderedPath.indexOf(s.backboneNode) + 1, name: s.name }));
+    return buildName(CHAIN_NAMES[best.orderedPath.length], locantedSubstituents);
+  }
+
+  function findRing(graph) {
+    const { nodeIds, adjacency } = graph;
+    const visited = new Set();
+    const parent = new Map();
+    const stack = [[nodeIds[0], null]];
+    while (stack.length) {
+      const [node, from] = stack.pop();
+      if (visited.has(node)) continue;
+      visited.add(node); parent.set(node, from);
+      for (const next of adjacency.get(node)) {
+        if (next === from) continue;
+        if (visited.has(next)) {
+          const ring = [node];
+          let cur = node;
+          while (cur !== next) { cur = parent.get(cur); ring.push(cur); }
+          return ring;
+        }
+        stack.push([next, node]);
+      }
+    }
+    throw new Error('RING_NOT_FOUND');
+  }
+
+  function nameCycloalkane(graph) {
+    const ring = findRing(graph);
+    const ringSize = ring.length;
+    if (ringSize % 2 !== 0) throw new Error('UNSUPPORTED: 奇数員環');
+    if (![4, 6].includes(ringSize)) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環はMVP対象外`);
+
+    const ringSet = new Set(ring);
+    const rawSubstituents = extractSubstituents(graph, ringSet);
+    if (rawSubstituents.length === 0) return 'シクロ' + CHAIN_NAMES[ringSize];
+
+    // 環の置換基が1個だけなら、どこを1番炭素にしても位置番号は必ず1になり情報を持たないため省略する
+    // (例: 1-メチルシクロヘキサン ではなく メチルシクロヘキサン)
+    if (rawSubstituents.length === 1) {
+      return rawSubstituents[0].name + 'シクロ' + CHAIN_NAMES[ringSize];
+    }
+
+    let best = null;
+    for (let startIdx = 0; startIdx < ringSize; startIdx++) {
+      for (const direction of [1, -1]) {
+        const ordered = [];
+        for (let step = 0; step < ringSize; step++) {
+          const idx = ((startIdx + step * direction) % ringSize + ringSize) % ringSize;
+          ordered.push(ring[idx]);
+        }
+        const locants = rawSubstituents.map((s) => ordered.indexOf(s.backboneNode) + 1).sort((a, b) => a - b);
+        if (best === null || compareLocantArrays(locants, best.locants) < 0) best = { ordered, locants };
+      }
+    }
+    const locantedSubstituents = rawSubstituents.map((s) => ({ locant: best.ordered.indexOf(s.backboneNode) + 1, name: s.name }));
+    return buildName('シクロ' + CHAIN_NAMES[ringSize], locantedSubstituents);
+  }
+
+  function generateName(grid) {
+    const mismatches = checkMismatches(grid);
+    if (mismatches.length > 0) return { ok: false, error: 'INCOMPLETE_BONDS', mismatches };
+    const graph = buildGraph(grid);
+    if (graph.nodeIds.length === 0) return { ok: false, error: 'EMPTY_GRID' };
+    const connectivity = checkConnectivity(graph);
+    if (!connectivity.allConnected) return { ok: false, error: 'DISCONNECTED', islands: connectivity.islands };
+    const structureType = classifyStructure(graph);
+    try {
+      if (structureType === 'ALKANE') return { ok: true, name: nameAlkane(graph) };
+      if (structureType === 'CYCLOALKANE') return { ok: true, name: nameCycloalkane(graph) };
+      return { ok: false, error: structureType };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
+
+  // ============================================================
+  // 問題生成(ゲーム①②共通)
+  // ============================================================
+  function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+  function choice(arr) { return arr[randInt(0, arr.length - 1)]; }
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+  function emptyGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(null)); }
+
+  // targetDirsが欲しいときに、その活性方向の組を実現するtype/rotationを逆算する
+  // (手計算で回転角を出すよりも間違いにくいので、生成ロジックは基本これ経由にする)
+  function panelFor(type, targetDirs) {
+    const targetSet = new Set(targetDirs);
+    const base = PANEL_ARM_TABLE[type];
+    for (let steps = 0; steps < 4; steps++) {
+      const candidate = new Set(base.map((d) => rotateCW(d, steps)));
+      if (candidate.size === targetSet.size && [...candidate].every((d) => targetSet.has(d))) {
+        return { type, rotation: steps * 90 };
+      }
+    }
+    throw new Error('NO_ROTATION_MATCH'); // 生成ロジックのバグ(本来到達しないはず)
+  }
+
+  function spinePanel(hasUp, hasDown, isLeftEnd, isRightEnd) {
+    if (isLeftEnd) return panelFor(1, ['E']);
+    if (isRightEnd) return panelFor(1, ['W']);
+    if (hasUp && hasDown) return panelFor(5, ['N', 'E', 'S', 'W']);
+    if (hasUp) return panelFor(4, ['N', 'W', 'E']);
+    if (hasDown) return panelFor(4, ['S', 'W', 'E']);
+    return panelFor(2, ['W', 'E']);
+  }
+
+  function branchPanels(side, length) {
+    const back = side === 'up' ? 'S' : 'N';
+    const fwd = side === 'up' ? 'N' : 'S';
+    if (length === 1) return [panelFor(1, [back])];
+    return [panelFor(2, [back, fwd]), panelFor(1, [back])];
+  }
+
+  // 鎖状(アルカン): 横一直線の主鎖 + 上下に伸びる置換基、という単純なレイアウトで生成する。
+  // 5行×7列に収めるため主鎖は最大7炭素までとする(命名エンジン自体は10炭素まで対応可能)。
+  function generateAlkaneGrid(maxTypes) {
+    const len = randInt(2, 7);
+    const startCol = Math.floor((COLS - len) / 2);
+    const spineRow = 2;
+    const grid = emptyGrid();
+
+    const slots = [];
+    for (let i = 1; i < len - 1; i++) { slots.push([i, 'up']); slots.push([i, 'down']); }
+    shuffle(slots);
+
+    const bothNames = ['メチル', 'エチル'];
+    const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.4)
+      ? bothNames
+      : [choice(bothNames)];
+
+    const count = Math.min(slots.length, randInt(0, 3));
+    const posInfo = {};
+    for (let i = 0; i < count; i++) {
+      const [idx, side] = slots[i];
+      const name = distinctNames.length === 1 ? distinctNames[0] : choice(distinctNames);
+      if (!posInfo[idx]) posInfo[idx] = {};
+      posInfo[idx][side] = name;
+    }
+
+    for (let i = 0; i < len; i++) {
+      const col = startCol + i;
+      const info = posInfo[i] || {};
+      grid[spineRow][col] = spinePanel(!!info.up, !!info.down, i === 0, i === len - 1);
+      if (info.up) {
+        const bp = branchPanels('up', info.up === 'エチル' ? 2 : 1);
+        grid[spineRow - 1][col] = bp[0];
+        if (bp[1]) grid[spineRow - 2][col] = bp[1];
+      }
+      if (info.down) {
+        const bp = branchPanels('down', info.down === 'エチル' ? 2 : 1);
+        grid[spineRow + 1][col] = bp[0];
+        if (bp[1]) grid[spineRow + 2][col] = bp[1];
+      }
+    }
+    return grid;
+  }
+
+  // 環状(シクロアルカン): シクロブタン/シクロヘキサンの2テンプレートを固定位置に配置。
+  // 置換基はメチルのみ・最大1個(はみ出し防止のため。エチルや複数置換基は今後の拡張候補)。
+  const RING_TEMPLATES = {
+    4: { baseRow: 1, baseCol: 2, cells: [
+      { dr: 0, dc: 0, type: 3, rotation: 90, free: ['N', 'W'] },
+      { dr: 0, dc: 1, type: 3, rotation: 180, free: ['N', 'E'] },
+      { dr: 1, dc: 0, type: 3, rotation: 0, free: ['S', 'W'] },
+      { dr: 1, dc: 1, type: 3, rotation: 270, free: ['S', 'E'] },
+    ] },
+    6: { baseRow: 1, baseCol: 2, cells: [
+      { dr: 0, dc: 0, type: 3, rotation: 90, free: ['N', 'W'] },
+      { dr: 0, dc: 1, type: 2, rotation: 90, free: ['N'] },
+      { dr: 0, dc: 2, type: 3, rotation: 180, free: ['N', 'E'] },
+      { dr: 1, dc: 0, type: 3, rotation: 0, free: ['S', 'W'] },
+      { dr: 1, dc: 1, type: 2, rotation: 90, free: ['S'] },
+      { dr: 1, dc: 2, type: 3, rotation: 270, free: ['S', 'E'] },
+    ] },
+  };
+
+  function generateCycloalkaneGrid() {
+    const ringSize = choice([4, 6]);
+    const tmpl = RING_TEMPLATES[ringSize];
+    const grid = emptyGrid();
+    for (const cell of tmpl.cells) {
+      grid[tmpl.baseRow + cell.dr][tmpl.baseCol + cell.dc] = { type: cell.type, rotation: cell.rotation };
+    }
+
+    if (Math.random() < 0.5) {
+      const cell = choice(tmpl.cells);
+      const dir = choice(cell.free);
+      const r0 = tmpl.baseRow + cell.dr, c0 = tmpl.baseCol + cell.dc;
+      const ringActive = getActiveDirections({ type: cell.type, rotation: cell.rotation });
+      grid[r0][c0] = panelFor(4, [...ringActive, dir]);
+      const [ddr, ddc] = DELTA[dir];
+      grid[r0 + ddr][c0 + ddc] = panelFor(1, [OPPOSITE[dir]]);
+    }
+    return grid;
+  }
+
+  // 名前文字列に含まれる置換基の「種類数」を数える(メチル/エチルのみが対象なので単純な部分文字列チェックで十分)
+  function countDistinctTypesInName(name) {
+    let n = 0;
+    if (name.includes('メチル')) n++;
+    if (name.includes('エチル')) n++;
+    return n;
+  }
+
+  // maxTypes: この問題で許容する置換基の「種類数」(ゲーム①=2, ゲーム②=1)
+  function generateStructure(maxTypes) {
+    for (let attempt = 0; attempt < 50; attempt++) {
+      try {
+        const g = Math.random() < 0.7 ? generateAlkaneGrid(maxTypes) : generateCycloalkaneGrid();
+        const result = generateName(g);
+        // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
+        // 意図せずmaxTypesを超えることがあるため、実際の結果を見てから判定する
+        if (result.ok && countDistinctTypesInName(result.name) <= maxTypes) return { grid: g, name: result.name };
+      } catch (e) { /* 稀に組み合わせが悪い場合は生成をやり直す */ }
+    }
+    // 保険: 万一30回失敗してもエタンで確実に成功させる
+    const g = emptyGrid();
+    g[2][3] = panelFor(1, ['E']);
+    g[2][4] = panelFor(1, ['W']);
+    return { grid: g, name: generateName(g).name };
+  }
+
+  // ============================================================
+  // ゲーム状態
+  // ============================================================
+  let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  let cellEls = [];
+  let dragState = null;
+  let interactionsEnabled = true; // ゲーム②(読み取り専用表示)ではfalseにする
+  let currentMode = 'free'; // 'free' | 'game1' | 'game2'
+  let targetName = '';
+  let answerTokens = [];
+
+  // ============================================================
+  // 描画
+  // ============================================================
+  function svgIcon(type, mismatchActualDirs, rotationDeg) {
+    const base = new Set(PANEL_ARM_TABLE[type]);
+    const mismatchBase = new Set((mismatchActualDirs || []).map((d) => toBaseDir(d, rotationDeg)));
+    let arms = '';
+    for (const dir of DIR_ORDER) {
+      const [dx, dy] = VEC[dir];
+      if (base.has(dir)) {
+        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 38, y2 = 50 + dy * 38;
+        const danger = mismatchBase.has(dir);
+        arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${danger ? 'var(--warning)' : 'var(--text)'}" stroke-width="3" stroke-linecap="round"/>`;
+      } else {
+        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 25, y2 = 50 + dy * 25;
+        const cx = 50 + dx * 32, cy = 50 + dy * 32;
+        arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round"/>`;
+        arms += `<circle cx="${cx}" cy="${cy}" r="6" fill="none" stroke="var(--text-muted)" stroke-width="2"/>`;
+      }
+    }
+    return `<svg viewBox="0 0 100 100" width="100%" height="100%">${arms}<circle cx="50" cy="50" r="14" fill="var(--text)"/></svg>`;
+  }
+
+  function buildGridDOM() {
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = '';
+    cellEls = [];
+    for (let r = 0; r < ROWS; r++) {
+      const row = [];
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = r; cell.dataset.col = c;
+        attachCellInteractions(cell, r, c);
+        gridEl.appendChild(cell);
+        row.push(cell);
+      }
+      cellEls.push(row);
+    }
+  }
+
+  function syncCell(r, c, mismatchMap, islands) {
+    const cellEl = cellEls[r][c];
+    const panel = grid[r][c];
+    const key = `${r},${c}`;
+    if (!panel) { cellEl.className = 'cell'; cellEl.innerHTML = ''; return; }
+
+    let cls = 'cell filled';
+    if (mismatchMap.has(key)) cls += ' mismatch';
+    if (islands.has(key)) cls += ' isolated';
+    cellEl.className = cls;
+
+    let rotor = cellEl.querySelector('.rotor');
+    if (!rotor) { rotor = document.createElement('div'); rotor.className = 'rotor'; cellEl.appendChild(rotor); }
+    rotor.innerHTML = svgIcon(panel.type, mismatchMap.get(key), panel.rotation);
+    rotor.style.transform = `rotate(${panel.rotation}deg)`;
+  }
+
+  function refreshAll() {
+    const mismatches = checkMismatches(grid);
+    const mismatchMap = new Map();
+    for (const m of mismatches) {
+      const key = `${m.r},${m.c}`;
+      if (!mismatchMap.has(key)) mismatchMap.set(key, []);
+      mismatchMap.get(key).push(m.dir);
+    }
+
+    let islands = new Set();
+    let hasAnyPanel = false;
+    let nameResult = null;
+
+    if (mismatches.length === 0) {
+      const graph = buildGraph(grid);
+      hasAnyPanel = graph.nodeIds.length > 0;
+      if (hasAnyPanel) {
+        const conn = checkConnectivity(graph);
+        islands = new Set(conn.islands);
+        if (conn.allConnected) nameResult = generateName(grid);
+      }
+    }
+
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) syncCell(r, c, mismatchMap, islands);
+
+    const statusEl = document.getElementById('status');
+    if (mismatches.length > 0) {
+      statusEl.textContent = `不整合: ${mismatches.length}箇所\n結合の手が揃っていないマスがあります`;
+    } else if (!hasAnyPanel) {
+      statusEl.textContent = 'パネルをグリッドに配置してください';
+    } else if (islands.size > 0) {
+      statusEl.textContent = `孤立フラグメントがあります(${islands.size}マス)\nひとつの分子になるよう繋げてください`;
+    } else if (nameResult && nameResult.ok) {
+      statusEl.innerHTML = `構造は正常です\n<span class="name">${nameResult.name}</span>`;
+    } else if (nameResult) {
+      statusEl.textContent = `判定エラー: ${nameResult.error}`;
+    }
+  }
+
+  // ============================================================
+  // パレット(新規配置ドラッグ)
+  // ============================================================
+  function setupPalette() {
+    const paletteEl = document.getElementById('palette');
+    paletteEl.innerHTML = '';
+    for (let type = 1; type <= 5; type++) {
+      const card = document.createElement('div');
+      card.className = 'palette-card';
+      const icon = document.createElement('div');
+      icon.className = 'icon';
+      icon.innerHTML = svgIcon(type, [], 0);
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = `${'①②③④⑤'[type - 1]}${PANEL_LABELS[type]}`;
+      card.appendChild(icon); card.appendChild(label);
+      paletteEl.appendChild(card);
+      card.addEventListener('pointerdown', (e) => { e.preventDefault(); startPaletteDrag(e, type); });
+    }
+  }
+
+  function moveGhost(ghost, x, y) {
+    ghost.style.left = (x - 28) + 'px';
+    ghost.style.top = (y - 28) + 'px';
+  }
+
+  function startPaletteDrag(e, type) {
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    ghost.innerHTML = svgIcon(type, [], 0);
+    document.body.appendChild(ghost);
+    moveGhost(ghost, e.clientX, e.clientY);
+    dragState = { mode: 'new', type, ghost };
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+  }
+
+  function onDragMove(e) {
+    if (!dragState) return;
+    moveGhost(dragState.ghost, e.clientX, e.clientY);
+  }
+
+  function onDragEnd(e) {
+    if (!dragState) return;
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    const cellEl = target && target.closest('.cell');
+    dragState.ghost.remove();
+
+    if (cellEl) {
+      const r = +cellEl.dataset.row, c = +cellEl.dataset.col;
+      const isEmpty = !grid[r][c];
+      if (dragState.mode === 'new' && isEmpty) {
+        grid[r][c] = { type: dragState.type, rotation: 0 };
+      } else if (dragState.mode === 'move') {
+        const { fromR, fromC, panel } = dragState;
+        if (isEmpty && !(r === fromR && c === fromC)) { grid[r][c] = panel; }
+        else { grid[fromR][fromC] = panel; }
+      }
+    }
+    // グリッド外(cellElがnull)で離した場合は何もしない。
+    // beginMoveDrag側で元マスは既に空にしてあるので、そのまま削除扱いになる。
+
+    window.removeEventListener('pointermove', onDragMove);
+    window.removeEventListener('pointerup', onDragEnd);
+    dragState = null;
+    refreshAll();
+  }
+
+  // ============================================================
+  // グリッド上のパネル操作(タップ回転/ダブルタップ削除/ドラッグ移動)
+  // ============================================================
+  const MOVE_THRESHOLD = 8;
+  const TAP_TIMEOUT = 220; // この時間内に次のタップが来なければ、それまでのタップ回数でアクションを確定する
+
+  function attachCellInteractions(cell, r, c) {
+    let downX = 0, downY = 0, moved = false;
+    let tapCount = 0;
+    let pendingTimer = null;
+
+    cell.addEventListener('pointerdown', (e) => {
+      if (!interactionsEnabled || !grid[r][c]) return;
+      downX = e.clientX; downY = e.clientY; moved = false;
+
+      const onMove = (ev) => {
+        const dx = ev.clientX - downX, dy = ev.clientY - downY;
+        if (!moved && Math.hypot(dx, dy) > MOVE_THRESHOLD) {
+          moved = true;
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          beginMoveDrag(ev, r, c);
+        }
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+
+    // 1タップ=時計回りに回転 / 2タップ=反時計回りに回転 / 3タップ=削除
+    // click/dblclickはタッチ操作だと発火が不安定なため使わず、pointerupの回数と間隔だけで自前判定する
+    cell.addEventListener('pointerup', () => {
+      if (!interactionsEnabled) return;
+      if (moved) { moved = false; return; }
+      if (!grid[r][c]) return;
+
+      if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+      tapCount += 1;
+
+      if (tapCount >= 3) {
+        tapCount = 0;
+        grid[r][c] = null;
+        refreshAll();
+        return;
+      }
+
+      pendingTimer = setTimeout(() => {
+        const panel = grid[r][c];
+        if (panel) {
+          const delta = tapCount === 1 ? 90 : -90; // 1回=時計回り、2回=反時計回り
+          panel.rotation = ((panel.rotation + delta) % 360 + 360) % 360;
+          refreshAll();
+        }
+        tapCount = 0;
+        pendingTimer = null;
+      }, TAP_TIMEOUT);
+    });
+  }
+
+  function beginMoveDrag(e, fromR, fromC) {
+    const panel = grid[fromR][fromC];
+    grid[fromR][fromC] = null;
+    refreshAll();
+
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    ghost.innerHTML = svgIcon(panel.type, [], panel.rotation);
+    ghost.style.transform = `rotate(${panel.rotation}deg)`;
+    document.body.appendChild(ghost);
+    moveGhost(ghost, e.clientX, e.clientY);
+
+    dragState = { mode: 'move', panel, fromR, fromC, ghost };
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+  }
+
+  // ============================================================
+  // ゲーム①(組み立てて当てる)
+  // ============================================================
+  let game1Checked = null; // null | 'correct' | 'incorrect'
+
+  function startGame1() {
+    interactionsEnabled = true;
+    const { name } = generateStructure(2);
+    targetName = name;
+    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    game1Checked = null;
+    renderGame1Objective();
+    refreshAll();
+  }
+
+  function checkGame1Answer() {
+    const result = generateName(grid);
+    game1Checked = (result.ok && result.name === targetName) ? 'correct' : 'incorrect';
+    renderGame1Objective();
+  }
+
+  function renderGame1Objective() {
+    const obj = document.getElementById('objective');
+    obj.classList.toggle('success', game1Checked === 'correct');
+    if (game1Checked === 'correct') {
+      obj.innerHTML = `正解です！<br><span class="name">${targetName}</span><br><button id="next-btn1">次の問題</button>`;
+      document.getElementById('next-btn1').addEventListener('click', startGame1);
+    } else {
+      const extra = game1Checked === 'incorrect' ? '<br>不正解です。組み直してもう一度チェックしてください' : '';
+      obj.innerHTML = `この化合物を作ってください:<br><span class="name">${targetName}</span>${extra}<br><button id="check-btn1">チェック</button>`;
+      document.getElementById('check-btn1').addEventListener('click', checkGame1Answer);
+    }
+  }
+
+  // ============================================================
+  // ゲーム②(構造を見て名前を当てる)
+  // ============================================================
+  const BASE_NAME_SET = new Set(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン']);
+  const SUB_NAME_SET = new Set(['メチル', 'エチル']);
+  const MULTIPLIER_SET = new Set(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']);
+
+  // 数字・倍数詞・置換基名・主鎖名のトークン列から、コンマ・ハイフンを自動で補って正式な名称文字列に組み立てる。
+  // 例: ['2','2','3','トリ','メチル','ブタン'] -> '2,2,3-トリメチルブタン'
+  // 形式に合わない並びの場合はnullを返す。
+  function reconstructNameFromTokens(tokens) {
+    let i = 0;
+    const groups = [];
+
+    // 数字から始まる置換基グループ(位置番号あり)を読み取れるだけ読み取る
+    while (i < tokens.length && /^\d+$/.test(tokens[i])) {
+      const locants = [];
+      while (i < tokens.length && /^\d+$/.test(tokens[i])) { locants.push(tokens[i]); i++; }
+      let multiplier = '';
+      if (i < tokens.length && MULTIPLIER_SET.has(tokens[i])) { multiplier = tokens[i]; i++; }
+      if (i >= tokens.length || !SUB_NAME_SET.has(tokens[i])) return null;
+      groups.push(`${locants.join(',')}-${multiplier}${tokens[i]}`);
+      i++;
+    }
+    // 位置番号を省略した置換基グループ(環の単置換のケース)
+    while (i < tokens.length && SUB_NAME_SET.has(tokens[i])) {
+      groups.push(tokens[i]);
+      i++;
+    }
+    if (i >= tokens.length || !BASE_NAME_SET.has(tokens[i])) return null;
+    const base = tokens[i];
+    i++;
+    if (i !== tokens.length) return null; // 余分なトークンが残っている
+
+    return groups.join('-') + base;
+  }
+
+  function startGame2() {
+    interactionsEnabled = false;
+    const { grid: g, name } = generateStructure(1);
+    targetName = name;
+    grid = g;
+    answerTokens = [];
+    updateAnswerPreview();
+    refreshAll();
+  }
+
+  function updateAnswerPreview() {
+    const preview = document.getElementById('answer-preview');
+    if (!preview) return;
+    // 組み立て中はトークンをそのまま並べて見せる(カンマ・ハイフンの自動補完は回答確定時に行う)
+    preview.textContent = answerTokens.length ? answerTokens.join(' ') : '(ここに表示されます)';
+  }
+
+  function submitGame2Answer() {
+    const reconstructed = reconstructNameFromTokens(answerTokens);
+    const preview = document.getElementById('answer-preview');
+    const correct = reconstructed !== null && reconstructed === targetName;
+
+    if (correct) {
+      preview.innerHTML = `正解！ <span class="name">${targetName}</span><br><button id="next-btn2">次の問題</button>`;
+    } else if (reconstructed === null) {
+      preview.innerHTML = `入力の並びが正しくありません<br>正解は <span class="name">${targetName}</span> でした<br><button id="next-btn2">次の問題</button>`;
+    } else {
+      preview.innerHTML = `不正解…あなたの回答: ${reconstructed}<br>正解は <span class="name">${targetName}</span> でした<br><button id="next-btn2">次の問題</button>`;
+    }
+    document.getElementById('next-btn2').addEventListener('click', startGame2);
+  }
+
+  function buildWordBank() {
+    const wb = document.getElementById('wordbank');
+    wb.innerHTML = '';
+
+    const preview = document.createElement('div');
+    preview.className = 'preview';
+    preview.id = 'answer-preview';
+    wb.appendChild(preview);
+
+    const rows = [
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+      ['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ'],
+      ['メチル', 'エチル'],
+      ['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン'],
+    ];
+    for (const row of rows) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'row';
+      for (const token of row) {
+        const btn = document.createElement('button');
+        btn.textContent = token;
+        btn.addEventListener('click', () => { answerTokens.push(token); updateAnswerPreview(); });
+        rowEl.appendChild(btn);
+      }
+      wb.appendChild(rowEl);
+    }
+
+    const controlRow = document.createElement('div');
+    controlRow.className = 'row';
+    const undoBtn = document.createElement('button');
+    undoBtn.textContent = '1つ戻す';
+    undoBtn.className = 'secondary';
+    undoBtn.addEventListener('click', () => { answerTokens.pop(); updateAnswerPreview(); });
+    const clearBtn = document.createElement('button');
+    clearBtn.textContent = 'クリア';
+    clearBtn.className = 'secondary';
+    clearBtn.addEventListener('click', () => { answerTokens = []; updateAnswerPreview(); });
+    const submitBtn = document.createElement('button');
+    submitBtn.textContent = '回答する';
+    submitBtn.className = 'primary';
+    submitBtn.addEventListener('click', submitGame2Answer);
+    controlRow.appendChild(undoBtn); controlRow.appendChild(clearBtn); controlRow.appendChild(submitBtn);
+    wb.appendChild(controlRow);
+  }
+
+  // ============================================================
+  // モード切替
+  // ============================================================
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+    document.getElementById('objective').style.display = mode === 'game1' ? 'block' : 'none';
+    document.getElementById('wordbank').style.display = mode === 'game2' ? 'block' : 'none';
+    document.getElementById('palette').style.display = mode === 'game2' ? 'none' : 'flex';
+    document.getElementById('status').style.display = mode === 'game2' ? 'none' : 'block';
+    document.getElementById('hint').style.display = mode === 'game2' ? 'none' : 'block';
+
+    if (mode === 'free') {
+      interactionsEnabled = true;
+      grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+      refreshAll();
+    } else if (mode === 'game1') {
+      startGame1();
+    } else if (mode === 'game2') {
+      startGame2();
+    }
+  }
+
+  // ============================================================
+  // 初期化
+  // ============================================================
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    if (currentMode === 'game2') return; // 読み取り専用モードでは無効
+    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    refreshAll();
+  });
+  document.querySelectorAll('.mode-tab').forEach((btn) => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+
+  buildGridDOM();
+  setupPalette();
+  buildWordBank();
+  refreshAll();
+})();
+</script>
+</body>
+</html>
