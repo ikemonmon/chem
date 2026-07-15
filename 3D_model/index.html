@@ -32,6 +32,10 @@
             color: #f0f0f0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             transition: background-color 0.3s ease;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         #app-container {
@@ -40,6 +44,9 @@
             width: 100%;
             height: 100%;
             position: relative;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
         
         #canvas-container {
@@ -50,6 +57,9 @@
             z-index: 1;
             touch-action: none;
             overflow: hidden; /* はみ出し防止 */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .view-label {
@@ -140,6 +150,14 @@
             outline: none;
             width: 140px;
             transition: width 0.3s ease;
+            -webkit-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+        }
+        #ss-compounds, #ss-interval, #ss-speed {
+            -webkit-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
         }
         #search-input::placeholder {
             color: rgba(255, 255, 255, 0.45); 
@@ -229,6 +247,45 @@
         .ss-segment {
             display: flex; gap: 4px; background: rgba(255,255,255,0.05);
             padding: 4px; border-radius: 20px; border: 1px solid var(--border-light);
+        }
+
+        #compound-pick-overlay {
+            display: none;
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            z-index: 1999; pointer-events: auto;
+        }
+        #compound-pick-modal {
+            display: none;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 2000; flex-direction: column; padding: 20px 24px;
+            width: 90%; max-width: 420px; gap: 16px;
+            max-height: 80dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        #compound-pick-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+        }
+        #compound-pick-list .compound-pick-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            color: rgba(255, 255, 255, 0.85);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 8px 14px;
+            line-height: 1.3;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+        #compound-pick-list .compound-pick-btn:hover {
+            color: #fff;
+            background: rgba(222, 255, 154, 0.18);
+            border-color: rgba(222, 255, 154, 0.35);
         }
 
         #toast-notification {
@@ -356,7 +413,7 @@
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </button>
-                    <button class="icon-btn" id="search-submit" title="Search">
+                    <button class="icon-btn" id="search-submit" title="Search [Right-click / Long-press: SS compounds]">
                         <svg viewBox="0 0 24 24">
                             <circle cx="11" cy="11" r="8"/>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -421,6 +478,15 @@
                     </button>
                 </div>
             </div>
+        </div>
+
+        <div id="compound-pick-overlay"></div>
+        <div id="compound-pick-modal" class="ui-panel">
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-light); padding-bottom:10px;">
+                <span style="font-weight:600; font-size:13px; letter-spacing:1px; color:var(--text-active);">Screensaver Compounds</span>
+                <button id="compound-pick-close" class="icon-btn" style="padding:2px;"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            </div>
+            <div id="compound-pick-list"></div>
         </div>
 
         <div id="ss-overlay"></div>
@@ -643,7 +709,7 @@
         // スクリーンセーバー(自動再生)システム管理
         // ==========================================
         let ssSettings = JSON.parse(localStorage.getItem('ss_settings')) || {};
-        if (!ssSettings.compounds) ssSettings.compounds = "nanokid, adamantane, caffeine, cholesterol, morphine, strychnine, sucrose, adenosine triphosphate, porphine, penicillin v";
+        if (!ssSettings.compounds) ssSettings.compounds = "nanokid, adamantane, caffeine, cholesterol, morphine, strychnine, sucrose, adenosine triphosphate, porphine, penicillin v, perfluorooctane, hexahelicene, mirex, tetrodotoxin, capsaicin, linolenic acid, hexanitrohexaazaisowurtzitane, 1-methylsilatrane, decafluorobiphenyl";
         if (!ssSettings.order) ssSettings.order = "sequential";
         if (typeof ssSettings.interval === 'undefined') ssSettings.interval = 15;
         if (typeof ssSettings.speed === 'undefined') ssSettings.speed = 18;
@@ -661,6 +727,7 @@
         let ssCurrentIndex = 0;
         let ssFailCount = 0;
         let ssFetchAbort = null;
+        let ssPendingFx = null;
         let previousState = {};
 
         // SS用：カメラ/ワールド混合 + 軸漂い回転
@@ -740,11 +807,34 @@
             loadNextSSMolecule();
         }
 
+        function pickSSEffects() {
+            return {
+                bg: (ssSettings.bg === 'random') ? SS_VALS.bg[Math.floor(Math.random() * 3)] : ssSettings.bg,
+                model: (ssSettings.model === 'random') ? SS_VALS.model[Math.floor(Math.random() * 3)] : ssSettings.model,
+                stereo: (ssSettings.stereo === 'random') ? Math.floor(Math.random() * 3) : parseInt(ssSettings.stereo),
+                depth: (ssSettings.depth === 'random') ? Math.floor(Math.random() * 3) : parseInt(ssSettings.depth),
+                gloss: (ssSettings.gloss === 'random') ? (Math.random() > 0.5) : (ssSettings.gloss === 'true')
+            };
+        }
+
+        function applySSPendingFx() {
+            if (!ssPendingFx) return;
+            currentBgMode = ssPendingFx.bg;
+            currentRenderMode = ssPendingFx.model;
+            currentStereoIndex = ssPendingFx.stereo;
+            currentDepthIndex = ssPendingFx.depth;
+            currentGlossMode = ssPendingFx.gloss;
+            scene.background.setHex(BG_COLORS[currentBgMode]);
+            updateStereoCameras();
+            ssPendingFx = null;
+        }
+
         function stopScreenSaver() {
             if (!ssActive) return;
             ssActive = false;
             clearTimeout(ssTimer);
             ssTimer = null;
+            ssPendingFx = null;
             if (ssFetchAbort) {
                 ssFetchAbort.abort();
                 ssFetchAbort = null;
@@ -818,7 +908,7 @@
         }
 
         // ==========================================
-        // SS用：浮遊化合物名ラベル（3D Sprite）
+        // SS用：浮遊化合物名ラベル（メインカメラ向き Plane・重心と同じ奥行き）
         // ==========================================
         let currentMoleculeRadius = 2;
         let nameSprite = null;
@@ -883,7 +973,8 @@
         function removeNameSprite() {
             if (nameSprite) {
                 scene.remove(nameSprite);
-                nameSprite.material.map.dispose();
+                if (nameSprite.geometry) nameSprite.geometry.dispose();
+                if (nameSprite.material.map) nameSprite.material.map.dispose();
                 nameSprite.material.dispose();
                 nameSprite = null;
             }
@@ -899,14 +990,22 @@
             if (!ssActive) return; 
 
             const { texture, aspect } = createNameTexture(text, ssSettings.nameDisplay);
-            const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false });
-            nameSprite = new THREE.Sprite(material);
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 0,
+                depthWrite: false,
+                side: THREE.DoubleSide
+            });
 
             // ★フォントサイズを80%に調整 (0.32 * 0.8 = 0.256, 0.5 * 0.8 = 0.4)
             const worldHeight = Math.max(currentMoleculeRadius * 0.256, 0.4);
-            nameSprite.scale.set(worldHeight * aspect, worldHeight, 1);
+            const worldWidth = worldHeight * aspect;
+            const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
+            nameSprite = new THREE.Mesh(geometry, material);
 
             // 分子の下に置きつつ、カメラ可視範囲の下端より上に収める（スマホのはみ出し対策）
+            // 奥行きは重心（原点）と同じ面になるよう Z=0 のまま、左右眼共通の向きは mainCamera に合わせる
             const desiredY = -(currentMoleculeRadius * 1.25 + 0.6);
             const camDist = mainCamera.position.distanceTo(controls.target);
             const halfVisibleH = Math.tan(THREE.MathUtils.degToRad(mainCamera.fov / 2)) * camDist;
@@ -915,6 +1014,7 @@
             const minY = -halfVisibleH + margin + shakePad;
             nameSpriteBaseY = Math.max(desiredY, minY);
             nameSprite.position.set(0, nameSpriteBaseY, 0);
+            nameSprite.quaternion.copy(mainCamera.quaternion);
 
             scene.add(nameSprite);
 
@@ -928,6 +1028,8 @@
             const list = ssSettings.compounds.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0);
             if (list.length === 0) list.push('benzene');
             
+            ssPendingFx = pickSSEffects();
+
             if (ssFailCount >= list.length) {
                 ssFailCount = 0;
                 fetchMoleculeData('benzene', true); 
@@ -941,15 +1043,6 @@
                 comp = list[ssCurrentIndex % list.length];
                 ssCurrentIndex++;
             }
-            
-            currentBgMode = (ssSettings.bg === 'random') ? SS_VALS.bg[Math.floor(Math.random()*3)] : ssSettings.bg;
-            currentRenderMode = (ssSettings.model === 'random') ? SS_VALS.model[Math.floor(Math.random()*3)] : ssSettings.model;
-            currentStereoIndex = (ssSettings.stereo === 'random') ? Math.floor(Math.random()*3) : parseInt(ssSettings.stereo);
-            currentDepthIndex = (ssSettings.depth === 'random') ? Math.floor(Math.random()*3) : parseInt(ssSettings.depth);
-            currentGlossMode = (ssSettings.gloss === 'random') ? (Math.random() > 0.5) : (ssSettings.gloss === 'true');
-            
-            scene.background.setHex(BG_COLORS[currentBgMode]);
-            updateStereoCameras();
             
             fetchMoleculeData(comp, true);
         }
@@ -1259,6 +1352,7 @@
                 if (isStaleSS()) return;
 
                 const parsedData = parseSDF(sdfText);
+                if (isSS) applySSPendingFx();
                 buildMoleculeGeometry(parsedData, false); 
                 window.currentSdfData = parsedData;
 
@@ -1277,6 +1371,7 @@
                 if (error.name === 'AbortError') return;
                 if (isSS) {
                     if (!ssActive) return;
+                    ssPendingFx = null;
                     ssFailCount++;
                     ssTimer = setTimeout(loadNextSSMolecule, 1000); 
                 } else {
@@ -1347,6 +1442,9 @@
             if (nameSprite) {
                 nameClockTime += delta;
 
+                // 左右眼で共通の向き（立体視の奥行きを重心面に安定させる）
+                nameSprite.quaternion.copy(mainCamera.quaternion);
+
                 if (ssSettings.nameShake !== 'false') {
                     const speed = 1.2;
                     const amplitudeY = currentMoleculeRadius * 0.0375;
@@ -1359,9 +1457,11 @@
 
                     nameSprite.position.y = nameSpriteBaseY + bobY;
                     nameSprite.position.x = bobX;
+                    nameSprite.position.z = 0;
                 } else {
                     nameSprite.position.y = nameSpriteBaseY;
                     nameSprite.position.x = 0;
+                    nameSprite.position.z = 0;
                 }
 
                 nameOpacityState.current += (nameOpacityState.target - nameOpacityState.current) * 0.04;
@@ -1588,6 +1688,13 @@
         const searchInput = document.getElementById('search-input');
         const searchClear = document.getElementById('search-clear');
 
+        // 長押しによる画面全体の選択ハイライトを抑制（入力欄は除外）
+        document.addEventListener('selectstart', (e) => {
+            const el = e.target;
+            if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
+            e.preventDefault();
+        });
+
         searchInput.addEventListener('input', () => {
             if (searchInput.value.length > 0) searchClear.style.display = 'inline-flex';
             else searchClear.style.display = 'none';
@@ -1601,10 +1708,73 @@
             searchInput.focus();
         });
 
-        document.getElementById('search-submit').addEventListener('click', () => {
+        const btnSearchSubmit = document.getElementById('search-submit');
+        let searchPressTimer;
+        let searchIsLongPress = false;
+
+        btnSearchSubmit.addEventListener('click', () => {
+            if (searchIsLongPress) {
+                searchIsLongPress = false;
+                return;
+            }
             const query = searchInput.value;
             if (query) { fetchMoleculeData(query); searchInput.blur(); }
         });
+        btnSearchSubmit.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            openCompoundPickModal();
+        });
+        btnSearchSubmit.addEventListener('touchstart', () => {
+            searchIsLongPress = false;
+            searchPressTimer = setTimeout(() => {
+                searchIsLongPress = true;
+                openCompoundPickModal();
+            }, 500);
+        }, { passive: true });
+        btnSearchSubmit.addEventListener('touchend', (e) => {
+            clearTimeout(searchPressTimer);
+            if (searchIsLongPress) e.preventDefault();
+        });
+        btnSearchSubmit.addEventListener('touchmove', () => {
+            clearTimeout(searchPressTimer);
+        });
+        btnSearchSubmit.addEventListener('selectstart', (e) => { e.preventDefault(); });
+
+        function openCompoundPickModal() {
+            const listEl = document.getElementById('compound-pick-list');
+            listEl.innerHTML = '';
+            const list = ssSettings.compounds.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0);
+            if (list.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'font-size:12px; color:rgba(255,255,255,0.5); padding:8px 0;';
+                empty.textContent = '候補分子が設定されていません（SS設定で追加）';
+                listEl.appendChild(empty);
+            } else {
+                list.forEach(name => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'compound-pick-btn';
+                    btn.textContent = name;
+                    btn.addEventListener('click', () => {
+                        searchInput.value = name;
+                        searchClear.style.display = 'inline-flex';
+                        closeCompoundPickModal();
+                        fetchMoleculeData(name);
+                        searchInput.blur();
+                    });
+                    listEl.appendChild(btn);
+                });
+            }
+            document.getElementById('compound-pick-overlay').style.display = 'block';
+            document.getElementById('compound-pick-modal').style.display = 'flex';
+        }
+
+        function closeCompoundPickModal() {
+            document.getElementById('compound-pick-overlay').style.display = 'none';
+            document.getElementById('compound-pick-modal').style.display = 'none';
+        }
+        document.getElementById('compound-pick-close').addEventListener('click', closeCompoundPickModal);
+        document.getElementById('compound-pick-overlay').addEventListener('click', closeCompoundPickModal);
         
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -1727,16 +1897,23 @@
         let ssPressTimer;
         let isLongPress = false;
 
-        btnSS.addEventListener('click', () => { startScreenSaver(); });
+        btnSS.addEventListener('click', () => {
+            if (isLongPress) {
+                isLongPress = false;
+                return;
+            }
+            startScreenSaver();
+        });
         btnSS.addEventListener('contextmenu', (e) => { e.preventDefault(); openSSModal(); });
-        btnSS.addEventListener('touchstart', (e) => {
+        btnSS.addEventListener('touchstart', () => {
             isLongPress = false;
             ssPressTimer = setTimeout(() => { isLongPress = true; openSSModal(); }, 500);
-        }, {passive: false});
+        }, { passive: true });
         btnSS.addEventListener('touchend', (e) => {
             clearTimeout(ssPressTimer);
             if (isLongPress) e.preventDefault(); 
         });
+        btnSS.addEventListener('selectstart', (e) => { e.preventDefault(); });
 
         function openSSModal() {
             document.getElementById('ss-compounds').value = ssSettings.compounds;
@@ -1805,6 +1982,16 @@
                     stopScreenSaver();
                 }
                 return;
+            }
+            if (e.key === 'Escape') {
+                if (document.getElementById('compound-pick-modal').style.display === 'flex') {
+                    closeCompoundPickModal();
+                    return;
+                }
+                if (document.getElementById('ss-modal').style.display === 'flex') {
+                    closeSSModal();
+                    return;
+                }
             }
             if (document.activeElement === searchInput) return;
             switch (e.key.toLowerCase()) {
