@@ -709,7 +709,7 @@
         // スクリーンセーバー(自動再生)システム管理
         // ==========================================
         let ssSettings = JSON.parse(localStorage.getItem('ss_settings')) || {};
-        if (!ssSettings.compounds) ssSettings.compounds = "nanokid, adamantane, caffeine, cholesterol, morphine, strychnine, sucrose, adenosine triphosphate, porphine, penicillin v, perfluorooctane, hexahelicene, mirex, tetrodotoxin, capsaicin, linolenic acid, hexanitrohexaazaisowurtzitane, 1-methylsilatrane, decafluorobiphenyl";
+        if (!ssSettings.compounds) ssSettings.compounds = "nanokid, adamantane, caffeine, cholesterol, perfluorohexanesulfonic acid, morphine, strychnine, sucrose, adenosine triphosphate, porphine, penicillin v, perfluorooctane, hexahelicene, mirex, tetrodotoxin, capsaicin, linolenic acid, hexanitrohexaazaisowurtzitane, 1-methylsilatrane, decafluorobiphenyl";
         if (!ssSettings.order) ssSettings.order = "sequential";
         if (typeof ssSettings.interval === 'undefined') ssSettings.interval = 15;
         if (typeof ssSettings.speed === 'undefined') ssSettings.speed = 18;
