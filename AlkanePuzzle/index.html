@@ -144,8 +144,22 @@
   const PANEL_LABELS = { 1: '末端', 2: '直線', 3: 'かど', 4: '分岐', 5: '四級' };
   const CHAIN_NAMES = ['', 'メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン'];
   const SUBSTITUENT_NAME_BY_LENGTH = { 1: 'メチル', 2: 'エチル' };
-  const SUBSTITUENT_ORDER = { 'エチル': 0, 'メチル': 1 };
+  // アルファベット順(bromo, chloro, ethyl, fluoro, iodo, methyl)。日本語の五十音順ではない点に注意。
+  const SUBSTITUENT_ORDER = { 'ブロモ': 0, 'クロロ': 1, 'エチル': 2, 'フルオロ': 3, 'ヨード': 4, 'メチル': 5 };
   const MULTIPLIER_PREFIX = ['', '', 'ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']; // index = 同じ置換基の個数
+  // ハロゲン(F/Cl/Br/I): 一価の原子なので必ず1マス・末端(type1相当)になる
+  const HALOGEN_INFO = {
+    F: { name: 'フルオロ', stroke: '#C9A227', fill: '#FBF0C4' },
+    Cl: { name: 'クロロ', stroke: '#7CB518', fill: '#E8F5D0' },
+    Br: { name: 'ブロモ', stroke: '#A0522D', fill: '#F3E0D6' },
+    I: { name: 'ヨード', stroke: '#7B4397', fill: '#EBDFF5' },
+  };
+  const HALOGEN_ELEMENT_BY_NAME = { 'フルオロ': 'F', 'クロロ': 'Cl', 'ブロモ': 'Br', 'ヨード': 'I' };
+  // 出題(生成)で使う置換基の種類プール。長さはエチルのみ2、それ以外は1。
+  const SUBSTITUENT_SPECIES = ['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード'];
+  const SUBSTITUENT_LENGTH = { 'メチル': 1, 'エチル': 2, 'フルオロ': 1, 'クロロ': 1, 'ブロモ': 1, 'ヨード': 1 };
+  // 環は原子1個分の余白しか確保していないため、エチル(2マス必要)は対象外にする
+  const RING_SUBSTITUENT_SPECIES = ['メチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード'];
 
   function rotateCW(dir, times) {
     const i = DIR_ORDER.indexOf(dir);
@@ -193,11 +207,16 @@
   function buildGraph(grid) {
     const adjacency = new Map();
     const nodeIds = [];
+    const elements = new Map();
     const idOf = (r, c) => `${r},${c}`;
 
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        if (grid[r][c]) { nodeIds.push(idOf(r, c)); adjacency.set(idOf(r, c), new Set()); }
+        if (grid[r][c]) {
+          nodeIds.push(idOf(r, c));
+          adjacency.set(idOf(r, c), new Set());
+          elements.set(idOf(r, c), grid[r][c].element || 'C');
+        }
       }
     }
     for (let r = 0; r < ROWS; r++) {
@@ -213,7 +232,7 @@
         }
       }
     }
-    return { nodeIds, adjacency };
+    return { nodeIds, adjacency, elements };
   }
 
   function checkConnectivity(graph) {
@@ -267,6 +286,16 @@
     for (const node of backboneSet) {
       for (const neighbor of graph.adjacency.get(node)) {
         if (backboneSet.has(neighbor)) continue;
+
+        const neighborElement = graph.elements.get(neighbor);
+        if (neighborElement !== 'C') {
+          // ハロゲンは一価なので、この1マスで置換基が確定する(さらに先に何か繋がっていたら不正な構造)
+          const further = [...graph.adjacency.get(neighbor)].filter((n) => n !== node);
+          if (further.length > 0) throw new Error('UNSUPPORTED_SUBSTITUENT');
+          substituents.push({ backboneNode: node, length: 1, name: HALOGEN_INFO[neighborElement].name });
+          continue;
+        }
+
         const subtreeNodes = new Set([neighbor]);
         const queue = [neighbor];
         let branchOk = true;
@@ -274,7 +303,10 @@
           const cur = queue.shift();
           const nexts = [...graph.adjacency.get(cur)].filter((n) => n !== node && !backboneSet.has(n));
           if (subtreeNodes.size > 1 && nexts.length > 1) branchOk = false;
-          for (const n of nexts) if (!subtreeNodes.has(n)) { subtreeNodes.add(n); queue.push(n); }
+          for (const n of nexts) {
+            if (graph.elements.get(n) !== 'C') throw new Error('UNSUPPORTED_SUBSTITUENT'); // 炭素鎖の途中にハロゲンが混ざる形は未対応
+            if (!subtreeNodes.has(n)) { subtreeNodes.add(n); queue.push(n); }
+          }
         }
         const length = subtreeNodes.size;
         if (!branchOk || length > 2) throw new Error('UNSUPPORTED_SUBSTITUENT');
@@ -309,9 +341,10 @@
   }
 
   function nameAlkane(graph) {
-    const { nodeIds, adjacency } = graph;
+    const { nodeIds, adjacency, elements } = graph;
     // メタン(C1)は不整合チェックの時点で弾かれるためここには到達しない(エタン以上のみ)
-    const leaves = nodeIds.filter((id) => adjacency.get(id).size === 1);
+    // 主鎖の候補端点は炭素のみに限定する(ハロゲンは一価の置換基であり、主鎖の一部にはなれない)
+    const leaves = nodeIds.filter((id) => adjacency.get(id).size === 1 && elements.get(id) === 'C');
     const distMaps = new Map();
     for (const leaf of leaves) distMaps.set(leaf, bfsDistancesAndParents(adjacency, leaf));
 
@@ -434,6 +467,10 @@
     return arr;
   }
   function emptyGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(null)); }
+  function pickTwoDistinct(pool) {
+    const shuffled = shuffle([...pool]);
+    return [shuffled[0], shuffled[1]];
+  }
 
   // targetDirsが欲しいときに、その活性方向の組を実現するtype/rotationを逆算する
   // (手計算で回転角を出すよりも間違いにくいので、生成ロジックは基本これ経由にする)
@@ -458,10 +495,17 @@
     return panelFor(2, ['W', 'E']);
   }
 
-  function branchPanels(side, length) {
+  // 置換基の名前(メチル/エチル/フルオロ/クロロ/ブロモ/ヨード)から、その枝を構成するパネル列を作る
+  function branchPanelsForName(side, name) {
     const back = side === 'up' ? 'S' : 'N';
     const fwd = side === 'up' ? 'N' : 'S';
-    if (length === 1) return [panelFor(1, [back])];
+    const length = SUBSTITUENT_LENGTH[name];
+    if (length === 1) {
+      const panel = panelFor(1, [back]);
+      const el = HALOGEN_ELEMENT_BY_NAME[name];
+      if (el) panel.element = el;
+      return [panel];
+    }
     return [panelFor(2, [back, fwd]), panelFor(1, [back])];
   }
 
@@ -478,10 +522,9 @@
     for (let i = 1; i < len - 1; i++) { slots.push([i, 'up']); slots.push([i, 'down']); }
     shuffle(slots);
 
-    const bothNames = ['メチル', 'エチル'];
     const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.4)
-      ? bothNames
-      : [choice(bothNames)];
+      ? pickTwoDistinct(SUBSTITUENT_SPECIES)
+      : [choice(SUBSTITUENT_SPECIES)];
 
     const count = Math.min(slots.length, randInt(subMin, subMax));
     const posInfo = {};
@@ -497,12 +540,12 @@
       const info = posInfo[i] || {};
       grid[spineRow][col] = spinePanel(!!info.up, !!info.down, i === 0, i === len - 1);
       if (info.up) {
-        const bp = branchPanels('up', info.up === 'エチル' ? 2 : 1);
+        const bp = branchPanelsForName('up', info.up);
         grid[spineRow - 1][col] = bp[0];
         if (bp[1]) grid[spineRow - 2][col] = bp[1];
       }
       if (info.down) {
-        const bp = branchPanels('down', info.down === 'エチル' ? 2 : 1);
+        const bp = branchPanelsForName('down', info.down);
         grid[spineRow + 1][col] = bp[0];
         if (bp[1]) grid[spineRow + 2][col] = bp[1];
       }
@@ -582,10 +625,9 @@
     }
     shuffle(slots);
 
-    const bothNames = ['メチル', 'エチル'];
     const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.4)
-      ? bothNames
-      : [choice(bothNames)];
+      ? pickTwoDistinct(SUBSTITUENT_SPECIES)
+      : [choice(SUBSTITUENT_SPECIES)];
 
     const targetCount = randInt(subMin, subMax);
     const posInfo = {};
@@ -593,7 +635,7 @@
     for (const [i, dir] of slots) {
       if (placed >= targetCount) break;
       const name = distinctNames.length === 1 ? distinctNames[0] : choice(distinctNames);
-      const length = name === 'エチル' ? 2 : 1;
+      const length = SUBSTITUENT_LENGTH[name];
       const [dr, dc] = DELTA[dir];
       const [r0, c0] = path[i];
       let rr = r0, cc = c0, ok = true;
@@ -623,13 +665,15 @@
 
       for (const dir of branchDirs) {
         const name = info[dir];
-        const length = name === 'エチル' ? 2 : 1;
+        const length = SUBSTITUENT_LENGTH[name];
+        const el = HALOGEN_ELEMENT_BY_NAME[name];
         const [dr, dc] = DELTA[dir];
         let rr = r, cc = c;
         for (let k = 0; k < length; k++) {
           rr += dr; cc += dc;
           const isLast = k === length - 1;
           grid[rr][cc] = panelForDirections(isLast ? [OPPOSITE[dir]] : [OPPOSITE[dir], dir]);
+          if (isLast && el) grid[rr][cc].element = el;
         }
       }
     }
@@ -669,7 +713,7 @@
     ] },
   };
 
-  function generateCycloalkaneGrid() {
+  function generateCycloalkaneGrid(forceSubstituent) {
     const ringSize = choice([4, 6]);
     const tmpl = RING_TEMPLATES[ringSize];
     const grid = emptyGrid();
@@ -677,14 +721,18 @@
       grid[tmpl.baseRow + cell.dr][tmpl.baseCol + cell.dc] = { type: cell.type, rotation: cell.rotation };
     }
 
-    if (Math.random() < 0.5) {
+    if (forceSubstituent || Math.random() < 0.5) {
       const cell = choice(tmpl.cells);
       const dir = choice(cell.free);
       const r0 = tmpl.baseRow + cell.dr, c0 = tmpl.baseCol + cell.dc;
       const ringActive = getActiveDirections({ type: cell.type, rotation: cell.rotation });
       grid[r0][c0] = panelFor(4, [...ringActive, dir]);
       const [ddr, ddc] = DELTA[dir];
-      grid[r0 + ddr][c0 + ddc] = panelFor(1, [OPPOSITE[dir]]);
+      const name = choice(RING_SUBSTITUENT_SPECIES);
+      const panel = panelFor(1, [OPPOSITE[dir]]);
+      const el = HALOGEN_ELEMENT_BY_NAME[name];
+      if (el) panel.element = el;
+      grid[r0 + ddr][c0 + ddc] = panel;
     }
     return grid;
   }
@@ -694,6 +742,10 @@
     let n = 0;
     if (name.includes('メチル')) n++;
     if (name.includes('エチル')) n++;
+    if (name.includes('フルオロ')) n++;
+    if (name.includes('クロロ')) n++;
+    if (name.includes('ブロモ')) n++;
+    if (name.includes('ヨード')) n++;
     return n;
   }
 
@@ -701,7 +753,7 @@
   // opts: { lenMin, lenMax, subMin, subMax } 主鎖の長さと置換基数の範囲
   // useBent: 屈曲した主鎖を使うか(難問モード用)
   // forceTurn: 屈曲主鎖の生成時、できるだけ曲げるように誘導するか
-  function generateStructureWithOptions(maxTypes, opts, useBent, forceTurn) {
+  function generateStructureWithOptions(maxTypes, opts, useBent, forceTurn, forceRingSubstituent) {
     for (let attempt = 0; attempt < 60; attempt++) {
       try {
         let g;
@@ -709,7 +761,7 @@
           g = useBent ? generateBentAlkaneGrid(maxTypes, opts, forceTurn) : generateAlkaneGrid(maxTypes, opts);
           if (!g) continue;
         } else {
-          g = generateCycloalkaneGrid();
+          g = generateCycloalkaneGrid(forceRingSubstituent);
         }
         const result = generateName(g);
         // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
@@ -741,7 +793,8 @@
   // ============================================================
   // 描画
   // ============================================================
-  function svgIcon(type, mismatchActualDirs, rotationDeg, highlightBonds) {
+  function svgIcon(type, mismatchActualDirs, rotationDeg, highlightBonds, element) {
+    const isHalogen = !!element && element !== 'C';
     const base = new Set(PANEL_ARM_TABLE[type]);
     const mismatchBase = new Set((mismatchActualDirs || []).map((d) => toBaseDir(d, rotationDeg)));
     let underlay = '';
@@ -752,17 +805,27 @@
         const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 38, y2 = 50 + dy * 38;
         const danger = mismatchBase.has(dir);
         if (highlightBonds && !danger) {
-          underlay += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--highlighter)" stroke-width="9" stroke-linecap="round"/>`;
+          underlay += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--highlighter)" stroke-width="14" stroke-linecap="round"/>`;
         }
         arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${danger ? 'var(--warning)' : 'var(--text)'}" stroke-width="3" stroke-linecap="round"/>`;
-      } else {
+      } else if (!isHalogen) {
+        // ハロゲンは一価の原子なので、結合していない方向には(水素はおろか)何も存在しない
         const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 25, y2 = 50 + dy * 25;
         const cx = 50 + dx * 32, cy = 50 + dy * 32;
         arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round"/>`;
         arms += `<circle cx="${cx}" cy="${cy}" r="6" fill="none" stroke="var(--text-muted)" stroke-width="2"/>`;
       }
     }
-    return `<svg viewBox="0 0 100 100" width="100%" height="100%">${underlay}${arms}<circle cx="50" cy="50" r="14" fill="var(--text)"/></svg>`;
+    let atom;
+    if (isHalogen) {
+      const info = HALOGEN_INFO[element];
+      const fontSize = element.length === 1 ? 15 : 12;
+      atom = `<circle cx="50" cy="50" r="14" fill="${info.fill}" stroke="${info.stroke}" stroke-width="2"/>`
+        + `<text x="50" y="51" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}" font-weight="700" fill="${info.stroke}">${element}</text>`;
+    } else {
+      atom = `<circle cx="50" cy="50" r="14" fill="var(--text)"/>`;
+    }
+    return `<svg viewBox="0 0 100 100" width="100%" height="100%">${underlay}${arms}${atom}</svg>`;
   }
 
   function buildGridDOM() {
@@ -796,7 +859,7 @@
 
     let rotor = cellEl.querySelector('.rotor');
     if (!rotor) { rotor = document.createElement('div'); rotor.className = 'rotor'; cellEl.appendChild(rotor); }
-    rotor.innerHTML = svgIcon(panel.type, mismatchMap.get(key), panel.rotation, highlightBonds);
+    rotor.innerHTML = svgIcon(panel.type, mismatchMap.get(key), panel.rotation, highlightBonds, panel.element);
     rotor.style.transform = `rotate(${panel.rotation}deg)`;
   }
 
@@ -934,18 +997,27 @@
   function setupPalette() {
     const paletteEl = document.getElementById('palette');
     paletteEl.innerHTML = '';
-    for (let type = 1; type <= 5; type++) {
+    const items = [
+      ...[1, 2, 3, 4, 5].map((type) => ({ kind: 'carbon', type })),
+      ...['F', 'Cl', 'Br', 'I'].map((element) => ({ kind: 'halogen', element })),
+    ];
+    for (const item of items) {
       const card = document.createElement('div');
       card.className = 'palette-card';
       const icon = document.createElement('div');
       icon.className = 'icon';
-      icon.innerHTML = svgIcon(type, [], 0);
       const label = document.createElement('div');
       label.className = 'label';
-      label.textContent = `${'①②③④⑤'[type - 1]}${PANEL_LABELS[type]}`;
+      if (item.kind === 'carbon') {
+        icon.innerHTML = svgIcon(item.type, [], 0, false, 'C');
+        label.textContent = `${'①②③④⑤'[item.type - 1]}${PANEL_LABELS[item.type]}`;
+      } else {
+        icon.innerHTML = svgIcon(1, [], 0, false, item.element);
+        label.textContent = item.element;
+      }
       card.appendChild(icon); card.appendChild(label);
       paletteEl.appendChild(card);
-      card.addEventListener('pointerdown', (e) => { e.preventDefault(); startPaletteDrag(e, type); });
+      card.addEventListener('pointerdown', (e) => { e.preventDefault(); startPaletteDrag(e, item); });
     }
   }
 
@@ -954,13 +1026,15 @@
     ghost.style.top = (y - 28) + 'px';
   }
 
-  function startPaletteDrag(e, type) {
+  function startPaletteDrag(e, item) {
+    const type = item.kind === 'carbon' ? item.type : 1;
+    const element = item.kind === 'carbon' ? 'C' : item.element;
     const ghost = document.createElement('div');
     ghost.className = 'ghost';
-    ghost.innerHTML = svgIcon(type, [], 0);
+    ghost.innerHTML = svgIcon(type, [], 0, false, element);
     document.body.appendChild(ghost);
     moveGhost(ghost, e.clientX, e.clientY);
-    dragState = { mode: 'new', type, ghost };
+    dragState = { mode: 'new', type, element, ghost };
     window.addEventListener('pointermove', onDragMove);
     window.addEventListener('pointerup', onDragEnd);
   }
@@ -979,7 +1053,7 @@
     if (cellEl) {
       const r = +cellEl.dataset.row, c = +cellEl.dataset.col;
       if (dragState.mode === 'new') {
-        grid[r][c] = { type: dragState.type, rotation: 0 }; // 既にパネルがあっても確認なしで上書き
+        grid[r][c] = { type: dragState.type, rotation: 0, element: dragState.element }; // 既にパネルがあっても確認なしで上書き
         playPlaceSound();
       } else if (dragState.mode === 'move') {
         const { fromR, fromC, panel } = dragState;
@@ -1071,7 +1145,7 @@
 
     const ghost = document.createElement('div');
     ghost.className = 'ghost';
-    ghost.innerHTML = svgIcon(panel.type, [], panel.rotation);
+    ghost.innerHTML = svgIcon(panel.type, [], panel.rotation, false, panel.element);
     ghost.style.transform = `rotate(${panel.rotation}deg)`;
     document.body.appendChild(ghost);
     moveGhost(ghost, e.clientX, e.clientY);
@@ -1086,11 +1160,11 @@
   // ============================================================
   let game1Checked = null; // null | 'correct' | 'incorrect'
 
-  const GAME1_OPTS = { easy: { lenMin: 2, lenMax: 7, subMin: 0, subMax: 3 }, hard: { lenMin: 7, lenMax: 10, subMin: 2, subMax: 4 } };
+  const GAME1_OPTS = { easy: { lenMin: 2, lenMax: 7, subMin: 0, subMax: 3 }, hard: { lenMin: 7, lenMax: 10, subMin: 2, subMax: 5 } };
 
   function startGame1() {
     interactionsEnabled = true;
-    const { name } = generateStructureWithOptions(2, GAME1_OPTS[difficulty], difficulty === 'hard', false);
+    const { name } = generateStructureWithOptions(2, GAME1_OPTS[difficulty], difficulty === 'hard', false, difficulty === 'hard');
     targetName = name;
     grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     game1Checked = null;
@@ -1112,19 +1186,18 @@
       document.getElementById('next-btn1').addEventListener('click', startGame1);
     } else {
       const extra = game1Checked === 'incorrect' ? '<br>不正解です。組み直してもう一度チェックしてください' : '';
-      obj.innerHTML = `この化合物を作ってください:<br><span class="name">${targetName}</span>${extra}<br><button id="check-btn1">チェック</button> <button id="skip-btn1">次の問題へ</button>`;
+      obj.innerHTML = `この化合物を作ってください:<br><span class="name">${targetName}</span>${extra}<br><button id="check-btn1">チェック</button>`;
       document.getElementById('check-btn1').addEventListener('click', checkGame1Answer);
-      document.getElementById('skip-btn1').addEventListener('click', startGame1);
     }
   }
 
   // ============================================================
   // ゲーム②(構造を見て名前を当てる)
   // ============================================================
-  const GAME2_OPTS = { easy: { lenMin: 2, lenMax: 7, subMin: 0, subMax: 3 }, hard: { lenMin: 5, lenMax: 8, subMin: 2, subMax: 4 } };
+  const GAME2_OPTS = { easy: { lenMin: 2, lenMax: 7, subMin: 0, subMax: 3 }, hard: { lenMin: 5, lenMax: 8, subMin: 2, subMax: 5 } };
 
   const BASE_NAME_SET = new Set(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン']);
-  const SUB_NAME_SET = new Set(['メチル', 'エチル']);
+  const SUB_NAME_SET = new Set(['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード']);
   const MULTIPLIER_SET = new Set(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']);
 
   // 数字・倍数詞・置換基名・主鎖名のトークン列から、コンマ・ハイフンを自動で補って正式な名称文字列に組み立てる。
@@ -1159,7 +1232,7 @@
 
   function startGame2() {
     interactionsEnabled = false;
-    const { grid: g, name } = generateStructureWithOptions(1, GAME2_OPTS[difficulty], difficulty === 'hard', difficulty === 'hard');
+    const { grid: g, name } = generateStructureWithOptions(1, GAME2_OPTS[difficulty], difficulty === 'hard', difficulty === 'hard', difficulty === 'hard');
     targetName = name;
     grid = g;
     answerTokens = [];
@@ -1201,7 +1274,7 @@
     const rows = [
       { cls: 'cat-number', tokens: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
       { cls: 'cat-multiplier', tokens: ['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ'] },
-      { cls: 'cat-subname', tokens: ['メチル', 'エチル'] },
+      { cls: 'cat-subname', tokens: ['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード'] },
       { cls: 'cat-basename', tokens: ['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン'] },
     ];
     for (const { cls, tokens } of rows) {
@@ -1226,15 +1299,11 @@
     clearBtn.textContent = 'クリア';
     clearBtn.className = 'secondary';
     clearBtn.addEventListener('click', () => { answerTokens = []; updateAnswerPreview(); });
-    const skipBtn = document.createElement('button');
-    skipBtn.textContent = '次の問題へ';
-    skipBtn.className = 'secondary';
-    skipBtn.addEventListener('click', startGame2);
     const submitBtn = document.createElement('button');
     submitBtn.textContent = '回答する';
     submitBtn.className = 'primary';
     submitBtn.addEventListener('click', submitGame2Answer);
-    controlRow.appendChild(undoBtn); controlRow.appendChild(clearBtn); controlRow.appendChild(skipBtn); controlRow.appendChild(submitBtn);
+    controlRow.appendChild(undoBtn); controlRow.appendChild(clearBtn); controlRow.appendChild(submitBtn);
     wb.appendChild(controlRow);
   }
 
