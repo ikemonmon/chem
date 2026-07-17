@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>炭化水素パズル</title>
+<title>アルカンパズル</title>
 <style>
   :root{
     /* ノート紙のトーン */
@@ -101,12 +101,13 @@
 
   /* ---- パレット ---- */
   .palette{
-    display:flex;gap:6px;flex-wrap:wrap;justify-content:center;
+    display:flex;flex-direction:column;gap:8px;align-items:center;
     background:var(--surface);
     border:2.5px solid var(--ink);border-radius:20px 18px 22px 19px;
     padding:14px 10px;margin-bottom:14px;
     box-shadow:2px 3px 0 var(--shadow);
   }
+  .palette-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
   .palette-card{
     width:58px;text-align:center;padding:4px 2px;touch-action:none;cursor:grab;
     border-radius:12px;transition:transform .1s ease, background .1s ease;
@@ -264,17 +265,18 @@
 <body>
 <div id="app">
   <header>
-    <h1>炭化水素パズル</h1>
+    <h1>アルカンパズル</h1>
     <button id="reset-btn">クリア</button>
   </header>
   <div class="mode-tabs" id="mode-tabs">
-    <button class="mode-tab active" data-mode="free">練習モード</button>
+    <button class="mode-tab active" data-mode="free">練習</button>
     <button class="mode-tab" data-mode="game1">アルカン並べ</button>
-    <button class="mode-tab" data-mode="game2">アルカン名前</button>
+    <button class="mode-tab" data-mode="game2">アルカン名付け</button>
   </div>
   <div class="diff-tabs" id="diff-tabs" style="display:none;">
-    <button class="diff-tab active" data-diff="easy">かんたん</button>
-    <button class="diff-tab" data-diff="hard">むずかしい</button>
+    <button class="diff-tab active" data-diff="easy">やさしめ</button>
+    <button class="diff-tab" data-diff="medium">まあまあ</button>
+    <button class="diff-tab" data-diff="hard">そこそこ</button>
   </div>
   <div class="objective" id="objective" style="display:none;"></div>
   <div class="grid" id="grid"></div>
@@ -291,7 +293,8 @@
   // ============================================================
   // 定数・方向ユーティリティ
   // ============================================================
-  const ROWS = 5, COLS = 7;
+  const ROWS = 5;
+  let COLS = 7; // アルカン並べの最高難度(そこそこ)では5に縮小する。他は常に7。
   const DIR_ORDER = ['N', 'E', 'S', 'W'];
   const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
   const DELTA = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] }; // [drow, dcol]
@@ -327,6 +330,36 @@
     const steps = (panel.rotation / 90) % 4;
     return new Set(base.map((d) => rotateCW(d, steps)));
   }
+  function isHalogenPanel(panel) {
+    return !!panel && !!panel.element && panel.element !== 'C';
+  }
+  // 炭素側から「このマスへ向かって」手を伸ばしている隣接方向の一覧を返す。
+  // (隣が炭素で、その炭素の手がこちら側=OPPOSITE[dir]を向いているとき、その方向を含める)
+  function incomingCarbonDirections(grid, r, c) {
+    const dirs = [];
+    for (const dir of DIR_ORDER) {
+      const [dr, dc] = DELTA[dir];
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+      const neighbor = grid[nr][nc];
+      if (!neighbor || isHalogenPanel(neighbor)) continue; // 炭素からの手だけを数える
+      if (getActiveDirections(neighbor).has(OPPOSITE[dir])) dirs.push(dir);
+    }
+    return dirs;
+  }
+  // そのマスのパネルが実際に結合を形成している方向の集合を返す(グリッド全体の文脈が必要)。
+  // ・炭素: 自身の手の向き(getActiveDirections)がそのまま結合方向。
+  // ・ハロゲン: 向きを持たない一価原子。上下左右のうち「炭素の手がちょうど1方向だけ」来ているとき、
+  //   その1方向へ自動で結合する。0方向、または2方向以上のときは結合しない(手を出さない)。
+  function getBondDirections(grid, r, c) {
+    const panel = grid[r][c];
+    if (!panel) return new Set();
+    if (isHalogenPanel(panel)) {
+      const incoming = incomingCarbonDirections(grid, r, c);
+      return incoming.length === 1 ? new Set(incoming) : new Set();
+    }
+    return getActiveDirections(panel);
+  }
   function toBaseDir(actualDir, rotationDeg) {
     const steps = (rotationDeg / 90) % 4;
     return rotateCW(actualDir, (4 - steps) % 4);
@@ -341,8 +374,8 @@
       for (let c = 0; c < COLS; c++) {
         const panel = grid[r][c];
         if (!panel) continue;
-        const active = getActiveDirections(panel);
-        for (const dir of active) {
+        const bonds = getBondDirections(grid, r, c);
+        for (const dir of bonds) {
           const [dr, dc] = DELTA[dir];
           const nr = r + dr, nc = c + dc;
           const inBounds = nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS;
@@ -351,8 +384,9 @@
             mismatches.push({ r, c, dir, reason: 'DANGLING_BOND' });
             continue;
           }
-          const neighborActive = getActiveDirections(neighbor);
-          if (!neighborActive.has(OPPOSITE[dir])) {
+          // 相手側も同じ結合を張り返しているか(ハロゲンの自動結合もこの1本の判定に含まれる)
+          const neighborBonds = getBondDirections(grid, nr, nc);
+          if (!neighborBonds.has(OPPOSITE[dir])) {
             mismatches.push({ r, c, dir, reason: 'ONE_SIDED_BOND' });
           }
         }
@@ -380,7 +414,7 @@
       for (let c = 0; c < COLS; c++) {
         const panel = grid[r][c];
         if (!panel) continue;
-        for (const dir of getActiveDirections(panel)) {
+        for (const dir of getBondDirections(grid, r, c)) {
           const [dr, dc] = DELTA[dir];
           const nr = r + dr, nc = c + dc;
           if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || !grid[nr][nc]) continue;
@@ -596,7 +630,7 @@
     const ring = findRing(graph);
     const ringSize = ring.length;
     if (ringSize % 2 !== 0) throw new Error('UNSUPPORTED: 奇数員環');
-    if (![4, 6].includes(ringSize)) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環はMVP対象外`);
+    if (![4, 6, 8, 10].includes(ringSize)) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環は対象外`);
 
     const ringSet = new Set(ring);
     const rawSubstituents = extractSubstituents(graph, ringSet);
@@ -654,9 +688,10 @@
     return arr;
   }
   function emptyGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(null)); }
-  function pickTwoDistinct(pool) {
+  function pickUpToNDistinct(pool, n) {
+    const count = randInt(1, Math.max(1, Math.min(n, pool.length)));
     const shuffled = shuffle([...pool]);
-    return [shuffled[0], shuffled[1]];
+    return shuffled.slice(0, count);
   }
 
   // targetDirsが欲しいときに、その活性方向の組を実現するtype/rotationを逆算する
@@ -700,7 +735,7 @@
   // 5行×7列に収めるため主鎖は最大7炭素までとする(命名エンジン自体は10炭素まで対応可能)。
   function generateAlkaneGrid(maxTypes, opts) {
     const { lenMin = 2, lenMax = 7, subMin = 0, subMax = 3 } = opts || {};
-    const len = randInt(lenMin, lenMax);
+    const len = randInt(Math.max(2, lenMin), Math.max(2, lenMax));
     const startCol = Math.floor((COLS - len) / 2);
     const spineRow = 2;
     const grid = emptyGrid();
@@ -709,8 +744,8 @@
     for (let i = 1; i < len - 1; i++) { slots.push([i, 'up']); slots.push([i, 'down']); }
     shuffle(slots);
 
-    const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.4)
-      ? pickTwoDistinct(SUBSTITUENT_SPECIES)
+    const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.6)
+      ? pickUpToNDistinct(SUBSTITUENT_SPECIES, maxTypes)
       : [choice(SUBSTITUENT_SPECIES)];
 
     const count = Math.min(slots.length, randInt(subMin, subMax));
@@ -755,6 +790,16 @@
     if (i > 0) dirs.push(directionBetween(path[i], path[i - 1]));
     if (i < path.length - 1) dirs.push(directionBetween(path[i], path[i + 1]));
     return dirs;
+  }
+
+  // 主鎖のうち「進む向きが変わる炭素(かど)」の数を数える(折れ曲がり炭素の数の判定に使う)
+  function countBends(path) {
+    let bends = 0;
+    for (let i = 1; i < path.length - 1; i++) {
+      const [dPrev, dNext] = computeChainDirs(path, i);
+      if (OPPOSITE[dPrev] !== dNext) bends++;
+    }
+    return bends;
   }
 
   // 活性方向の集合から自動でパネル種類を判定して生成する(手動でtypeを指定しなくてよい版)
@@ -812,8 +857,8 @@
     }
     shuffle(slots);
 
-    const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.4)
-      ? pickTwoDistinct(SUBSTITUENT_SPECIES)
+    const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.6)
+      ? pickUpToNDistinct(SUBSTITUENT_SPECIES, maxTypes)
       : [choice(SUBSTITUENT_SPECIES)];
 
     const targetCount = randInt(subMin, subMax);
@@ -868,12 +913,16 @@
   }
 
   // 難問モード用: 屈曲した主鎖 + 側鎖多め
-  function generateBentAlkaneGrid(maxTypes, opts, forceTurn) {
+  // bendRange: [min, max] で「折れ曲がり炭素(かど)の数」の範囲を指定(省略時は無制限)
+  function generateBentAlkaneGrid(maxTypes, opts, forceTurn, bendRange) {
     const { lenMin = 6, lenMax = 9, subMin = 2, subMax = 4 } = opts || {};
-    for (let attempt = 0; attempt < 25; attempt++) {
-      const len = randInt(lenMin, lenMax);
+    const [bendMin, bendMax] = bendRange || [0, Infinity];
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const len = randInt(Math.max(2, lenMin), Math.max(2, lenMax));
       const walk = tryGenerateBentChain(len, forceTurn);
       if (!walk) continue;
+      const bends = countBends(walk.path);
+      if (bends < bendMin || bends > bendMax) continue; // 指定した折れ曲がり数の範囲外ならやり直す
       const occupied = new Set(walk.occupied);
       const posInfo = planBentSubstituents(walk.path, occupied, maxTypes, subMin, subMax);
       return buildBentGrid(walk.path, posInfo);
@@ -881,39 +930,41 @@
     return null; // 呼び出し元でリトライ
   }
 
-  // 環状(シクロアルカン): シクロブタン/シクロヘキサンの2テンプレートを固定位置に配置。
-  // 置換基はメチルのみ・最大1個(はみ出し防止のため。エチルや複数置換基は今後の拡張候補)。
+  // 環状(シクロアルカン): 2行×N列の「細長い六角形」型のリングを、活性方向(dirs)から自動生成する。
+  // 置換基はメチルまたはハロゲン1個のみ(はみ出し防止のため。エチルや複数置換基は今後の拡張候補)。
+  // width(列数)が同じであれば何員環でも同じ形のロジックで組めるので、テンプレートは関数で生成する。
+  function makeRingTemplate(width) {
+    const cells = [];
+    cells.push({ dr: 0, dc: 0, dirs: ['E', 'S'], free: ['N', 'W'] });
+    for (let i = 1; i < width - 1; i++) cells.push({ dr: 0, dc: i, dirs: ['W', 'E'], free: ['N'] });
+    cells.push({ dr: 0, dc: width - 1, dirs: ['W', 'S'], free: ['N', 'E'] });
+    cells.push({ dr: 1, dc: width - 1, dirs: ['N', 'W'], free: ['S', 'E'] });
+    for (let i = width - 2; i >= 1; i--) cells.push({ dr: 1, dc: i, dirs: ['E', 'W'], free: ['S'] });
+    cells.push({ dr: 1, dc: 0, dirs: ['E', 'N'], free: ['S', 'W'] });
+    return { width, height: 2, cells };
+  }
   const RING_TEMPLATES = {
-    4: { baseRow: 1, baseCol: 2, cells: [
-      { dr: 0, dc: 0, type: 3, rotation: 90, free: ['N', 'W'] },
-      { dr: 0, dc: 1, type: 3, rotation: 180, free: ['N', 'E'] },
-      { dr: 1, dc: 0, type: 3, rotation: 0, free: ['S', 'W'] },
-      { dr: 1, dc: 1, type: 3, rotation: 270, free: ['S', 'E'] },
-    ] },
-    6: { baseRow: 1, baseCol: 2, cells: [
-      { dr: 0, dc: 0, type: 3, rotation: 90, free: ['N', 'W'] },
-      { dr: 0, dc: 1, type: 2, rotation: 90, free: ['N'] },
-      { dr: 0, dc: 2, type: 3, rotation: 180, free: ['N', 'E'] },
-      { dr: 1, dc: 0, type: 3, rotation: 0, free: ['S', 'W'] },
-      { dr: 1, dc: 1, type: 2, rotation: 90, free: ['S'] },
-      { dr: 1, dc: 2, type: 3, rotation: 270, free: ['S', 'E'] },
-    ] },
+    4: makeRingTemplate(2),   // シクロブタン
+    6: makeRingTemplate(3),   // シクロヘキサン
+    8: makeRingTemplate(4),   // シクロオクタン
+    10: makeRingTemplate(5),  // シクロデカン
   };
 
-  function generateCycloalkaneGrid(forceSubstituent) {
-    const ringSize = choice([4, 6]);
+  function generateCycloalkaneGrid(forceSubstituent, ringSizes) {
+    const ringSize = choice(ringSizes || [4, 6]);
     const tmpl = RING_TEMPLATES[ringSize];
+    const baseRow = Math.floor((ROWS - tmpl.height) / 2);
+    const baseCol = Math.floor((COLS - tmpl.width) / 2);
     const grid = emptyGrid();
     for (const cell of tmpl.cells) {
-      grid[tmpl.baseRow + cell.dr][tmpl.baseCol + cell.dc] = { type: cell.type, rotation: cell.rotation };
+      grid[baseRow + cell.dr][baseCol + cell.dc] = panelForDirections(cell.dirs);
     }
 
     if (forceSubstituent || Math.random() < 0.5) {
       const cell = choice(tmpl.cells);
       const dir = choice(cell.free);
-      const r0 = tmpl.baseRow + cell.dr, c0 = tmpl.baseCol + cell.dc;
-      const ringActive = getActiveDirections({ type: cell.type, rotation: cell.rotation });
-      grid[r0][c0] = panelFor(4, [...ringActive, dir]);
+      const r0 = baseRow + cell.dr, c0 = baseCol + cell.dc;
+      grid[r0][c0] = panelForDirections([...cell.dirs, dir]);
       const [ddr, ddc] = DELTA[dir];
       const name = choice(RING_SUBSTITUENT_SPECIES);
       const panel = panelFor(1, [OPPOSITE[dir]]);
@@ -936,19 +987,46 @@
     return n;
   }
 
-  // maxTypes: この問題で許容する置換基の「種類数」(ゲーム①=2, ゲーム②=1)
-  // opts: { lenMin, lenMax, subMin, subMax } 主鎖の長さと置換基数の範囲
-  // useBent: 屈曲した主鎖を使うか(難問モード用)
-  // forceTurn: 屈曲主鎖の生成時、できるだけ曲げるように誘導するか
-  function generateStructureWithOptions(maxTypes, opts, useBent, forceTurn, forceRingSubstituent) {
+  // 主鎖が炭素1個だけの構造(ハロゲン化メタン)を生成する。やさしめ難度でのみ登場させる。
+  function generateMethaneGrid() {
+    const dirsByCount = { 1: ['E'], 2: ['E', 'W'], 3: ['E', 'W', 'N'], 4: ['E', 'W', 'N', 'S'] };
+    const typeByCount = { 1: 1, 2: 2, 3: 4, 4: 5 };
+    const count = randInt(1, 4);
+    const dirs = dirsByCount[count];
+    const grid = emptyGrid();
+    const cr = 2, cc = Math.floor(COLS / 2);
+    grid[cr][cc] = panelFor(typeByCount[count], dirs);
+    const opp = { E: 'W', W: 'E', N: 'S', S: 'N' };
+    const halogenNames = Object.keys(HALOGEN_ELEMENT_BY_NAME);
+    dirs.forEach((d) => {
+      const [dr, dc] = DELTA[d];
+      const panel = panelFor(1, [opp[d]]);
+      panel.element = HALOGEN_ELEMENT_BY_NAME[choice(halogenNames)];
+      grid[cr + dr][cc + dc] = panel;
+    });
+    return grid;
+  }
+
+  // opts: { maxTypes, lenMin, lenMax, subMin, subMax, useBent, forceTurn, forceRingSubstituent, ringSizes, bendRange, allowMethane }
+  //   maxTypes: この問題で許容する置換基の「種類数」
+  //   useBent: 屈曲した主鎖を使うか / forceTurn: できるだけ曲げるように誘導するか
+  //   ringSizes: 環のサイズ候補(例: [4,6]) / bendRange: [min,max]で折れ曲がり炭素数を指定(省略時は無制限)
+  //   allowMethane: 炭素1個だけの構造(ハロゲン化メタン)も出題対象に含めるか
+  function generateStructureWithOptions(opts) {
+    const {
+      maxTypes = 1, useBent = false, forceTurn = false, forceRingSubstituent = false,
+      ringSizes = [4, 6], bendRange = null, allowMethane = false,
+    } = opts || {};
     for (let attempt = 0; attempt < 60; attempt++) {
       try {
         let g;
-        if (Math.random() < 0.75) {
-          g = useBent ? generateBentAlkaneGrid(maxTypes, opts, forceTurn) : generateAlkaneGrid(maxTypes, opts);
+        if (allowMethane && Math.random() < 0.15) {
+          g = generateMethaneGrid();
+        } else if (Math.random() < 0.75) {
+          g = useBent ? generateBentAlkaneGrid(maxTypes, opts, forceTurn, bendRange) : generateAlkaneGrid(maxTypes, opts);
           if (!g) continue;
         } else {
-          g = generateCycloalkaneGrid(forceRingSubstituent);
+          g = generateCycloalkaneGrid(forceRingSubstituent, ringSizes);
         }
         const result = generateName(g);
         // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
@@ -972,7 +1050,7 @@
   let interactionsEnabled = true; // ゲーム②(読み取り専用表示)ではfalseにする
   let wasStructureValid = false; // 直前が「正常」だったかどうか(不正→正常の遷移でのみ音を鳴らすため)
   let currentMode = 'free'; // 'free' | 'game1' | 'game2'
-  let difficulty = 'easy'; // 'easy' | 'hard'
+  let difficulty = 'easy'; // 'easy' | 'medium' | 'hard'
   let nameRevealed = false; // 自由に組むモードで名前を表示済みかどうか
   let targetName = '';
   let answerTokens = [];
@@ -980,31 +1058,25 @@
   // ============================================================
   // スタンプ(手描き風SVG・外部依存なし)
   // ============================================================
-  // 正解: 赤い花丸(渦巻き花) + 「正解」の手書き風文字
+  // 正解: 「誤」と同じ丸枠+かすれのスタンプ様式で「正解」を表示(色は同じ赤)
   function correctStampSVG() {
-    const petals = 8, cx = 100, cy = 94, rBase = 48;
-    const pts = [], steps = petals * 16;
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps * Math.PI * 2;
-      const r = rBase + Math.pow(Math.max(0, Math.sin(t * petals)), 0.7) * 20; // 花びららしく尖らせる
-      pts.push([cx + Math.cos(t - Math.PI / 2) * r, cy + Math.sin(t - Math.PI / 2) * r]);
-    }
-    let d = 'M ' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
-    for (let i = 1; i < pts.length; i++) d += ' L ' + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1);
-    d += ' Z';
-    let sd = ''; const turns = 2.2, spSteps = 150, a = 2.0;
-    for (let i = 0; i <= spSteps; i++) {
-      const th = i / spSteps * turns * Math.PI * 2, r = a * th;
-      sd += (i === 0 ? 'M ' : 'L ') + (cx + Math.cos(th) * r).toFixed(1) + ' ' + (cy + Math.sin(th) * r).toFixed(1) + ' ';
-    }
     return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <defs><filter id="stampRough1" x="-20%" y="-20%" width="140%" height="140%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/></filter></defs>
-      <g filter="url(#stampRough1)" fill="none" stroke="#e8503a" stroke-linecap="round" stroke-linejoin="round">
-        <path d="${d}" stroke-width="7"/><path d="${sd}" stroke-width="6.5"/></g>
-      <text x="100" y="112" text-anchor="middle" font-size="40" font-weight="900" fill="#e8503a"
-        font-family="'Hiragino Maru Gothic ProN','Yu Gothic',sans-serif" transform="rotate(-6 100 100)" filter="url(#stampRough1)">正解</text>
+      <defs>
+        <filter id="stampRough2c" x="-25%" y="-25%" width="150%" height="150%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="12" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/></filter>
+        <filter id="stampRough3c" x="-25%" y="-25%" width="150%" height="150%">
+          <feTurbulence type="turbulence" baseFrequency="0.11" numOctaves="2" seed="17" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="7"/></filter>
+      </defs>
+      <g fill="none" stroke="#d63b2e">
+        <circle cx="100" cy="100" r="76" stroke-width="7" filter="url(#stampRough2c)"/>
+        <circle cx="100" cy="100" r="76" stroke-width="4" opacity="0.5" filter="url(#stampRough3c)"/>
+      </g>
+      <text x="100" y="102" text-anchor="middle" dominant-baseline="central" font-size="62" font-weight="900"
+        fill="#d63b2e" font-family="'Hiragino Mincho ProN','Yu Mincho',serif" transform="rotate(-4 100 100)" filter="url(#stampRough2c)">正解</text>
+      <text x="100" y="102" text-anchor="middle" dominant-baseline="central" font-size="62" font-weight="900"
+        fill="#d63b2e" opacity="0.4" font-family="'Hiragino Mincho ProN','Yu Mincho',serif" transform="rotate(-4 100 100)" filter="url(#stampRough3c)">正解</text>
     </svg>`;
   }
 
@@ -1033,43 +1105,57 @@
   // ============================================================
   // 描画
   // ============================================================
-  function svgIcon(type, mismatchActualDirs, rotationDeg, highlightAlpha, element) {
+  function svgIcon(type, mismatchActualDirs, rotationDeg, highlightAlpha, element, halogenBondDirs) {
     const isHalogen = !!element && element !== 'C';
-    const base = new Set(PANEL_ARM_TABLE[type]);
-    const mismatchBase = new Set((mismatchActualDirs || []).map((d) => toBaseDir(d, rotationDeg)));
     let underlay = '';
     let arms = '';
+
+    if (isHalogen) {
+      // ハロゲンは向きを持たない一価原子。結合が成立している方向(halogenBondDirs)にだけ手を1本描く。
+      // 未接続(パレット/ゴースト/孤立)のときは手を描かず、丸と元素記号だけを表示する。
+      const bondSet = halogenBondDirs || new Set();
+      for (const dir of DIR_ORDER) {
+        if (!bondSet.has(dir)) continue;
+        const [dx, dy] = VEC[dir];
+        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 38, y2 = 50 + dy * 38;
+        if (highlightAlpha > 0) {
+          underlay += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--highlighter)" stroke-width="14" stroke-linecap="round" opacity="${highlightAlpha}"/>`;
+        }
+        arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>`;
+      }
+      const info = HALOGEN_INFO[element];
+      const fontSize = element.length === 1 ? 32 : 24;
+      const atom = `<circle cx="50" cy="50" r="27" fill="${info.fill}" stroke="${info.stroke}" stroke-width="2"/>`
+        + `<text x="50" y="51" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}" font-weight="700" fill="${info.stroke}">${element}</text>`;
+      return `<svg viewBox="0 0 100 100" width="100%" height="100%">${underlay}${arms}${atom}</svg>`;
+    }
+
+    const base = new Set(PANEL_ARM_TABLE[type]);
+    const mismatchBase = new Set((mismatchActualDirs || []).map((d) => toBaseDir(d, rotationDeg)));
     for (const dir of DIR_ORDER) {
       const [dx, dy] = VEC[dir];
       if (base.has(dir)) {
-        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 38, y2 = 50 + dy * 38;
         const danger = mismatchBase.has(dir);
+        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 38, y2 = 50 + dy * 38;
         if (highlightAlpha > 0 && !danger) {
           underlay += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--highlighter)" stroke-width="14" stroke-linecap="round" opacity="${highlightAlpha}"/>`;
         }
         arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${danger ? 'var(--warning)' : 'var(--text)'}" stroke-width="3" stroke-linecap="round"/>`;
-      } else if (!isHalogen) {
-        // ハロゲンは一価の原子なので、結合していない方向には(水素はおろか)何も存在しない
+      } else {
+        // 炭素の未結合の手: 薄い線 + 小さな丸(水素の暗示)
         const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 25, y2 = 50 + dy * 25;
         const cx = 50 + dx * 32, cy = 50 + dy * 32;
         arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round"/>`;
         arms += `<circle cx="${cx}" cy="${cy}" r="6" fill="none" stroke="var(--text-muted)" stroke-width="2"/>`;
       }
     }
-    let atom;
-    if (isHalogen) {
-      const info = HALOGEN_INFO[element];
-      const fontSize = element.length === 1 ? 32 : 24;
-      atom = `<circle cx="50" cy="50" r="27" fill="${info.fill}" stroke="${info.stroke}" stroke-width="2"/>`
-        + `<text x="50" y="51" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}" font-weight="700" fill="${info.stroke}" transform="rotate(${-rotationDeg} 50 50)">${element}</text>`;
-    } else {
-      atom = `<circle cx="50" cy="50" r="14" fill="var(--text)"/>`;
-    }
+    const atom = `<circle cx="50" cy="50" r="14" fill="var(--text)"/>`;
     return `<svg viewBox="0 0 100 100" width="100%" height="100%">${underlay}${arms}${atom}</svg>`;
   }
 
   function buildGridDOM() {
     const gridEl = document.getElementById('grid');
+    gridEl.style.gridTemplateColumns = `repeat(${COLS}, minmax(0,1fr))`;
     gridEl.innerHTML = '';
     cellEls = [];
     for (let r = 0; r < ROWS; r++) {
@@ -1086,6 +1172,16 @@
     }
   }
 
+  // アルカン並べの「そこそこ」難度だけグリッドを5×5に縮小する。それ以外は常に5×7。
+  // モード切替・難易度切替のたびに呼び出し、必要な場合だけグリッドを作り直す。
+  function applyGridSize() {
+    const newCols = (currentMode === 'game1' && difficulty === 'hard') ? 5 : 7;
+    if (newCols === COLS) return;
+    COLS = newCols;
+    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    buildGridDOM();
+  }
+
   function syncCell(r, c, mismatchMap, islands, highlightAlpha) {
     const cellEl = cellEls[r][c];
     const panel = grid[r][c];
@@ -1099,8 +1195,13 @@
 
     let rotor = cellEl.querySelector('.rotor');
     if (!rotor) { rotor = document.createElement('div'); rotor.className = 'rotor'; cellEl.appendChild(rotor); }
-    rotor.innerHTML = svgIcon(panel.type, mismatchMap.get(key), panel.rotation, highlightAlpha, panel.element);
-    rotor.style.transform = `rotate(${panel.rotation}deg)`;
+    if (isHalogenPanel(panel)) {
+      rotor.innerHTML = svgIcon(panel.type, null, 0, highlightAlpha, panel.element, getBondDirections(grid, r, c));
+      rotor.style.transform = 'rotate(0deg)';
+    } else {
+      rotor.innerHTML = svgIcon(panel.type, mismatchMap.get(key), panel.rotation, highlightAlpha, panel.element);
+      rotor.style.transform = `rotate(${panel.rotation}deg)`;
+    }
   }
 
   // ---- 蛍光ペンのフェードアウト管理 ----
@@ -1312,23 +1413,30 @@
   function setupPalette() {
     const paletteEl = document.getElementById('palette');
     paletteEl.innerHTML = '';
-    const items = [
-      ...[1, 2, 3, 4, 5].map((type) => ({ kind: 'carbon', type })),
-      ...['F', 'Cl', 'Br', 'I'].map((element) => ({ kind: 'halogen', element })),
+    const carbonRow = document.createElement('div');
+    carbonRow.className = 'palette-row';
+    const halogenRow = document.createElement('div');
+    halogenRow.className = 'palette-row';
+    const groups = [
+      { row: carbonRow, items: [1, 2, 3, 4, 5].map((type) => ({ kind: 'carbon', type })) },
+      { row: halogenRow, items: ['F', 'Cl', 'Br', 'I'].map((element) => ({ kind: 'halogen', element })) },
     ];
-    for (const item of items) {
-      const card = document.createElement('div');
-      card.className = 'palette-card';
-      const icon = document.createElement('div');
-      icon.className = 'icon';
-      if (item.kind === 'carbon') {
-        icon.innerHTML = svgIcon(item.type, [], 0, false, 'C');
-      } else {
-        icon.innerHTML = svgIcon(1, [], 0, false, item.element);
+    for (const { row, items } of groups) {
+      for (const item of items) {
+        const card = document.createElement('div');
+        card.className = 'palette-card';
+        const icon = document.createElement('div');
+        icon.className = 'icon';
+        if (item.kind === 'carbon') {
+          icon.innerHTML = svgIcon(item.type, [], 0, false, 'C');
+        } else {
+          icon.innerHTML = svgIcon(1, [], 0, false, item.element);
+        }
+        card.appendChild(icon);
+        row.appendChild(card);
+        card.addEventListener('pointerdown', (e) => { e.preventDefault(); startPaletteDrag(e, item); });
       }
-      card.appendChild(icon);
-      paletteEl.appendChild(card);
-      card.addEventListener('pointerdown', (e) => { e.preventDefault(); startPaletteDrag(e, item); });
+      paletteEl.appendChild(row);
     }
   }
 
@@ -1427,18 +1535,31 @@
 
       if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
       tapCount += 1;
+      // ドラッグ&ドロップでこのマスに新しいパネルを置いた瞬間も、同じpointerupイベントで
+      // このタップ判定が先に走ってしまうことがある(ドロップ処理はwindow側のリスナーで後から発火するため)。
+      // その結果、ドロップ直後のパネルが意図せず回転してしまう不具合があったため、
+      // タップを登録した時点のパネル参照を覚えておき、実行時に置き換わっていないか確認する。
+      const panelAtTapTime = grid[r][c];
 
       if (tapCount >= 3) {
         tapCount = 0;
-        grid[r][c] = null;
-        playDeleteSound();
-        refreshAll();
+        if (grid[r][c] === panelAtTapTime) {
+          grid[r][c] = null;
+          playDeleteSound();
+          refreshAll();
+        }
+        return;
+      }
+
+      // ハロゲンは向きを持たない自動結合パネルなので、回転は行わない(削除の3タップだけ有効)。
+      if (isHalogenPanel(panelAtTapTime)) {
+        pendingTimer = setTimeout(() => { tapCount = 0; pendingTimer = null; }, TAP_TIMEOUT);
         return;
       }
 
       pendingTimer = setTimeout(() => {
         const panel = grid[r][c];
-        if (panel) {
+        if (panel && panel === panelAtTapTime) {
           const delta = tapCount === 1 ? 90 : -90; // 1回=時計回り、2回=反時計回り
           panel.rotation = ((panel.rotation + delta) % 360 + 360) % 360;
           if (delta === 90) playRotateCWSound(); else playRotateCCWSound();
@@ -1472,11 +1593,25 @@
   // ============================================================
   let game1Checked = null; // null | 'correct' | 'incorrect'
 
-  const GAME1_OPTS = { easy: { lenMin: 2, lenMax: 7, subMin: 0, subMax: 3 }, hard: { lenMin: 7, lenMax: 10, subMin: 2, subMax: 5 } };
+  // 主鎖=main chain, 側鎖=substituent(種類数はmaxTypes, 数はsubMin~subMax)
+  const GAME1_OPTS = {
+    easy: {
+      maxTypes: 1, lenMin: 1, lenMax: 6, subMin: 0, subMax: 4,
+      ringSizes: [4, 6], allowMethane: true, useBent: false, forceRingSubstituent: false,
+    },
+    medium: {
+      maxTypes: 2, lenMin: 4, lenMax: 8, subMin: 3, subMax: 6,
+      ringSizes: [6, 8], allowMethane: false, useBent: true, forceTurn: false, forceRingSubstituent: true,
+    },
+    hard: {
+      maxTypes: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6,
+      ringSizes: [6, 8, 10], allowMethane: false, useBent: true, forceTurn: true, forceRingSubstituent: true,
+    },
+  };
 
   function startGame1() {
     interactionsEnabled = true;
-    const { name } = generateStructureWithOptions(2, GAME1_OPTS[difficulty], difficulty === 'hard', false, difficulty === 'hard');
+    const { name } = generateStructureWithOptions(GAME1_OPTS[difficulty]);
     targetName = name;
     grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     game1Checked = null;
@@ -1513,9 +1648,22 @@
   // ============================================================
   // ゲーム②(構造を見て名前を当てる)
   // ============================================================
-  const GAME2_OPTS = { easy: { lenMin: 2, lenMax: 7, subMin: 0, subMax: 3 }, hard: { lenMin: 5, lenMax: 8, subMin: 2, subMax: 5 } };
+  const GAME2_OPTS = {
+    easy: {
+      maxTypes: 1, lenMin: 1, lenMax: 6, subMin: 0, subMax: 3,
+      ringSizes: [4, 6], allowMethane: true, useBent: false, forceRingSubstituent: false,
+    },
+    medium: {
+      maxTypes: 1, lenMin: 4, lenMax: 8, subMin: 3, subMax: 6,
+      ringSizes: [6, 8], allowMethane: false, useBent: true, forceTurn: false, bendRange: [0, 3], forceRingSubstituent: true,
+    },
+    hard: {
+      maxTypes: 1, lenMin: 6, lenMax: 10, subMin: 4, subMax: 6,
+      ringSizes: [6, 8, 10], allowMethane: false, useBent: true, forceTurn: true, bendRange: [4, Infinity], forceRingSubstituent: true,
+    },
+  };
 
-  const BASE_NAME_SET = new Set(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン']);
+  const BASE_NAME_SET = new Set(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン', 'シクロオクタン', 'シクロデカン']);
   const SUB_NAME_SET = new Set(['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード']);
   const MULTIPLIER_SET = new Set(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']);
 
@@ -1551,7 +1699,7 @@
 
   function startGame2() {
     interactionsEnabled = false;
-    const { grid: g, name } = generateStructureWithOptions(1, GAME2_OPTS[difficulty], difficulty === 'hard', difficulty === 'hard', difficulty === 'hard');
+    const { grid: g, name } = generateStructureWithOptions(GAME2_OPTS[difficulty]);
     targetName = name;
     grid = g;
     answerTokens = [];
@@ -1608,7 +1756,7 @@
       { cls: 'cat-number', tokens: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
       { cls: 'cat-multiplier', tokens: shuffle(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']) },
       { cls: 'cat-subname', tokens: shuffle(['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード']) },
-      { cls: 'cat-basename', tokens: shuffle(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン']) },
+      { cls: 'cat-basename', tokens: shuffle(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン', 'シクロオクタン', 'シクロデカン']) },
     ];
     for (const { cls, tokens } of rows) {
       const rowEl = document.createElement('div');
@@ -1645,6 +1793,7 @@
   // ============================================================
   function setMode(mode) {
     currentMode = mode;
+    applyGridSize();
     document.querySelectorAll('.mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
     document.getElementById('objective').style.display = mode === 'game1' ? 'block' : 'none';
     document.getElementById('wordbank').style.display = mode === 'game2' ? 'block' : 'none';
@@ -1689,6 +1838,7 @@
     btn.addEventListener('click', () => {
       difficulty = btn.dataset.diff;
       document.querySelectorAll('.diff-tab').forEach((b) => b.classList.toggle('active', b === btn));
+      applyGridSize();
       if (currentMode === 'game1') startGame1();
       else if (currentMode === 'game2') startGame2();
     });
