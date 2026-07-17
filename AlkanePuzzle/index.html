@@ -53,17 +53,18 @@
     font-size:12px;color:var(--text-muted);background:var(--surface);
     border:1px solid var(--border);border-radius:8px;padding:6px 10px;
   }
+  #reset-btn.disabled{opacity:.4;pointer-events:none;}
   .grid{
-    display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+    display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;
     width:min(94vw,490px);margin:0 auto 16px;touch-action:none;
   }
   .cell{
     position:relative;aspect-ratio:1;
-    border:2px dashed var(--border);border-radius:8px;background:var(--surface);
-    touch-action:none;
+    border:1px dashed var(--border);border-radius:8px;background:var(--surface);
+    touch-action:none;overflow:hidden;
   }
-  .cell.filled{border-style:solid;cursor:pointer;}
-  .cell.isolated{border-color:var(--warning);border-style:dashed;}
+  .cell.filled{border-style:solid;border-width:2px;cursor:pointer;}
+  .cell.isolated{border-color:var(--warning);border-style:dashed;border-width:2px;}
   .rotor{width:100%;height:100%;transition:transform 200ms cubic-bezier(.34,1.56,.64,1);transform-origin:50% 50%;-webkit-user-drag:none;}
   .palette{
     display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
@@ -73,6 +74,7 @@
   .palette-card{width:64px;text-align:center;padding:6px 4px;touch-action:none;cursor:grab;}
   .palette-card .icon{width:56px;height:56px;margin:0 auto;}
   .palette-card .label{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .palette.hide-labels .label{display:none;}
   .ghost{position:fixed;pointer-events:none;width:56px;height:56px;opacity:.85;z-index:999;}
   .hint{font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:12px;}
   .status{
@@ -86,7 +88,7 @@
   .mode-tab.active{border-color:var(--accent);color:var(--accent);font-weight:600;}
   .diff-tabs{display:flex;gap:6px;margin-bottom:12px;justify-content:center;}
   .diff-tab{font-size:12px;padding:5px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);}
-  .diff-tab.active{border-color:var(--warning);color:var(--warning);font-weight:600;}
+  .diff-tab.active{border-color:var(--accent);color:var(--accent);font-weight:600;}
   .objective{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;text-align:center;line-height:1.6;}
   .objective .name{font-size:16px;font-weight:600;color:var(--accent);}
   .objective.success{background:var(--accent);}
@@ -104,6 +106,7 @@
   .wordbank .row.cat-multiplier button{background:var(--cat-multiplier-bg);border-color:var(--cat-multiplier-border);}
   .wordbank .row.cat-subname button{background:var(--cat-subname-bg);border-color:var(--cat-subname-border);}
   .wordbank .row.cat-basename button{background:var(--cat-basename-bg);border-color:var(--cat-basename-border);}
+  .wordbank.answered .row button{opacity:.4;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -113,9 +116,9 @@
     <button id="reset-btn">クリア</button>
   </header>
   <div class="mode-tabs" id="mode-tabs">
-    <button class="mode-tab active" data-mode="free">自由に組む</button>
-    <button class="mode-tab" data-mode="game1">①作る</button>
-    <button class="mode-tab" data-mode="game2">②答える</button>
+    <button class="mode-tab active" data-mode="free">練習モード</button>
+    <button class="mode-tab" data-mode="game1">アルカン並べ</button>
+    <button class="mode-tab" data-mode="game2">アルカン名前</button>
   </div>
   <div class="diff-tabs" id="diff-tabs" style="display:none;">
     <button class="diff-tab active" data-diff="easy">かんたん</button>
@@ -151,7 +154,7 @@
   const MULTIPLIER_PREFIX = ['', '', 'ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']; // index = 同じ置換基の個数
   // ハロゲン(F/Cl/Br/I): 一価の原子なので必ず1マス・末端(type1相当)になる
   const HALOGEN_INFO = {
-    F: { name: 'フルオロ', stroke: '#C9A227', fill: '#FBF0C4' },
+    F: { name: 'フルオロ', stroke: '#B08D1A', fill: '#F7F2A0' },
     Cl: { name: 'クロロ', stroke: '#7CB518', fill: '#E8F5D0' },
     Br: { name: 'ブロモ', stroke: '#A0522D', fill: '#F3E0D6' },
     I: { name: 'ヨード', stroke: '#7B4397', fill: '#EBDFF5' },
@@ -342,11 +345,41 @@
     return 0;
   }
 
+  // メタン置換体(炭素が1個だけの構造)専用の名前組み立て。
+  // 炭素が1個しかなく位置番号に意味がないため、位置番号(ロカント)を付けずに置換基名を連結する。
+  // 例: クロロメタン、ジクロロメタン、トリクロロメタン、テトラクロロメタン、クロロフルオロメタン
+  function buildMethaneName(substituents) {
+    if (substituents.length === 0) return 'メタン'; // 通常は不整合チェックの時点で弾かれるためここには来ない
+    const counts = new Map();
+    for (const s of substituents) counts.set(s.name, (counts.get(s.name) || 0) + 1);
+    const sortedNames = [...counts.keys()].sort((a, b) => SUBSTITUENT_ORDER[a] - SUBSTITUENT_ORDER[b]);
+    const parts = sortedNames.map((name) => {
+      const count = counts.get(name);
+      const multiplier = MULTIPLIER_PREFIX[count] || '';
+      return `${multiplier}${name}`;
+    });
+    return parts.join('') + 'メタン';
+  }
+
   function nameAlkane(graph) {
     const { nodeIds, adjacency, elements } = graph;
-    // メタン(C1)は不整合チェックの時点で弾かれるためここには到達しない(エタン以上のみ)
-    // 主鎖の候補端点は炭素のみに限定する(ハロゲンは一価の置換基であり、主鎖の一部にはなれない)
-    const leaves = nodeIds.filter((id) => adjacency.get(id).size === 1 && elements.get(id) === 'C');
+    const carbonIds = nodeIds.filter((id) => elements.get(id) === 'C');
+
+    // 主鎖の炭素が1個だけの場合(ハロゲン化メタン): 2端点間の最長パス探索がそもそも成立しない特殊ケースなので専用に処理する
+    if (carbonIds.length === 1) {
+      const centerId = carbonIds[0];
+      const rawSubstituents = extractSubstituents(graph, new Set([centerId]));
+      return buildMethaneName(rawSubstituents);
+    }
+
+    // 主鎖の候補端点は炭素のみに限定する(ハロゲンは一価の置換基であり、主鎖の一部にはなれない)。
+    // 末端炭素にハロゲンが付いている場合でも正しく端点として扱えるよう、
+    // 「全結合数」ではなく「炭素どうしの結合数」が1かどうかで判定する。
+    const leaves = carbonIds.filter((id) => {
+      let carbonNeighborCount = 0;
+      for (const n of adjacency.get(id)) if (elements.get(n) === 'C') carbonNeighborCount++;
+      return carbonNeighborCount === 1;
+    });
     const distMaps = new Map();
     for (const leaf of leaves) distMaps.set(leaf, bfsDistancesAndParents(adjacency, leaf));
 
@@ -870,7 +903,7 @@
   let lastIslands = new Set();
   let highlightStartTime = 0;
   let highlightAnimTimer = null;
-  const HIGHLIGHT_HOLD_MS = 1000;
+  const HIGHLIGHT_HOLD_MS = 2000;
   const HIGHLIGHT_FADE_MS = 400;
 
   function getHighlightAlpha() {
@@ -1254,7 +1287,7 @@
       document.getElementById('next-btn1').addEventListener('click', startGame1);
     } else {
       const extra = game1Checked === 'incorrect' ? '<br>不正解です。組み直してもう一度チェックしてください' : '';
-      obj.innerHTML = `この化合物を作ってください:<br><span class="name">${targetName}</span>${extra}<br><button id="check-btn1">チェック</button>`;
+      obj.innerHTML = `お題：<span class="name">${targetName}</span>${extra}<br><button id="check-btn1">チェック</button>`;
       document.getElementById('check-btn1').addEventListener('click', checkGame1Answer);
     }
   }
@@ -1307,6 +1340,7 @@
     wasStructureValid = false;
     highlightStartTime = 0;
     stopHighlightAnimation();
+    buildWordBank();
     updateAnswerPreview();
     refreshAll();
   }
@@ -1315,13 +1349,15 @@
     const preview = document.getElementById('answer-preview');
     if (!preview) return;
     // 組み立て中はトークンをそのまま並べて見せる(カンマ・ハイフンの自動補完は回答確定時に行う)
-    preview.textContent = answerTokens.length ? answerTokens.join(' ') : '(ここに表示されます)';
+    preview.textContent = answerTokens.join(' ');
   }
 
   function submitGame2Answer() {
     const reconstructed = reconstructNameFromTokens(answerTokens);
     const preview = document.getElementById('answer-preview');
     const correct = reconstructed !== null && reconstructed === targetName;
+
+    document.getElementById('wordbank').classList.add('answered');
 
     if (correct) {
       playCorrectSound();
@@ -1339,17 +1375,19 @@
   function buildWordBank() {
     const wb = document.getElementById('wordbank');
     wb.innerHTML = '';
+    wb.classList.remove('answered');
 
     const preview = document.createElement('div');
     preview.className = 'preview';
     preview.id = 'answer-preview';
     wb.appendChild(preview);
 
+    // グループ内の並び順を毎回シャッフルする(位置の暗記ではなく毎回読んで選ばせるため)
     const rows = [
-      { cls: 'cat-number', tokens: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
-      { cls: 'cat-multiplier', tokens: ['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ'] },
-      { cls: 'cat-subname', tokens: ['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード'] },
-      { cls: 'cat-basename', tokens: ['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン'] },
+      { cls: 'cat-number', tokens: shuffle(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']) },
+      { cls: 'cat-multiplier', tokens: shuffle(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']) },
+      { cls: 'cat-subname', tokens: shuffle(['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード']) },
+      { cls: 'cat-basename', tokens: shuffle(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン']) },
     ];
     for (const { cls, tokens } of rows) {
       const rowEl = document.createElement('div');
@@ -1390,9 +1428,11 @@
     document.getElementById('objective').style.display = mode === 'game1' ? 'block' : 'none';
     document.getElementById('wordbank').style.display = mode === 'game2' ? 'block' : 'none';
     document.getElementById('palette').style.display = mode === 'game2' ? 'none' : 'flex';
+    document.getElementById('palette').classList.toggle('hide-labels', mode === 'game1');
     document.getElementById('status').style.display = mode === 'free' ? 'block' : 'none';
-    document.getElementById('hint').style.display = mode === 'game2' ? 'none' : 'block';
+    document.getElementById('hint').style.display = mode === 'free' ? 'block' : 'none';
     document.getElementById('diff-tabs').style.display = (mode === 'game1' || mode === 'game2') ? 'flex' : 'none';
+    document.getElementById('reset-btn').classList.toggle('disabled', mode === 'game2');
 
     if (mode === 'free') {
       interactionsEnabled = true;
