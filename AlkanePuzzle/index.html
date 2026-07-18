@@ -1186,40 +1186,70 @@
   //   typeMin / typeMax: この問題で使う置換基の「種類数」の範囲
   //   useBent: 屈曲した主鎖を使うか / forceTurn: できるだけ曲げるように誘導するか
   //   ringSizes: 環のサイズ候補(例: [4,6]) / bendRange: [min,max]で折れ曲がり炭素数を指定(省略時は無制限)
-  //   allowMethane: 炭素1個だけの構造(ハロゲン化メタン)も出題対象に含めるか
+  //   allowMethane: 炭素1個だけの構造(ハロゲン化メタン)も出題対象に含めるか(出現率は固定で10%)
   //   maxWidth / maxHeight: 出題する構造が収まるべき列数・行数の上限(盤面を狭めている難度で使う)
   function generateStructureWithOptions(opts) {
     const {
-      typeMin = 1, typeMax = 1, useBent = false, forceTurn = false, forceRingSubstituent = false,
+      typeMin = 1, typeMax = 1, lenMin = 2, lenMax = 7, useBent = false, forceTurn = false, forceRingSubstituent = false,
       ringSizes = [4, 6], bendRange = null, allowMethane = false, maxWidth = COLS, maxHeight = ROWS,
     } = opts || {};
     const typeRange = [typeMin, typeMax];
-    for (let attempt = 0; attempt < 120; attempt++) {
-      try {
-        let g;
-        if (allowMethane && Math.random() < 0.15) {
-          g = generateMethaneGrid();
-        } else if (Math.random() < 0.75) {
-          g = useBent ? generateBentAlkaneGrid(typeRange, opts, forceTurn, bendRange) : generateAlkaneGrid(typeRange, opts);
-          if (!g) continue;
-        } else {
-          g = generateCycloalkaneGrid(forceRingSubstituent, ringSizes, opts.subMin, opts.subMax);
-        }
-        // 盤面の使用可能な範囲に収まらない構造は出題しない(組み立て不可能になるため)
-        const extent = gridExtent(g);
-        if (extent.w > maxWidth || extent.h > maxHeight) continue;
-        const result = generateName(g);
-        if (!result.ok) continue;
-        // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
-        // 意図せず種類数が設定範囲から外れることがあるため、実際の結果を見てから判定する。
-        // ただし置換基が1つも無い構造(種類数0)は、下限が何であっても許容する。
-        const typeCount = countDistinctTypesInName(result.name);
-        if (typeCount > typeMax) continue;
-        if (typeCount > 0 && typeCount < typeMin) continue;
-        return { grid: g, name: result.name, fellBack: false };
-      } catch (e) { /* 稀に組み合わせが悪い場合は生成をやり直す */ }
+
+    function finalize(g) {
+      // 盤面の使用可能な範囲に収まらない構造は出題しない(組み立て不可能になるため)
+      const extent = gridExtent(g);
+      if (extent.w > maxWidth || extent.h > maxHeight) return null;
+      const result = generateName(g);
+      if (!result.ok) return null;
+      // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
+      // 意図せず種類数が設定範囲から外れることがあるため、実際の結果を見てから判定する。
+      // ただし置換基が1つも無い構造(種類数0)は、下限が何であっても許容する。
+      const typeCount = countDistinctTypesInName(result.name);
+      if (typeCount > typeMax) return null;
+      if (typeCount > 0 && typeCount < typeMin) return null;
+      return { grid: g, name: result.name, fellBack: false };
     }
-    // 保険: 万一失敗してもエタンで確実に成功させる(fellBack:trueで「設定が厳しすぎる」ことを呼び出し元に伝える)
+    function tryMethane() { try { return finalize(generateMethaneGrid()); } catch (e) { return null; } }
+    function tryCyclo() { try { return finalize(generateCycloalkaneGrid(forceRingSubstituent, ringSizes, opts.subMin, opts.subMax)); } catch (e) { return null; } }
+    function tryChainLen(len) {
+      try {
+        const lenOpts = { ...opts, lenMin: len, lenMax: len };
+        const g = useBent ? generateBentAlkaneGrid(typeRange, lenOpts, forceTurn, bendRange) : generateAlkaneGrid(typeRange, lenOpts);
+        return g ? finalize(g) : null;
+      } catch (e) { return null; }
+    }
+
+    // 生成する候補を「メタン」「主鎖長ごとの鎖」「環」のカテゴリに分け、
+    // まずカテゴリの並びをシャッフルしてから、1つのカテゴリをまとめて何度か試す。
+    // 単に毎回ランダムにカテゴリを選び直すだけだと、エタン(長さ2)のように
+    // ほぼ確実に一発で成功するカテゴリが最初の成功として選ばれやすくなり、
+    // 結果的にそればかりが出題されてしまう。カテゴリ単位でまとまった回数を試すことで、
+    // 生成の成功しやすさに関わらずカテゴリ間で公平にする。
+    const categories = [];
+    if (allowMethane) categories.push({ kind: 'methane' });
+    for (let l = Math.max(2, lenMin); l <= Math.max(2, lenMax); l++) categories.push({ kind: 'chain', len: l });
+    categories.push({ kind: 'cyclo' });
+    shuffle(categories);
+
+    function tryCategory(cat) {
+      if (cat.kind === 'methane') return tryMethane();
+      if (cat.kind === 'cyclo') return tryCyclo();
+      return tryChainLen(cat.len);
+    }
+
+    const attemptsPerCategory = 15;
+    for (const cat of categories) {
+      for (let i = 0; i < attemptsPerCategory; i++) {
+        const r = tryCategory(cat);
+        if (r) return r;
+      }
+    }
+    // それでも決まらない場合の保険(かなり厳しい設定のとき): カテゴリを問わずもう少し粘る
+    for (let i = 0; i < 40; i++) {
+      const r = tryCategory(choice(categories));
+      if (r) return r;
+    }
+    // 最終手段: 万一失敗してもエタンで確実に成功させる(fellBack:trueで「設定が厳しすぎる」ことを呼び出し元に伝える)
     const g = emptyGrid();
     g[2][3] = panelFor(1, ['E']);
     g[2][4] = panelFor(1, ['W']);
@@ -1232,6 +1262,8 @@
   let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   let cellEls = [];
   let dragState = null;
+  let traceState = null; // なぞって描く操作の進行状態: null | { path:[{r,c},...], closed:boolean }
+  let traceSnapshot = null; // なぞり開始前のgridの退避(取り消し・キャンセル用)
   let interactionsEnabled = true; // ゲーム②(読み取り専用表示)ではfalseにする
   let wasStructureValid = false; // 直前が「正常」だったかどうか(不正→正常の遷移でのみ音を鳴らすため)
   let currentMode = 'game1'; // 'game1' | 'game2'
@@ -1239,7 +1271,6 @@
   let nameRevealed = false; // 自由に組むモードで名前を表示済みかどうか
   let targetName = '';
   let answerTokens = [];
-  let game2WrongTimer = null; // 「誤」スタンプを自動で消すためのタイマー
 
   function isPracticeTier() { return currentMode === 'game1' && difficulty === 'practice'; }
 
@@ -1389,9 +1420,9 @@
   // ============================================================
   // モーダルで編集できる項目の既定値。ここが「今の設定」の基準になる。
   const DEFAULT_GAME1_OPTS = {
-    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5 },
-    medium: { typeMin: 1, typeMax: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5 },
-    hard:   { typeMin: 1, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5 },
+    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5, traceEnabled: false },
+    medium: { typeMin: 1, typeMax: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5, traceEnabled: false },
+    hard:   { typeMin: 1, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5, traceEnabled: false },
   };
   const DEFAULT_GAME2_OPTS = {
     easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 3, ringSizes: [4, 6],     forceRingSubstituent: false, bendMin: 0, bendMax: 0 },
@@ -1475,6 +1506,14 @@
     return r >= 0 && r < ROWS && c >= 0 && c < COLS && isPlayableCol(c) && isPlayableRow(r);
   }
 
+  // 「なぞって描く」機能が今この場面で有効かどうか。アルカン並べでのみ使い、
+  // 「練習」は難度タブに無いので「やさしめ」の設定に準じる。
+  function isTraceEnabledNow() {
+    if (currentMode !== 'game1') return false;
+    const tier = difficulty === 'practice' ? 'easy' : difficulty;
+    return !!(gameSettings.game1[tier] && gameSettings.game1[tier].traceEnabled);
+  }
+
   // 非表示マスの見た目を更新し、そこに残っているパネルは取り除く。
   function applyGridSize() {
     for (let r = 0; r < ROWS; r++) {
@@ -1484,6 +1523,105 @@
         if (cellEls[r] && cellEls[r][c]) cellEls[r][c].classList.toggle('hidden-col', !playable);
       }
     }
+  }
+
+  // ============================================================
+  // なぞって描く(アルカン並べ専用): 空きマスからドラッグを始め、
+  // 通ったマス順に炭素をつなげて主鎖(または環)を描く。
+  // ============================================================
+  // pathの位置iにおける、隣接パネルへの活性方向を求める(closed=trueなら始点と終点も繋がっているとみなす)
+  function computeTraceDirs(path, i, closed) {
+    const n = path.length;
+    const cur = [path[i].r, path[i].c];
+    const dirs = [];
+    if (i > 0) dirs.push(directionBetween(cur, [path[i - 1].r, path[i - 1].c]));
+    else if (closed && n > 1) dirs.push(directionBetween(cur, [path[n - 1].r, path[n - 1].c]));
+    if (i < n - 1) dirs.push(directionBetween(cur, [path[i + 1].r, path[i + 1].c]));
+    else if (closed && n > 1) dirs.push(directionBetween(cur, [path[0].r, path[0].c]));
+    return dirs;
+  }
+
+  // なぞり開始前の状態(traceSnapshot)を土台に、現在のtraceStateの経路分だけ上書きしてgridを組み直す。
+  function applyTraceToGrid() {
+    const g = traceSnapshot.map((row) => row.slice());
+    const { path, closed } = traceState;
+    for (let i = 0; i < path.length; i++) {
+      const { r, c } = path[i];
+      const dirs = computeTraceDirs(path, i, closed);
+      if (dirs.length === 0) continue; // 経路が1マスだけ(まだ動いていない)ときは何も置かない
+      g[r][c] = panelForDirections(dirs);
+    }
+    grid = g;
+  }
+
+  function startTrace(e, startR, startC) {
+    traceSnapshot = grid.map((row) => row.slice());
+    traceState = { path: [{ r: startR, c: startC }], closed: false };
+
+    const processStep = (nr, nc) => {
+      if (!traceState || traceState.closed) return;
+      const path = traceState.path;
+      const last = path[path.length - 1];
+      if (nr === last.r && nc === last.c) return; // 同じマスのまま
+      // 上下左右に隣接するマスへの移動だけを認識する(斜め・飛び地は無視)
+      if (Math.abs(nr - last.r) + Math.abs(nc - last.c) !== 1) return;
+      if (!isPlayableCell(nr, nc)) return;
+
+      // 1つ前のマスへ戻ったら、直前の1マス分を取り消す(引き返し)
+      if (path.length >= 2) {
+        const prev = path[path.length - 2];
+        if (nr === prev.r && nc === prev.c) {
+          path.pop();
+          if (path.length >= 2) applyTraceToGrid();
+          else grid = traceSnapshot.map((row) => row.slice());
+          refreshAll();
+          return;
+        }
+      }
+
+      // 始点に戻ってきたら環として閉じる(最低3マス移動している場合のみ)
+      const start = path[0];
+      if (path.length >= 3 && nr === start.r && nc === start.c) {
+        traceState.closed = true;
+        applyTraceToGrid();
+        nameRevealed = false;
+        refreshAll();
+        return;
+      }
+      // 経路上に既にあるマス(始点以外)には進めない(自己交差回避)
+      if (path.some((p) => p.r === nr && p.c === nc)) return;
+
+      path.push({ r: nr, c: nc });
+      applyTraceToGrid();
+      nameRevealed = false;
+      refreshAll();
+    };
+
+    const onMove = (ev) => {
+      if (!traceState || traceState.closed) return;
+      const target = document.elementFromPoint(ev.clientX, ev.clientY);
+      const cellEl = target && target.closest('.cell');
+      if (!cellEl) return;
+      processStep(+cellEl.dataset.row, +cellEl.dataset.col);
+    };
+    const finish = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      const path = traceState ? traceState.path : [];
+      if (path.length >= 2) {
+        playPlaceSound(); // gridは既にapplyTraceToGridで反映済みなので、そのまま確定する
+      } else {
+        grid = traceSnapshot.map((row) => row.slice()); // 実質タップのみ = 何もしない
+      }
+      traceState = null;
+      traceSnapshot = null;
+      refreshAll();
+    };
+    const onUp = () => finish();
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   }
 
   function syncCell(r, c, mismatchMap, islands, highlightAlpha) {
@@ -1832,7 +1970,12 @@
     let pendingTimer = null;
 
     cell.addEventListener('pointerdown', (e) => {
-      if (!interactionsEnabled || !grid[r][c]) return;
+      if (!interactionsEnabled) return;
+      if (!grid[r][c]) {
+        // 空きマスからのドラッグ: なぞって描く機能が有効なときだけ反応する
+        if (isTraceEnabledNow()) { e.preventDefault(); startTrace(e, r, c); }
+        return;
+      }
       e.preventDefault();
       downX = e.clientX; downY = e.clientY; moved = false;
 
@@ -1858,6 +2001,7 @@
     cell.addEventListener('pointerup', () => {
       if (!interactionsEnabled) return;
       if (moved) { moved = false; return; }
+      if (traceState) return; // なぞって描く操作の最中/直後は、このマスのタップ判定を無視する
       if (!grid[r][c]) return;
 
       if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
@@ -1922,9 +2066,21 @@
   // ============================================================
   let game1Checked = null; // null | 'correct' | 'incorrect'
 
+  // 直前に出した名前と同じものが連続しないよう、数回だけ引き直す(体感的な繰り返しを減らすための軽い対策)
+  let lastGame1Name = null;
+  let lastGame2Name = null;
+  function generateAvoidingImmediateRepeat(opts, lastName) {
+    let result = generateStructureWithOptions(opts);
+    for (let i = 0; i < 5 && result.name === lastName; i++) {
+      result = generateStructureWithOptions(opts);
+    }
+    return result;
+  }
+
   function startGame1() {
     interactionsEnabled = true;
-    const { name } = generateStructureWithOptions(buildGame1Opts(difficulty));
+    const { name } = generateAvoidingImmediateRepeat(buildGame1Opts(difficulty), lastGame1Name);
+    lastGame1Name = name;
     targetName = name;
     grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     game1Checked = null;
@@ -2004,8 +2160,8 @@
 
   function startGame2() {
     interactionsEnabled = false;
-    if (game2WrongTimer) { clearTimeout(game2WrongTimer); game2WrongTimer = null; }
-    const { grid: g, name } = generateStructureWithOptions(buildGame2Opts(difficulty));
+    const { grid: g, name } = generateAvoidingImmediateRepeat(buildGame2Opts(difficulty), lastGame2Name);
+    lastGame2Name = name;
     targetName = name;
     grid = g;
     answerTokens = [];
@@ -2020,7 +2176,7 @@
   function updateAnswerPreview() {
     const preview = document.getElementById('answer-preview');
     if (!preview) return;
-    preview.classList.remove('result');
+    if (preview.classList.contains('result')) return; // 結果表示中(誤スタンプ・正解スタンプ)は上書きしない
     // 組み立て中はトークンをそのまま並べて見せる(カンマ・ハイフンの自動補完は回答確定時に行う)
     preview.textContent = answerTokens.join(' ');
   }
@@ -2030,10 +2186,11 @@
     const preview = document.getElementById('answer-preview');
     const correct = reconstructed !== null && reconstructed === targetName;
 
+    document.getElementById('wordbank').classList.add('answered');
+    preview.classList.add('result');
+
     if (correct) {
       playCorrectSound();
-      document.getElementById('wordbank').classList.add('answered');
-      preview.classList.add('result');
       // スタンプは右側にずらして、解答の文字が隠れないようにする
       preview.innerHTML = `<span class="stamp tappable stamp-side" id="correct-stamp2">${correctStampSVG()}</span>正解！ <span class="name">${targetName}</span>`;
       const stamp = document.getElementById('correct-stamp2');
@@ -2041,21 +2198,17 @@
       return;
     }
 
-    // 不正解: 答えは見せず、「誤」スタンプを出して同じ問題にもう一度挑戦できるようにする。
-    // (語群は操作可能なままにしておき、スタンプは少ししたら自動で消す)
+    // 不正解: 自分の回答を表示したまま「誤」スタンプを出す。正解は見せず、
+    // 「再挑戦」ボタンを押すまではその表示のまま維持する(同じ問題にもう一度挑戦できる)。
     playIncorrectSound();
-    preview.classList.add('result');
     const message = reconstructed === null ? '入力の並びが正しくありません' : `あなたの回答: ${reconstructed}`;
-    preview.innerHTML = `<span class="stamp stamp-side" id="wrong-stamp2">${wrongStampSVG()}</span>${message}<br><span class="retry-hint">もう一度挑戦してみましょう</span>`;
-    if (game2WrongTimer) clearTimeout(game2WrongTimer);
-    game2WrongTimer = setTimeout(() => {
-      game2WrongTimer = null;
-      const p = document.getElementById('answer-preview');
-      if (!p) return;
-      p.classList.remove('result');
+    preview.innerHTML = `<span class="stamp stamp-side" id="wrong-stamp2">${wrongStampSVG()}</span>${message}<br><button id="retry-btn2">再挑戦</button>`;
+    document.getElementById('retry-btn2').addEventListener('click', () => {
+      document.getElementById('wordbank').classList.remove('answered');
+      preview.classList.remove('result');
       answerTokens = [];
       updateAnswerPreview();
-    }, 1600);
+    });
   }
 
   function buildWordBank() {
@@ -2083,8 +2236,6 @@
         const btn = document.createElement('button');
         btn.textContent = token;
         btn.addEventListener('click', () => {
-          // 「誤」スタンプ表示中に入力を始めたら、すぐにスタンプを消して入力欄に戻す
-          if (game2WrongTimer) { clearTimeout(game2WrongTimer); game2WrongTimer = null; answerTokens = []; }
           answerTokens.push(token);
           updateAnswerPreview();
           playPlaceSound();
@@ -2257,6 +2408,7 @@
     if (game === 'game1') {
       form.appendChild(makeStepperRow('枠数(横)', s, 'gridCols', 3, COLS));
       form.appendChild(makeStepperRow('枠数(縦)', s, 'gridRows', 3, ROWS));
+      form.appendChild(makeToggleRow('なぞって描く', s, 'traceEnabled'));
     } else {
       form.appendChild(makeRangeStepperRow('折れ曲がり炭素数', s, 'bendMin', 'bendMax', 0, 10));
     }
@@ -2296,7 +2448,7 @@
     const fmtTier = (s, isGame1) => {
       const common = `typeMin: ${s.typeMin}, typeMax: ${s.typeMax}, lenMin: ${s.lenMin}, lenMax: ${s.lenMax}, subMin: ${s.subMin}, subMax: ${s.subMax}, ringSizes: [${s.ringSizes.join(', ')}]`;
       const rest = isGame1
-        ? `forceRingSubstituent: ${s.forceRingSubstituent}, gridCols: ${s.gridCols}, gridRows: ${s.gridRows}`
+        ? `forceRingSubstituent: ${s.forceRingSubstituent}, gridCols: ${s.gridCols}, gridRows: ${s.gridRows}, traceEnabled: ${s.traceEnabled}`
         : `forceRingSubstituent: ${s.forceRingSubstituent}, bendMin: ${s.bendMin}, bendMax: ${s.bendMax}`;
       return `    ${common}, ${rest}`;
     };
