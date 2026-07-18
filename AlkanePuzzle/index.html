@@ -1,3 +1,133 @@
+
+Claudeが応答を完了しました
+
+Run the fixed assert2.js game1 correct-flow test
+Run the fixed assert2.js game1 correct-flow test
+All pass. Now let's check assert4.js (game2) and the cyclo-token tests:
+
+
+Run game2 and cyclo-token regression tests
+Run game2 and cyclo-token regression tests
+Let's run the remaining generation-logic tests to be thorough:
+
+
+テストファイルの不具合を診断中。
+テストファイルの不具合を診断中。
+All generation tests pass and species-count distribution (1–4 types) still appears correctly. Let's do one final full syntax check and a visual sanity screenshot of the merged practice mode:
+
+
+2個のコマンドを実行しました
+2個のコマンドを実行しました
+Everything is structured exactly as intended: header no longer has クリア, initial state is 練習 with status card + hint visible, and やさしめ shows お題+チェック+クリア in a row together. Let's copy the final file to outputs.
+
+
+コマンドを実行しました, ファイルを読み取りました
+コマンドを実行しました, ファイルを読み取りました
+4項目すべて実装しました。
+
+実装内容
+1a. 解答欄の縦幅
+高さを固定し、はみ出す分は内部スクロールにしました。組み立て中はコンパクトなまま動かず、回答確定後（結果メッセージや正解スタンプ表示時）だけ高さの制限を解除して、スタンプが欠けずに表示されるようにしています。
+
+1b. IUPACアルゴリズム
+現状維持（変更なし）で確定しました。
+
+2. 「練習」を「アルカン並べ」に合併
+
+上部タブは「アルカン並べ」「アルカン名付け」の2つに
+「アルカン並べ」内の難易度タブは「練習｜やさしめ｜まあまあ｜そこそこ」の4つ
+「練習」選択時は、お題なしの自由組み立て（旧・練習モードと同じ挙動）を再現
+「アルカン名付け」に切り替えたときに難易度が「練習」のままだった場合は「やさしめ」に自動調整（名付け側には練習タブがないため）
+3. クリアボタン
+
+アルカン並べ：チェックボタンと同じ行に並べて配置
+アルカン並べ・練習：ステータス欄（名前を表示ボタンの近く）に配置
+アルカン名付け：完全に削除（語群側の「クリア」はそのまま残っています）
+検証結果（すべてPASS）
+命名エンジン・ハロゲン自動結合：既存の全テストに影響なし
+初期状態が「アルカン並べ・練習」になっており、お題カード非表示／ステータスカード表示／ヒント表示
+「やさしめ」に切り替えるとお題＋チェック＋クリアが1行に並ぶ
+「アルカン名付け」ではクリアボタンが存在せず、難易度タブも「やさしめ／まあまあ／そこそこ」の3つ（練習タブは非表示）
+「アルカン並べ」に戻ると練習タブが再表示される
+正解／不正解スタンプ、5列縮小、結合線の長さなど、これまでの機能に回帰がないことを確認
+実機で「練習」⇄「やさしめ」の切り替わり方や、解答欄のスクロール挙動を確認してみてください。
+
+
+Hydrocarbon puzzle
+コード · HTML 
+いい感じです。
+パネルのC-H結合の線を、以前の長さに戻してほしいです。
+可能ですか？
+
+
+C-H結合パラメータを特定し調整中です。
+C-H結合パラメータを特定し調整中です。
+はい、可能です。前回、結合している手（C-C・C-ハロゲン）を44まで伸ばした際に、バランスを見てC-H側（未結合の手・水素原子を表す白丸）も一緒に伸ばしていました。ここだけ元の長さ（線の先端25、白丸の中心32）に戻します。
+
+C-C結合の線（44）はそのまま維持します。
+
+
+Revert only the C-H (hydrogen stub) line/circle geometry to its previous length, keeping the bonded C-C/C-halogen arm length (44) unchanged
+Revert only the C-H (hydrogen stub) line/circle geometry to its previous length, keeping the bonded C-C/C-halogen arm length (44) unchanged
+Syntax check and a quick visual confirmation:
+
+
+座標計算を検証し、結合位置を確認中。
+座標計算を検証し、結合位置を確認中。
+確認できました。C-C結合線は44のまま、C-H側（未結合の手・水素の白丸）は元の長さ（線25、丸32）に戻っています。
+
+
+コマンドを実行しました, ファイルを読み取りました
+コマンドを実行しました, ファイルを読み取りました
+C-H結合（未結合の手・水素の白丸）だけを元の長さに戻しました。実際に結合した炭素の手（C-C・C-ハロゲン）は44のまま変わっていません。実機でバランスを見てみてください。
+
+
+Hydrocarbon puzzle
+コード · HTML 
+「アルカン並べ」「アルカン名付け」のボタンをそれぞれ「並べ」「名付け」に変更し、「アルカンパズル」の右に並べて。
+
+
+レイアウト再構成し、ボタンテキスト短縮、スタイル調整した。
+レイアウト再構成し、ボタンテキスト短縮、スタイル調整した。
+Markup is correct. Now let's update the CSS for .mode-tabs/.mode-tab to be compact and fit inline in the header rather than stretching full-width:
+
+
+回帰テスト全体を実行して機能確認中。
+回帰テスト全体を実行して機能確認中。
+No overflow. Let's run the full regression suite since mode-tab structure changed location:
+
+
+修正対象を特定し、テスト更新戦略を立案した。
+修正対象を特定し、テスト更新戦略を立案した。
+All failures are stale test expectations (old labels, and the hydrogen-circle test wasn't updated after the previous C-H revert) — not real regressions. Let me update them:
+
+
+2個のコマンドを実行しました
+2個のコマンドを実行しました
+All pass. Now let's do a final visual confirmation of the header layout:
+
+
+コマンドを実行しました, ファイルを表示しました
+コマンドを実行しました, ファイルを表示しました
+Header layout looks correct — title on the left, "並べ"/"名付け" tabs on the right. Let's copy the final file to outputs.
+
+
+コマンドを実行しました, ファイルを読み取りました
+コマンドを実行しました, ファイルを読み取りました
+ボタンを「並べ」「名付け」に短縮し、ヘッダー内で「アルカンパズル」の右隣に配置しました。ヘッダーは既にflexレイアウトだったので、タイトルとタブが左右に振り分けられる形です。オーバーフローしないことも確認済みです。
+
+
+Hydrocarbon puzzle
+コード · HTML 
+
+
+
+
+
+Claude は AI のため、誤りを含む可能性があります。回答内容は必ずご確認ください。
+
+
+Hydrocarbon puzzle · HTML
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -61,7 +191,7 @@
     -webkit-touch-callout:none;
   }
   #app{max-width:520px;margin:0 auto;padding:16px;}
-
+ 
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
   header h1{
     font-size:20px;font-weight:800;margin:0;letter-spacing:.02em;
@@ -79,7 +209,8 @@
   }
   #reset-btn:active{transform:translate(1px,2px);box-shadow:0 0 0 var(--shadow);}
   #reset-btn.disabled{opacity:.35;pointer-events:none;}
-
+  .status #reset-btn{display:block;margin:10px auto 0;}
+ 
   /* ---- グリッド(方眼のマス) ---- */
   .grid{
     display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;
@@ -96,9 +227,10 @@
     border-style:solid;border-width:1px;border-color:var(--border);cursor:pointer;
     box-shadow:none;
   }
-  .cell.isolated{border-color:var(--warning);border-style:dashed;border-width:2.5px;box-shadow:none;}
+  /* 非表示の列(アルカン並べ「そこそこ」の左右端): 背景の方眼罫がそのまま見えるようにする */
+  .cell.hidden-col{border-color:transparent;background:transparent;pointer-events:none;}
   .rotor{width:100%;height:100%;transition:transform 220ms cubic-bezier(.34,1.7,.5,1);transform-origin:50% 50%;-webkit-user-drag:none;}
-
+ 
   /* ---- パレット ---- */
   .palette{
     display:flex;flex-direction:column;gap:8px;align-items:center;
@@ -114,10 +246,8 @@
   }
   .palette-card:active{transform:scale(.9) rotate(-3deg);background:var(--accent-soft);}
   .palette-card .icon{width:52px;height:52px;margin:0 auto;pointer-events:none;}
-  .palette-card .label{font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:700;}
-  .palette.hide-labels .label{display:none;}
   .ghost{position:fixed;pointer-events:none;width:56px;height:56px;opacity:.9;z-index:999;filter:drop-shadow(2px 3px 2px var(--shadow));}
-
+ 
   /* ---- ヒント(手描きの付箋風) ---- */
   .hint{
     font-size:12.5px;color:var(--text-muted);text-align:center;
@@ -127,7 +257,7 @@
     display:inline-block;background:var(--accent-soft);color:var(--accent-ink);
     border-radius:7px 6px 8px 6px;padding:1px 7px;margin:0 1px;font-weight:800;
   }
-
+ 
   /* ---- ステータス(練習モード) ---- */
   .status{
     font-family:var(--font-hand);font-size:14px;color:var(--text-muted);
@@ -145,11 +275,11 @@
     transition:transform .08s ease, box-shadow .08s ease;
   }
   .status button:active{transform:translate(1px,2px);box-shadow:0 0 0 var(--shadow);}
-
+ 
   /* ---- モードタブ ---- */
-  .mode-tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .mode-tabs{display:flex;gap:6px;flex-shrink:0;}
   .mode-tab{
-    flex:1;font-size:14px;font-weight:700;padding:10px 4px;
+    font-size:14px;font-weight:700;padding:8px 14px;
     border-radius:14px 12px 15px 11px;border:2.5px solid var(--border);
     background:var(--surface);color:var(--text-muted);
     box-shadow:1px 2px 0 var(--shadow);
@@ -160,7 +290,7 @@
     border-color:var(--accent);color:var(--accent-ink);font-weight:800;
     background:var(--accent-soft);
   }
-
+ 
   /* ---- 難易度タブ ---- */
   .diff-tabs{display:flex;gap:8px;margin-bottom:14px;justify-content:center;}
   .diff-tab{
@@ -171,7 +301,7 @@
   }
   .diff-tab:active{transform:translate(1px,2px);box-shadow:0 0 0 var(--shadow);}
   .diff-tab.active{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft);font-weight:800;}
-
+ 
   /* ---- お題カード(アルカン並べ) ---- */
   .objective{
     position:relative;background:var(--surface);
@@ -187,10 +317,12 @@
     transition:transform .08s ease, box-shadow .08s ease;
   }
   .objective button:active{transform:translate(1px,2px);box-shadow:0 0 0 var(--shadow);}
+  .objective-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+  .objective-actions button{margin-top:0;}
   .objective.success{background:var(--accent);border-color:var(--accent-ink);}
   .objective.success, .objective.success .name{color:#fff;}
   .objective.success button{background:#fff;color:var(--accent-ink);border-color:#fff;}
-
+ 
   /* 正解/不正解スタンプ(手描きSVGがドン、と現れる) */
   .stamp{
     position:absolute;top:50%;left:50%;
@@ -223,7 +355,7 @@
     .pop{animation:none;}
     .rotor{transition:none;}
   }
-
+ 
   /* ---- 単語バンク(アルカン名前) ---- */
   .wordbank{
     background:var(--surface);
@@ -231,12 +363,14 @@
     padding:14px;margin-top:4px;box-shadow:2px 3px 0 var(--shadow);
   }
   .wordbank .preview{
-    position:relative;overflow:visible;
-    font-size:18px;font-weight:800;min-height:30px;text-align:center;
-    margin-bottom:12px;padding:12px 10px;
+    position:relative;overflow:hidden;
+    font-size:18px;font-weight:800;height:62px;overflow-y:auto;text-align:center;
+    margin-bottom:12px;padding:10px 10px;
     background:var(--bg);border:2px dashed var(--border);border-radius:12px 10px 13px 11px;
     color:var(--text-muted);line-height:1.5;
   }
+  /* 回答確定後(結果表示中)は高さを固定せず、正解スタンプがはみ出して見えるようにする */
+  .wordbank .preview.result{height:auto;min-height:62px;overflow:visible;}
   .wordbank .preview .name{color:var(--accent-ink);}
   .wordbank .preview button{
     margin-top:10px;font-size:14px;font-weight:800;padding:8px 20px;
@@ -266,15 +400,14 @@
 <div id="app">
   <header>
     <h1>アルカンパズル</h1>
-    <button id="reset-btn">クリア</button>
+    <div class="mode-tabs" id="mode-tabs">
+      <button class="mode-tab active" data-mode="game1">並べ</button>
+      <button class="mode-tab" data-mode="game2">名付け</button>
+    </div>
   </header>
-  <div class="mode-tabs" id="mode-tabs">
-    <button class="mode-tab active" data-mode="free">練習</button>
-    <button class="mode-tab" data-mode="game1">アルカン並べ</button>
-    <button class="mode-tab" data-mode="game2">アルカン名付け</button>
-  </div>
-  <div class="diff-tabs" id="diff-tabs" style="display:none;">
-    <button class="diff-tab active" data-diff="easy">やさしめ</button>
+  <div class="diff-tabs" id="diff-tabs">
+    <button class="diff-tab active" data-diff="practice">練習</button>
+    <button class="diff-tab" data-diff="easy">やさしめ</button>
     <button class="diff-tab" data-diff="medium">まあまあ</button>
     <button class="diff-tab" data-diff="hard">そこそこ</button>
   </div>
@@ -285,21 +418,20 @@
   <div class="status" id="status">パネルをグリッドに配置してください</div>
   <div class="wordbank" id="wordbank" style="display:none;"></div>
 </div>
-
+ 
 <script>
 (function(){
   'use strict';
-
+ 
   // ============================================================
   // 定数・方向ユーティリティ
   // ============================================================
-  const ROWS = 5;
-  let COLS = 7; // アルカン並べの最高難度(そこそこ)では5に縮小する。他は常に7。
+  const ROWS = 5, COLS = 7;
   const DIR_ORDER = ['N', 'E', 'S', 'W'];
   const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
   const DELTA = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] }; // [drow, dcol]
   const VEC = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };   // SVG上の[dx, dy]
-
+ 
   const PANEL_ARM_TABLE = { 1: ['E'], 2: ['N', 'S'], 3: ['N', 'E'], 4: ['N', 'W', 'E'], 5: ['N', 'E', 'S', 'W'] };
   const PANEL_LABELS = { 1: '末端', 2: '直線', 3: 'かど', 4: '分岐', 5: '四級' };
   const CHAIN_NAMES = ['', 'メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン'];
@@ -320,7 +452,7 @@
   const SUBSTITUENT_LENGTH = { 'メチル': 1, 'エチル': 2, 'フルオロ': 1, 'クロロ': 1, 'ブロモ': 1, 'ヨード': 1 };
   // 環は原子1個分の余白しか確保していないため、エチル(2マス必要)は対象外にする
   const RING_SUBSTITUENT_SPECIES = ['メチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード'];
-
+ 
   function rotateCW(dir, times) {
     const i = DIR_ORDER.indexOf(dir);
     return DIR_ORDER[((i + times) % 4 + 4) % 4];
@@ -364,7 +496,7 @@
     const steps = (rotationDeg / 90) % 4;
     return rotateCW(actualDir, (4 - steps) % 4);
   }
-
+ 
   // ============================================================
   // 命名エンジン(naming-engine.jsで検証済みのロジックと同一)
   // ============================================================
@@ -394,13 +526,13 @@
     }
     return mismatches;
   }
-
+ 
   function buildGraph(grid) {
     const adjacency = new Map();
     const nodeIds = [];
     const elements = new Map();
     const idOf = (r, c) => `${r},${c}`;
-
+ 
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         if (grid[r][c]) {
@@ -425,7 +557,7 @@
     }
     return { nodeIds, adjacency, elements };
   }
-
+ 
   function checkConnectivity(graph) {
     const { nodeIds, adjacency } = graph;
     if (nodeIds.length === 0) return { allConnected: true, islands: [] };
@@ -439,7 +571,7 @@
     }
     return { allConnected: visited.size === nodeIds.length, islands: nodeIds.filter((id) => !visited.has(id)) };
   }
-
+ 
   function countEdges(graph) {
     let sum = 0;
     for (const n of graph.adjacency.values()) sum += n.size;
@@ -452,7 +584,7 @@
     if (cyclomatic === 1) return 'CYCLOALKANE';
     return 'UNSUPPORTED_MULTI_RING';
   }
-
+ 
   function bfsDistancesAndParents(adjacency, start) {
     const dist = new Map([[start, 0]]);
     const parent = new Map([[start, null]]);
@@ -471,13 +603,13 @@
     while (cur !== from) { cur = parent.get(cur); path.push(cur); }
     return path.reverse();
   }
-
+ 
   function extractSubstituents(graph, backboneSet) {
     const substituents = [];
     for (const node of backboneSet) {
       for (const neighbor of graph.adjacency.get(node)) {
         if (backboneSet.has(neighbor)) continue;
-
+ 
         const neighborElement = graph.elements.get(neighbor);
         if (neighborElement !== 'C') {
           // ハロゲンは一価なので、この1マスで置換基が確定する(さらに先に何か繋がっていたら不正な構造)
@@ -486,7 +618,7 @@
           substituents.push({ backboneNode: node, length: 1, name: HALOGEN_INFO[neighborElement].name });
           continue;
         }
-
+ 
         const subtreeNodes = new Set([neighbor]);
         const queue = [neighbor];
         let branchOk = true;
@@ -506,7 +638,7 @@
     }
     return substituents;
   }
-
+ 
   function buildName(baseName, locantedSubstituents) {
     if (locantedSubstituents.length === 0) return baseName;
     const groups = new Map();
@@ -530,7 +662,7 @@
     }
     return 0;
   }
-
+ 
   // メタン置換体(炭素が1個だけの構造)専用の名前組み立て。
   // 炭素が1個しかなく位置番号に意味がないため、位置番号(ロカント)を付けずに置換基名を連結する。
   // 例: クロロメタン、ジクロロメタン、トリクロロメタン、テトラクロロメタン、クロロフルオロメタン
@@ -546,18 +678,18 @@
     });
     return parts.join('') + 'メタン';
   }
-
+ 
   function nameAlkane(graph) {
     const { nodeIds, adjacency, elements } = graph;
     const carbonIds = nodeIds.filter((id) => elements.get(id) === 'C');
-
+ 
     // 主鎖の炭素が1個だけの場合(ハロゲン化メタン): 2端点間の最長パス探索がそもそも成立しない特殊ケースなので専用に処理する
     if (carbonIds.length === 1) {
       const centerId = carbonIds[0];
       const rawSubstituents = extractSubstituents(graph, new Set([centerId]));
       return buildMethaneName(rawSubstituents);
     }
-
+ 
     // 主鎖の候補端点は炭素のみに限定する(ハロゲンは一価の置換基であり、主鎖の一部にはなれない)。
     // 末端炭素にハロゲンが付いている場合でも正しく端点として扱えるよう、
     // 「全結合数」ではなく「炭素どうしの結合数」が1かどうかで判定する。
@@ -568,7 +700,7 @@
     });
     const distMaps = new Map();
     for (const leaf of leaves) distMaps.set(leaf, bfsDistancesAndParents(adjacency, leaf));
-
+ 
     let maxDist = -1, candidatePairs = [];
     for (let i = 0; i < leaves.length; i++) {
       for (let j = i + 1; j < leaves.length; j++) {
@@ -578,7 +710,7 @@
       }
     }
     if (maxDist + 1 > 10) throw new Error('UNSUPPORTED: 主鎖がデカンを超えています');
-
+ 
     const candidatePaths = candidatePairs.map(([a, b]) => reconstructPath(distMaps.get(a).parent, a, b));
     const scored = candidatePaths.map((path) => {
       const pathSet = new Set(path);
@@ -588,7 +720,7 @@
     });
     const maxBranch = Math.max(...scored.map((s) => s.branchCount));
     const filtered = scored.filter((s) => s.branchCount === maxBranch).map((s) => s.path);
-
+ 
     let best = null;
     for (const path of filtered) {
       for (const reversed of [false, true]) {
@@ -602,7 +734,7 @@
     const locantedSubstituents = best.rawSubstituents.map((s) => ({ locant: best.orderedPath.indexOf(s.backboneNode) + 1, name: s.name }));
     return buildName(CHAIN_NAMES[best.orderedPath.length], locantedSubstituents);
   }
-
+ 
   function findRing(graph) {
     const { nodeIds, adjacency } = graph;
     const visited = new Set();
@@ -625,23 +757,23 @@
     }
     throw new Error('RING_NOT_FOUND');
   }
-
+ 
   function nameCycloalkane(graph) {
     const ring = findRing(graph);
     const ringSize = ring.length;
     if (ringSize % 2 !== 0) throw new Error('UNSUPPORTED: 奇数員環');
     if (![4, 6, 8, 10].includes(ringSize)) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環は対象外`);
-
+ 
     const ringSet = new Set(ring);
     const rawSubstituents = extractSubstituents(graph, ringSet);
     if (rawSubstituents.length === 0) return 'シクロ' + CHAIN_NAMES[ringSize];
-
+ 
     // 環の置換基が1個だけなら、どこを1番炭素にしても位置番号は必ず1になり情報を持たないため省略する
     // (例: 1-メチルシクロヘキサン ではなく メチルシクロヘキサン)
     if (rawSubstituents.length === 1) {
       return rawSubstituents[0].name + 'シクロ' + CHAIN_NAMES[ringSize];
     }
-
+ 
     let best = null;
     for (let startIdx = 0; startIdx < ringSize; startIdx++) {
       for (const direction of [1, -1]) {
@@ -657,7 +789,7 @@
     const locantedSubstituents = rawSubstituents.map((s) => ({ locant: best.ordered.indexOf(s.backboneNode) + 1, name: s.name }));
     return buildName('シクロ' + CHAIN_NAMES[ringSize], locantedSubstituents);
   }
-
+ 
   function generateName(grid) {
     const mismatches = checkMismatches(grid);
     if (mismatches.length > 0) return { ok: false, error: 'INCOMPLETE_BONDS', mismatches };
@@ -674,7 +806,7 @@
       return { ok: false, error: e.message };
     }
   }
-
+ 
   // ============================================================
   // 問題生成(ゲーム①②共通)
   // ============================================================
@@ -693,7 +825,7 @@
     const shuffled = shuffle([...pool]);
     return shuffled.slice(0, count);
   }
-
+ 
   // targetDirsが欲しいときに、その活性方向の組を実現するtype/rotationを逆算する
   // (手計算で回転角を出すよりも間違いにくいので、生成ロジックは基本これ経由にする)
   function panelFor(type, targetDirs) {
@@ -707,7 +839,7 @@
     }
     throw new Error('NO_ROTATION_MATCH'); // 生成ロジックのバグ(本来到達しないはず)
   }
-
+ 
   function spinePanel(hasUp, hasDown, isLeftEnd, isRightEnd) {
     if (isLeftEnd) return panelFor(1, ['E']);
     if (isRightEnd) return panelFor(1, ['W']);
@@ -716,7 +848,7 @@
     if (hasDown) return panelFor(4, ['S', 'W', 'E']);
     return panelFor(2, ['W', 'E']);
   }
-
+ 
   // 置換基の名前(メチル/エチル/フルオロ/クロロ/ブロモ/ヨード)から、その枝を構成するパネル列を作る
   function branchPanelsForName(side, name) {
     const back = side === 'up' ? 'S' : 'N';
@@ -730,7 +862,7 @@
     }
     return [panelFor(2, [back, fwd]), panelFor(1, [back])];
   }
-
+ 
   // 鎖状(アルカン): 横一直線の主鎖 + 上下に伸びる置換基、という単純なレイアウトで生成する(かんたんモード用)。
   // 5行×7列に収めるため主鎖は最大7炭素までとする(命名エンジン自体は10炭素まで対応可能)。
   function generateAlkaneGrid(maxTypes, opts) {
@@ -739,15 +871,15 @@
     const startCol = Math.floor((COLS - len) / 2);
     const spineRow = 2;
     const grid = emptyGrid();
-
+ 
     const slots = [];
     for (let i = 1; i < len - 1; i++) { slots.push([i, 'up']); slots.push([i, 'down']); }
     shuffle(slots);
-
+ 
     const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.6)
       ? pickUpToNDistinct(SUBSTITUENT_SPECIES, maxTypes)
       : [choice(SUBSTITUENT_SPECIES)];
-
+ 
     const count = Math.min(slots.length, randInt(subMin, subMax));
     const posInfo = {};
     for (let i = 0; i < count; i++) {
@@ -756,7 +888,7 @@
       if (!posInfo[idx]) posInfo[idx] = {};
       posInfo[idx][side] = name;
     }
-
+ 
     for (let i = 0; i < len; i++) {
       const col = startCol + i;
       const info = posInfo[i] || {};
@@ -774,7 +906,7 @@
     }
     return grid;
   }
-
+ 
   // ---- 屈曲する主鎖(難問モード用) ----
   // 直線ではなく、グリッド上をランダムウォークさせて主鎖を作る。自己交差はしない。
   function directionBetween([r1, c1], [r2, c2]) {
@@ -784,14 +916,14 @@
     if (r2 === r1 && c2 === c1 - 1) return 'W';
     throw new Error('NOT_ADJACENT');
   }
-
+ 
   function computeChainDirs(path, i) {
     const dirs = [];
     if (i > 0) dirs.push(directionBetween(path[i], path[i - 1]));
     if (i < path.length - 1) dirs.push(directionBetween(path[i], path[i + 1]));
     return dirs;
   }
-
+ 
   // 主鎖のうち「進む向きが変わる炭素(かど)」の数を数える(折れ曲がり炭素の数の判定に使う)
   function countBends(path) {
     let bends = 0;
@@ -801,7 +933,7 @@
     }
     return bends;
   }
-
+ 
   // 活性方向の集合から自動でパネル種類を判定して生成する(手動でtypeを指定しなくてよい版)
   function panelForDirections(dirs) {
     const set = new Set(dirs);
@@ -815,7 +947,7 @@
     if (n === 4) return panelFor(5, [...set]);
     throw new Error('INVALID_DIRECTION_COUNT');
   }
-
+ 
   function tryGenerateBentChain(len, forceTurn) {
     const occupied = new Set();
     const key = (r, c) => `${r},${c}`;
@@ -824,7 +956,7 @@
     const path = [[r, c]];
     occupied.add(key(r, c));
     let lastDir = null;
-
+ 
     for (let step = 1; step < len; step++) {
       let candidates = shuffle(['N', 'E', 'S', 'W']).filter((d) => !lastDir || d !== OPPOSITE[lastDir]);
       if (forceTurn && lastDir) {
@@ -847,7 +979,7 @@
     }
     return { path, occupied };
   }
-
+ 
   function planBentSubstituents(path, occupied, maxTypes, subMin, subMax) {
     const len = path.length;
     const slots = [];
@@ -856,11 +988,11 @@
       for (const d of ['N', 'E', 'S', 'W']) if (!chainDirs.includes(d)) slots.push([i, d]);
     }
     shuffle(slots);
-
+ 
     const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.6)
       ? pickUpToNDistinct(SUBSTITUENT_SPECIES, maxTypes)
       : [choice(SUBSTITUENT_SPECIES)];
-
+ 
     const targetCount = randInt(subMin, subMax);
     const posInfo = {};
     let placed = 0;
@@ -885,7 +1017,7 @@
     }
     return posInfo;
   }
-
+ 
   function buildBentGrid(path, posInfo) {
     const grid = emptyGrid();
     for (let i = 0; i < path.length; i++) {
@@ -894,7 +1026,7 @@
       const info = posInfo[i] || {};
       const branchDirs = Object.keys(info);
       grid[r][c] = panelForDirections(chainDirs.concat(branchDirs));
-
+ 
       for (const dir of branchDirs) {
         const name = info[dir];
         const length = SUBSTITUENT_LENGTH[name];
@@ -911,7 +1043,7 @@
     }
     return grid;
   }
-
+ 
   // 難問モード用: 屈曲した主鎖 + 側鎖多め
   // bendRange: [min, max] で「折れ曲がり炭素(かど)の数」の範囲を指定(省略時は無制限)
   function generateBentAlkaneGrid(maxTypes, opts, forceTurn, bendRange) {
@@ -929,7 +1061,7 @@
     }
     return null; // 呼び出し元でリトライ
   }
-
+ 
   // 環状(シクロアルカン): 2行×N列の「細長い六角形」型のリングを、活性方向(dirs)から自動生成する。
   // 置換基はメチルまたはハロゲン1個のみ(はみ出し防止のため。エチルや複数置換基は今後の拡張候補)。
   // width(列数)が同じであれば何員環でも同じ形のロジックで組めるので、テンプレートは関数で生成する。
@@ -949,7 +1081,7 @@
     8: makeRingTemplate(4),   // シクロオクタン
     10: makeRingTemplate(5),  // シクロデカン
   };
-
+ 
   function generateCycloalkaneGrid(forceSubstituent, ringSizes) {
     const ringSize = choice(ringSizes || [4, 6]);
     const tmpl = RING_TEMPLATES[ringSize];
@@ -959,7 +1091,7 @@
     for (const cell of tmpl.cells) {
       grid[baseRow + cell.dr][baseCol + cell.dc] = panelForDirections(cell.dirs);
     }
-
+ 
     if (forceSubstituent || Math.random() < 0.5) {
       const cell = choice(tmpl.cells);
       const dir = choice(cell.free);
@@ -974,7 +1106,7 @@
     }
     return grid;
   }
-
+ 
   // 名前文字列に含まれる置換基の「種類数」を数える(メチル/エチルのみが対象なので単純な部分文字列チェックで十分)
   function countDistinctTypesInName(name) {
     let n = 0;
@@ -986,7 +1118,7 @@
     if (name.includes('ヨード')) n++;
     return n;
   }
-
+ 
   // 主鎖が炭素1個だけの構造(ハロゲン化メタン)を生成する。やさしめ難度でのみ登場させる。
   function generateMethaneGrid() {
     const dirsByCount = { 1: ['E'], 2: ['E', 'W'], 3: ['E', 'W', 'N'], 4: ['E', 'W', 'N', 'S'] };
@@ -1006,18 +1138,33 @@
     });
     return grid;
   }
-
-  // opts: { maxTypes, lenMin, lenMax, subMin, subMax, useBent, forceTurn, forceRingSubstituent, ringSizes, bendRange, allowMethane }
+ 
+  // 構造が実際に占めている範囲(bounding box)の幅・高さを返す
+  function gridExtent(g) {
+    let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (!g[r][c]) continue;
+        if (r < minR) minR = r; if (r > maxR) maxR = r;
+        if (c < minC) minC = c; if (c > maxC) maxC = c;
+      }
+    }
+    if (maxR < 0) return { w: 0, h: 0 };
+    return { w: maxC - minC + 1, h: maxR - minR + 1 };
+  }
+ 
+  // opts: { maxTypes, lenMin, lenMax, subMin, subMax, useBent, forceTurn, forceRingSubstituent, ringSizes, bendRange, allowMethane, maxWidth }
   //   maxTypes: この問題で許容する置換基の「種類数」
   //   useBent: 屈曲した主鎖を使うか / forceTurn: できるだけ曲げるように誘導するか
   //   ringSizes: 環のサイズ候補(例: [4,6]) / bendRange: [min,max]で折れ曲がり炭素数を指定(省略時は無制限)
   //   allowMethane: 炭素1個だけの構造(ハロゲン化メタン)も出題対象に含めるか
+  //   maxWidth: 出題する構造が収まるべき列数の上限(盤面の左右を狭めている難度で使う)
   function generateStructureWithOptions(opts) {
     const {
       maxTypes = 1, useBent = false, forceTurn = false, forceRingSubstituent = false,
-      ringSizes = [4, 6], bendRange = null, allowMethane = false,
+      ringSizes = [4, 6], bendRange = null, allowMethane = false, maxWidth = COLS,
     } = opts || {};
-    for (let attempt = 0; attempt < 60; attempt++) {
+    for (let attempt = 0; attempt < 120; attempt++) {
       try {
         let g;
         if (allowMethane && Math.random() < 0.15) {
@@ -1028,6 +1175,9 @@
         } else {
           g = generateCycloalkaneGrid(forceRingSubstituent, ringSizes);
         }
+        // 盤面の使用可能な範囲に収まらない構造は出題しない(組み立て不可能になるため)
+        const extent = gridExtent(g);
+        if (extent.w > maxWidth || extent.h > ROWS) continue;
         const result = generateName(g);
         // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
         // 意図せずmaxTypesを超えることがあるため、実際の結果を見てから判定する
@@ -1040,7 +1190,7 @@
     g[2][4] = panelFor(1, ['W']);
     return { grid: g, name: generateName(g).name };
   }
-
+ 
   // ============================================================
   // ゲーム状態
   // ============================================================
@@ -1049,12 +1199,29 @@
   let dragState = null;
   let interactionsEnabled = true; // ゲーム②(読み取り専用表示)ではfalseにする
   let wasStructureValid = false; // 直前が「正常」だったかどうか(不正→正常の遷移でのみ音を鳴らすため)
-  let currentMode = 'free'; // 'free' | 'game1' | 'game2'
-  let difficulty = 'easy'; // 'easy' | 'medium' | 'hard'
+  let currentMode = 'game1'; // 'game1' | 'game2'
+  let difficulty = 'practice'; // 'practice' | 'easy' | 'medium' | 'hard' ('practice'はアルカン並べ専用)
   let nameRevealed = false; // 自由に組むモードで名前を表示済みかどうか
   let targetName = '';
   let answerTokens = [];
-
+ 
+  function isPracticeTier() { return currentMode === 'game1' && difficulty === 'practice'; }
+ 
+  // 「クリア」ボタンは1つのDOM要素を使い回し、文脈に応じて置き場所を移動する
+  // (アルカン並べの通常時はチェックボタンの右隣、練習ではステータス欄の下)。
+  // アルカン名付けでは表示しない(語群側に専用のクリアがあるため)。
+  const resetBtn = document.createElement('button');
+  resetBtn.id = 'reset-btn';
+  resetBtn.textContent = 'クリア';
+  resetBtn.addEventListener('click', () => {
+    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    nameRevealed = false;
+    wasStructureValid = false;
+    highlightStartTime = 0;
+    stopHighlightAnimation();
+    refreshAll();
+  });
+ 
   // ============================================================
   // スタンプ(手描き風SVG・外部依存なし)
   // ============================================================
@@ -1079,7 +1246,7 @@
         fill="#d63b2e" opacity="0.4" font-family="'Hiragino Mincho ProN','Yu Mincho',serif" transform="rotate(-4 100 100)" filter="url(#stampRough3c)">正解</text>
     </svg>`;
   }
-
+ 
   // 不正解: 赤い丸枠 + 「誤」の印鑑風文字(かすれ)
   function wrongStampSVG() {
     return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -1101,15 +1268,23 @@
         fill="#d63b2e" opacity="0.4" font-family="'Hiragino Mincho ProN','Yu Mincho',serif" transform="rotate(-4 100 100)" filter="url(#stampRough3)">誤</text>
     </svg>`;
   }
-
+ 
   // ============================================================
   // 描画
   // ============================================================
+  // ============================================================
+  // 描画に使う寸法(SVGは100x100座標系。パネルの端=50)
+  // ARM_END: 結合している手の先端。枠との余白が6になるよう44まで伸ばす。
+  // H_LINE_END / H_CIRCLE_AT: 未結合の手(水素原子)の線の先端と、水素の白丸の中心位置。以前の長さのまま。
+  const ARM_END = 44;
+  const H_LINE_END = 25;
+  const H_CIRCLE_AT = 32;
+ 
   function svgIcon(type, mismatchActualDirs, rotationDeg, highlightAlpha, element, halogenBondDirs) {
     const isHalogen = !!element && element !== 'C';
     let underlay = '';
     let arms = '';
-
+ 
     if (isHalogen) {
       // ハロゲンは向きを持たない一価原子。結合が成立している方向(halogenBondDirs)にだけ手を1本描く。
       // 未接続(パレット/ゴースト/孤立)のときは手を描かず、丸と元素記号だけを表示する。
@@ -1117,7 +1292,7 @@
       for (const dir of DIR_ORDER) {
         if (!bondSet.has(dir)) continue;
         const [dx, dy] = VEC[dir];
-        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 38, y2 = 50 + dy * 38;
+        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * ARM_END, y2 = 50 + dy * ARM_END;
         if (highlightAlpha > 0) {
           underlay += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--highlighter)" stroke-width="14" stroke-linecap="round" opacity="${highlightAlpha}"/>`;
         }
@@ -1129,30 +1304,30 @@
         + `<text x="50" y="51" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}" font-weight="700" fill="${info.stroke}">${element}</text>`;
       return `<svg viewBox="0 0 100 100" width="100%" height="100%">${underlay}${arms}${atom}</svg>`;
     }
-
+ 
     const base = new Set(PANEL_ARM_TABLE[type]);
     const mismatchBase = new Set((mismatchActualDirs || []).map((d) => toBaseDir(d, rotationDeg)));
     for (const dir of DIR_ORDER) {
       const [dx, dy] = VEC[dir];
       if (base.has(dir)) {
         const danger = mismatchBase.has(dir);
-        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 38, y2 = 50 + dy * 38;
+        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * ARM_END, y2 = 50 + dy * ARM_END;
         if (highlightAlpha > 0 && !danger) {
           underlay += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--highlighter)" stroke-width="14" stroke-linecap="round" opacity="${highlightAlpha}"/>`;
         }
         arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${danger ? 'var(--warning)' : 'var(--text)'}" stroke-width="3" stroke-linecap="round"/>`;
       } else {
-        // 炭素の未結合の手: 薄い線 + 小さな丸(水素の暗示)
-        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * 25, y2 = 50 + dy * 25;
-        const cx = 50 + dx * 32, cy = 50 + dy * 32;
+        // 炭素の未結合の手: 薄い線 + 小さな白丸(水素原子を表す)
+        const x1 = 50 + dx * 13, y1 = 50 + dy * 13, x2 = 50 + dx * H_LINE_END, y2 = 50 + dy * H_LINE_END;
+        const cx = 50 + dx * H_CIRCLE_AT, cy = 50 + dy * H_CIRCLE_AT;
         arms += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round"/>`;
-        arms += `<circle cx="${cx}" cy="${cy}" r="6" fill="none" stroke="var(--text-muted)" stroke-width="2"/>`;
+        arms += `<circle cx="${cx}" cy="${cy}" r="6" fill="var(--paper)" stroke="var(--text-muted)" stroke-width="2"/>`;
       }
     }
     const atom = `<circle cx="50" cy="50" r="14" fill="var(--text)"/>`;
     return `<svg viewBox="0 0 100 100" width="100%" height="100%">${underlay}${arms}${atom}</svg>`;
   }
-
+ 
   function buildGridDOM() {
     const gridEl = document.getElementById('grid');
     gridEl.style.gridTemplateColumns = `repeat(${COLS}, minmax(0,1fr))`;
@@ -1171,28 +1346,44 @@
       cellEls.push(row);
     }
   }
-
-  // アルカン並べの「そこそこ」難度だけグリッドを5×5に縮小する。それ以外は常に5×7。
-  // モード切替・難易度切替のたびに呼び出し、必要な場合だけグリッドを作り直す。
-  function applyGridSize() {
-    const newCols = (currentMode === 'game1' && difficulty === 'hard') ? 5 : 7;
-    if (newCols === COLS) return;
-    COLS = newCols;
-    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-    buildGridDOM();
+ 
+  // アルカン並べの「そこそこ」難度では、盤面の左右1列ずつを使用不可にして実質5列で解かせる。
+  // ただしグリッド自体は常に7列のまま(マスの大きさは変えない)で、両端の列は非表示にして
+  // 背景の方眼罫がそのまま見える状態にする。
+  function hiddenColCount() {
+    return (currentMode === 'game1' && difficulty === 'hard') ? 1 : 0;
   }
-
+  function isPlayableCol(c) {
+    const h = hiddenColCount();
+    return c >= h && c < COLS - h;
+  }
+  // 使用可能なマスかどうか(盤面外・非表示列はfalse)
+  function isPlayableCell(r, c) {
+    return r >= 0 && r < ROWS && c >= 0 && c < COLS && isPlayableCol(c);
+  }
+ 
+  // 非表示列の見た目を更新し、その列に残っているパネルは取り除く。
+  function applyGridSize() {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const playable = isPlayableCol(c);
+        if (!playable && grid[r][c]) grid[r][c] = null; // 隠れる列に残ったパネルは消す
+        if (cellEls[r] && cellEls[r][c]) cellEls[r][c].classList.toggle('hidden-col', !playable);
+      }
+    }
+  }
+ 
   function syncCell(r, c, mismatchMap, islands, highlightAlpha) {
     const cellEl = cellEls[r][c];
     const panel = grid[r][c];
     const key = `${r},${c}`;
-    if (!panel) { cellEl.className = 'cell'; cellEl.innerHTML = ''; return; }
-
-    let cls = 'cell filled';
+    const hiddenCls = isPlayableCol(c) ? '' : ' hidden-col'; // 非表示列の指定は維持する
+    if (!panel) { cellEl.className = 'cell' + hiddenCls; cellEl.innerHTML = ''; return; }
+ 
+    let cls = 'cell filled' + hiddenCls;
     if (mismatchMap.has(key)) cls += ' mismatch';
-    if (islands.has(key)) cls += ' isolated';
     cellEl.className = cls;
-
+ 
     let rotor = cellEl.querySelector('.rotor');
     if (!rotor) { rotor = document.createElement('div'); rotor.className = 'rotor'; cellEl.appendChild(rotor); }
     if (isHalogenPanel(panel)) {
@@ -1203,7 +1394,7 @@
       rotor.style.transform = `rotate(${panel.rotation}deg)`;
     }
   }
-
+ 
   // ---- 蛍光ペンのフェードアウト管理 ----
   let lastMismatchMap = new Map();
   let lastIslands = new Set();
@@ -1211,7 +1402,7 @@
   let highlightAnimTimer = null;
   const HIGHLIGHT_HOLD_MS = 2000;
   const HIGHLIGHT_FADE_MS = 400;
-
+ 
   function getHighlightAlpha() {
     if (!highlightStartTime) return 0;
     const elapsed = Date.now() - highlightStartTime;
@@ -1219,16 +1410,16 @@
     if (elapsed < HIGHLIGHT_HOLD_MS + HIGHLIGHT_FADE_MS) return 1 - (elapsed - HIGHLIGHT_HOLD_MS) / HIGHLIGHT_FADE_MS;
     return 0;
   }
-
+ 
   function renderHighlightFrame() {
     const alpha = getHighlightAlpha();
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) syncCell(r, c, lastMismatchMap, lastIslands, alpha);
   }
-
+ 
   function stopHighlightAnimation() {
     if (highlightAnimTimer) { clearInterval(highlightAnimTimer); highlightAnimTimer = null; }
   }
-
+ 
   function startHighlightAnimation() {
     stopHighlightAnimation();
     highlightAnimTimer = setInterval(() => {
@@ -1236,14 +1427,14 @@
       if (getHighlightAlpha() <= 0) stopHighlightAnimation();
     }, 50);
   }
-
+ 
   function refreshAll() {
     // アルカン並べで「不正解」スタンプ表示中にパネルを操作したら、スタンプを消してチェックボタンを再表示する
     if (currentMode === 'game1' && game1Checked === 'incorrect') {
       game1Checked = null;
       renderGame1Objective();
     }
-
+ 
     const mismatches = checkMismatches(grid);
     const mismatchMap = new Map();
     for (const m of mismatches) {
@@ -1251,11 +1442,11 @@
       if (!mismatchMap.has(key)) mismatchMap.set(key, []);
       mismatchMap.get(key).push(m.dir);
     }
-
+ 
     let islands = new Set();
     let hasAnyPanel = false;
     let nameResult = null;
-
+ 
     if (mismatches.length === 0) {
       const graph = buildGraph(grid);
       hasAnyPanel = graph.nodeIds.length > 0;
@@ -1265,21 +1456,21 @@
         if (conn.allConnected) nameResult = generateName(grid);
       }
     }
-
+ 
     const structureValid = !!(nameResult && nameResult.ok);
     const isNewValid = structureValid && !wasStructureValid;
     wasStructureValid = structureValid;
-
+ 
     lastMismatchMap = mismatchMap;
     lastIslands = islands;
-
+ 
     if (isNewValid) {
       playValidSound();
       if (currentMode !== 'game2') {
         highlightStartTime = Date.now();
         startHighlightAnimation();
       }
-      if (currentMode === 'free') {
+      if (isPracticeTier()) {
         const statusEl = document.getElementById('status');
         statusEl.classList.remove('pop');
         void statusEl.offsetWidth; // アニメーションを再トリガーするためのリフロー
@@ -1290,7 +1481,7 @@
       stopHighlightAnimation();
     }
     renderHighlightFrame();
-
+ 
     const statusEl = document.getElementById('status');
     if (mismatches.length > 0) {
       statusEl.textContent = `不整合: ${mismatches.length}箇所\n結合の手が揃っていないマスがあります`;
@@ -1309,8 +1500,9 @@
     } else if (nameResult) {
       statusEl.textContent = `判定エラー: ${nameResult.error}`;
     }
+    if (isPracticeTier()) statusEl.appendChild(resetBtn); // 練習では「名前を表示」の下にクリアを常設する
   }
-
+ 
   // ============================================================
   // 効果音
   // ============================================================
@@ -1328,7 +1520,7 @@
   // setTimeout内などユーザー操作から間接的なタイミングでresume()を呼ぶとブラウザに無視されることがあるため、
   // 画面に最初に触れた瞬間(直接のジェスチャー)に確実に起動させておく。
   window.addEventListener('pointerdown', () => getAudioCtx(), { once: true, passive: true });
-
+ 
   function playTone({ freqStart, freqEnd, duration, type, volume }) {
     const ctx = getAudioCtx();
     if (!ctx) return; // Web Audio非対応環境では何もしない
@@ -1347,7 +1539,7 @@
       osc.stop(now + duration);
     } catch (e) { /* 再生に失敗しても操作自体は継続させる */ }
   }
-
+ 
   // フィルターをかけたノイズの短いバースト = iPhoneキーボードのような乾いた「カチッ」音
   function playClick({ freq, duration, volume, q }) {
     const ctx = getAudioCtx();
@@ -1363,23 +1555,23 @@
       }
       const noise = ctx.createBufferSource();
       noise.buffer = buffer;
-
+ 
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
       filter.frequency.value = freq;
       filter.Q.value = q;
-
+ 
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(volume, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
+ 
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
       noise.start(now);
     } catch (e) { /* 再生に失敗しても操作自体は継続させる */ }
   }
-
+ 
   // 配置: 標準的な高さのカチッという音
   function playPlaceSound() { playClick({ freq: 2200, duration: 0.03, volume: 0.35, q: 1.1 }); }
   // 時計回り回転: 少し高めのカチッという音
@@ -1406,7 +1598,7 @@
     playTone({ freqStart: 493.88, freqEnd: 493.88, duration: 0.13, type: 'sine', volume: 0.12 });
     setTimeout(() => playTone({ freqStart: 392.00, freqEnd: 392.00, duration: 0.22, type: 'sine', volume: 0.13 }), 110);
   }
-
+ 
   // ============================================================
   // パレット(新規配置ドラッグ)
   // ============================================================
@@ -1439,12 +1631,12 @@
       paletteEl.appendChild(row);
     }
   }
-
+ 
   function moveGhost(ghost, x, y) {
     ghost.style.left = (x - 28) + 'px';
     ghost.style.top = (y - 28) + 'px';
   }
-
+ 
   function startPaletteDrag(e, item) {
     const type = item.kind === 'carbon' ? item.type : 1;
     const element = item.kind === 'carbon' ? 'C' : item.element;
@@ -1457,18 +1649,21 @@
     window.addEventListener('pointermove', onDragMove);
     window.addEventListener('pointerup', onDragEnd);
   }
-
+ 
   function onDragMove(e) {
     if (!dragState) return;
     moveGhost(dragState.ghost, e.clientX, e.clientY);
   }
-
+ 
   function onDragEnd(e) {
     if (!dragState) return;
     const target = document.elementFromPoint(e.clientX, e.clientY);
-    const cellEl = target && target.closest('.cell');
+    let cellEl = target && target.closest('.cell');
     dragState.ghost.remove();
-
+ 
+    // 非表示列(使用不可のマス)には置けない
+    if (cellEl && !isPlayableCell(+cellEl.dataset.row, +cellEl.dataset.col)) cellEl = null;
+ 
     if (cellEl) {
       const r = +cellEl.dataset.row, c = +cellEl.dataset.col;
       if (dragState.mode === 'new') {
@@ -1486,29 +1681,29 @@
     } else if (dragState.mode === 'move') {
       playDeleteSound(); // グリッド外へドラッグして削除
     }
-
+ 
     window.removeEventListener('pointermove', onDragMove);
     window.removeEventListener('pointerup', onDragEnd);
     dragState = null;
     refreshAll();
   }
-
+ 
   // ============================================================
   // グリッド上のパネル操作(タップ回転/ダブルタップ削除/ドラッグ移動)
   // ============================================================
   const MOVE_THRESHOLD = 8;
   const TAP_TIMEOUT = 220; // この時間内に次のタップが来なければ、それまでのタップ回数でアクションを確定する
-
+ 
   function attachCellInteractions(cell, r, c) {
     let downX = 0, downY = 0, moved = false;
     let tapCount = 0;
     let pendingTimer = null;
-
+ 
     cell.addEventListener('pointerdown', (e) => {
       if (!interactionsEnabled || !grid[r][c]) return;
       e.preventDefault();
       downX = e.clientX; downY = e.clientY; moved = false;
-
+ 
       const onMove = (ev) => {
         const dx = ev.clientX - downX, dy = ev.clientY - downY;
         if (!moved && Math.hypot(dx, dy) > MOVE_THRESHOLD) {
@@ -1525,14 +1720,14 @@
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
     });
-
+ 
     // 1タップ=時計回りに回転 / 2タップ=反時計回りに回転 / 3タップ=削除
     // click/dblclickはタッチ操作だと発火が不安定なため使わず、pointerupの回数と間隔だけで自前判定する
     cell.addEventListener('pointerup', () => {
       if (!interactionsEnabled) return;
       if (moved) { moved = false; return; }
       if (!grid[r][c]) return;
-
+ 
       if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
       tapCount += 1;
       // ドラッグ&ドロップでこのマスに新しいパネルを置いた瞬間も、同じpointerupイベントで
@@ -1540,7 +1735,7 @@
       // その結果、ドロップ直後のパネルが意図せず回転してしまう不具合があったため、
       // タップを登録した時点のパネル参照を覚えておき、実行時に置き換わっていないか確認する。
       const panelAtTapTime = grid[r][c];
-
+ 
       if (tapCount >= 3) {
         tapCount = 0;
         if (grid[r][c] === panelAtTapTime) {
@@ -1550,13 +1745,13 @@
         }
         return;
       }
-
+ 
       // ハロゲンは向きを持たない自動結合パネルなので、回転は行わない(削除の3タップだけ有効)。
       if (isHalogenPanel(panelAtTapTime)) {
         pendingTimer = setTimeout(() => { tapCount = 0; pendingTimer = null; }, TAP_TIMEOUT);
         return;
       }
-
+ 
       pendingTimer = setTimeout(() => {
         const panel = grid[r][c];
         if (panel && panel === panelAtTapTime) {
@@ -1570,29 +1765,29 @@
       }, TAP_TIMEOUT);
     });
   }
-
+ 
   function beginMoveDrag(e, fromR, fromC) {
     const panel = grid[fromR][fromC];
     grid[fromR][fromC] = null;
     refreshAll();
-
+ 
     const ghost = document.createElement('div');
     ghost.className = 'ghost';
     ghost.innerHTML = svgIcon(panel.type, [], panel.rotation, false, panel.element);
     ghost.style.transform = `rotate(${panel.rotation}deg)`;
     document.body.appendChild(ghost);
     moveGhost(ghost, e.clientX, e.clientY);
-
+ 
     dragState = { mode: 'move', panel, fromR, fromC, ghost };
     window.addEventListener('pointermove', onDragMove);
     window.addEventListener('pointerup', onDragEnd);
   }
-
+ 
   // ============================================================
   // ゲーム①(組み立てて当てる)
   // ============================================================
   let game1Checked = null; // null | 'correct' | 'incorrect'
-
+ 
   // 主鎖=main chain, 側鎖=substituent(種類数はmaxTypes, 数はsubMin~subMax)
   const GAME1_OPTS = {
     easy: {
@@ -1606,9 +1801,10 @@
     hard: {
       maxTypes: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6,
       ringSizes: [6, 8, 10], allowMethane: false, useBent: true, forceTurn: true, forceRingSubstituent: true,
+      maxWidth: 5, // 左右1列ずつを隠して実質5列にするため、5列に収まる構造だけを出題する
     },
   };
-
+ 
   function startGame1() {
     interactionsEnabled = true;
     const { name } = generateStructureWithOptions(GAME1_OPTS[difficulty]);
@@ -1621,14 +1817,14 @@
     renderGame1Objective();
     refreshAll();
   }
-
+ 
   function checkGame1Answer() {
     const result = generateName(grid);
     game1Checked = (result.ok && result.name === targetName) ? 'correct' : 'incorrect';
     if (game1Checked === 'correct') playCorrectSound(); else playIncorrectSound();
     renderGame1Objective();
   }
-
+ 
   function renderGame1Objective() {
     const obj = document.getElementById('objective');
     obj.classList.toggle('success', game1Checked === 'correct');
@@ -1640,11 +1836,12 @@
       // 不正解スタンプを表示。チェックボタンは出さない(パネルを操作すると自動で消えて再表示される)
       obj.innerHTML = `<span class="stamp" id="wrong-stamp1">${wrongStampSVG()}</span>お題：<span class="name">${targetName}</span>`;
     } else {
-      obj.innerHTML = `お題：<span class="name">${targetName}</span><br><button id="check-btn1">チェック</button>`;
+      obj.innerHTML = `お題：<span class="name">${targetName}</span><div class="objective-actions"><button id="check-btn1">チェック</button></div>`;
       document.getElementById('check-btn1').addEventListener('click', checkGame1Answer);
+      document.querySelector('.objective-actions').appendChild(resetBtn);
     }
   }
-
+ 
   // ============================================================
   // ゲーム②(構造を見て名前を当てる)
   // ============================================================
@@ -1662,18 +1859,21 @@
       ringSizes: [6, 8, 10], allowMethane: false, useBent: true, forceTurn: true, bendRange: [4, Infinity], forceRingSubstituent: true,
     },
   };
-
-  const BASE_NAME_SET = new Set(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン', 'シクロオクタン', 'シクロデカン']);
+ 
+  // 環の名前は「シクロ」+ 鎖の名前 の組み合わせで作らせる(シクロヘキサン等の完成形は語群に置かない)
+  const BASE_NAME_SET = new Set(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン']);
+  const CYCLO_TOKEN = 'シクロ';
   const SUB_NAME_SET = new Set(['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード']);
   const MULTIPLIER_SET = new Set(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']);
-
-  // 数字・倍数詞・置換基名・主鎖名のトークン列から、コンマ・ハイフンを自動で補って正式な名称文字列に組み立てる。
+ 
+  // 数字・倍数詞・置換基名・(シクロ)・主鎖名のトークン列から、コンマ・ハイフンを自動で補って正式な名称文字列に組み立てる。
   // 例: ['2','2','3','トリ','メチル','ブタン'] -> '2,2,3-トリメチルブタン'
+  // 例: ['ブロモ','シクロ','ヘキサン'] -> 'ブロモシクロヘキサン'
   // 形式に合わない並びの場合はnullを返す。
   function reconstructNameFromTokens(tokens) {
     let i = 0;
     const groups = [];
-
+ 
     // 数字から始まる置換基グループ(位置番号あり)を読み取れるだけ読み取る
     while (i < tokens.length && /^\d+$/.test(tokens[i])) {
       const locants = [];
@@ -1689,14 +1889,17 @@
       groups.push(tokens[i]);
       i++;
     }
+    // 「シクロ」があれば、その次に来る鎖の名前と繋げて環の名前にする
+    let cycloPrefix = '';
+    if (i < tokens.length && tokens[i] === CYCLO_TOKEN) { cycloPrefix = CYCLO_TOKEN; i++; }
     if (i >= tokens.length || !BASE_NAME_SET.has(tokens[i])) return null;
-    const base = tokens[i];
+    const base = cycloPrefix + tokens[i];
     i++;
     if (i !== tokens.length) return null; // 余分なトークンが残っている
-
+ 
     return groups.join('-') + base;
   }
-
+ 
   function startGame2() {
     interactionsEnabled = false;
     const { grid: g, name } = generateStructureWithOptions(GAME2_OPTS[difficulty]);
@@ -1710,21 +1913,23 @@
     updateAnswerPreview();
     refreshAll();
   }
-
+ 
   function updateAnswerPreview() {
     const preview = document.getElementById('answer-preview');
     if (!preview) return;
+    preview.classList.remove('result');
     // 組み立て中はトークンをそのまま並べて見せる(カンマ・ハイフンの自動補完は回答確定時に行う)
     preview.textContent = answerTokens.join(' ');
   }
-
+ 
   function submitGame2Answer() {
     const reconstructed = reconstructNameFromTokens(answerTokens);
     const preview = document.getElementById('answer-preview');
     const correct = reconstructed !== null && reconstructed === targetName;
-
+ 
     document.getElementById('wordbank').classList.add('answered');
-
+    preview.classList.add('result');
+ 
     if (correct) {
       playCorrectSound();
       preview.innerHTML = `<span class="stamp tappable" id="correct-stamp2">${correctStampSVG()}</span>正解！ <span class="name">${targetName}</span>`;
@@ -1740,23 +1945,24 @@
       document.getElementById('next-btn2').addEventListener('click', startGame2);
     }
   }
-
+ 
   function buildWordBank() {
     const wb = document.getElementById('wordbank');
     wb.innerHTML = '';
     wb.classList.remove('answered');
-
+ 
     const preview = document.createElement('div');
     preview.className = 'preview';
     preview.id = 'answer-preview';
     wb.appendChild(preview);
-
+ 
     // 数字行は「1,2,3...」の順に固定。それ以外の行はグループ内の並びを毎回シャッフルする
     const rows = [
       { cls: 'cat-number', tokens: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
       { cls: 'cat-multiplier', tokens: shuffle(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']) },
       { cls: 'cat-subname', tokens: shuffle(['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード']) },
-      { cls: 'cat-basename', tokens: shuffle(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン', 'シクロブタン', 'シクロヘキサン', 'シクロオクタン', 'シクロデカン']) },
+      // 環の名前は「シクロ」+ 鎖の名前 で組み立てさせる。「シクロ」はシャッフルせず末尾に固定する。
+      { cls: 'cat-basename', tokens: [...shuffle(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン']), 'シクロ'] },
     ];
     for (const { cls, tokens } of rows) {
       const rowEl = document.createElement('div');
@@ -1769,7 +1975,7 @@
       }
       wb.appendChild(rowEl);
     }
-
+ 
     const controlRow = document.createElement('div');
     controlRow.className = 'row control-row';
     const undoBtn = document.createElement('button');
@@ -1787,24 +1993,24 @@
     controlRow.appendChild(undoBtn); controlRow.appendChild(clearBtn); controlRow.appendChild(submitBtn);
     wb.appendChild(controlRow);
   }
-
+ 
   // ============================================================
   // モード切替
   // ============================================================
-  function setMode(mode) {
-    currentMode = mode;
-    applyGridSize();
-    document.querySelectorAll('.mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
-    document.getElementById('objective').style.display = mode === 'game1' ? 'block' : 'none';
-    document.getElementById('wordbank').style.display = mode === 'game2' ? 'block' : 'none';
-    document.getElementById('palette').style.display = mode === 'game2' ? 'none' : 'flex';
-    document.getElementById('palette').classList.toggle('hide-labels', mode === 'game1');
-    document.getElementById('status').style.display = mode === 'free' ? 'block' : 'none';
-    document.getElementById('hint').style.display = mode === 'free' ? 'block' : 'none';
-    document.getElementById('diff-tabs').style.display = (mode === 'game1' || mode === 'game2') ? 'flex' : 'none';
-    document.getElementById('reset-btn').classList.toggle('disabled', mode === 'game2');
-
-    if (mode === 'free') {
+  function refreshDiffTabsUI() {
+    document.querySelectorAll('.diff-tab').forEach((b) => b.classList.toggle('active', b.dataset.diff === difficulty));
+    const practiceBtn = document.querySelector('.diff-tab[data-diff="practice"]');
+    if (practiceBtn) practiceBtn.style.display = currentMode === 'game1' ? '' : 'none';
+  }
+ 
+  // アルカン並べ: 練習(お題なし・自由に組む)か、やさしめ/まあまあ/そこそこ(お題を当てる)かで表示を切り替える
+  function enterGame1Tier() {
+    const practice = difficulty === 'practice';
+    document.getElementById('objective').style.display = practice ? 'none' : 'block';
+    document.getElementById('status').style.display = practice ? 'block' : 'none';
+    document.getElementById('hint').style.display = practice ? 'block' : 'none';
+ 
+    if (practice) {
       interactionsEnabled = true;
       nameRevealed = false;
       wasStructureValid = false;
@@ -1812,43 +2018,56 @@
       stopHighlightAnimation();
       grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
       refreshAll();
-    } else if (mode === 'game1') {
+    } else {
       startGame1();
-    } else if (mode === 'game2') {
+    }
+  }
+ 
+  function setMode(mode) {
+    currentMode = mode;
+    // 「練習」はアルカン並べ専用の難度なので、アルカン名付けへ移るときは既定の難度に戻す
+    if (mode === 'game2' && difficulty === 'practice') difficulty = 'easy';
+    applyGridSize();
+    document.querySelectorAll('.mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+    refreshDiffTabsUI();
+    document.getElementById('wordbank').style.display = mode === 'game2' ? 'block' : 'none';
+    document.getElementById('palette').style.display = mode === 'game2' ? 'none' : 'flex';
+ 
+    if (mode === 'game1') {
+      enterGame1Tier();
+    } else {
+      document.getElementById('objective').style.display = 'none';
+      document.getElementById('status').style.display = 'none';
+      document.getElementById('hint').style.display = 'none';
       startGame2();
     }
   }
-
+ 
   // ============================================================
   // 初期化
   // ============================================================
-  document.getElementById('reset-btn').addEventListener('click', () => {
-    if (currentMode === 'game2') return; // 読み取り専用モードでは無効
-    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-    nameRevealed = false;
-    wasStructureValid = false;
-    highlightStartTime = 0;
-    stopHighlightAnimation();
-    refreshAll();
-  });
   document.querySelectorAll('.mode-tab').forEach((btn) => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
   });
   document.querySelectorAll('.diff-tab').forEach((btn) => {
     btn.addEventListener('click', () => {
       difficulty = btn.dataset.diff;
-      document.querySelectorAll('.diff-tab').forEach((b) => b.classList.toggle('active', b === btn));
+      refreshDiffTabsUI();
       applyGridSize();
-      if (currentMode === 'game1') startGame1();
+      if (currentMode === 'game1') enterGame1Tier();
       else if (currentMode === 'game2') startGame2();
     });
   });
-
+ 
   buildGridDOM();
   setupPalette();
   buildWordBank();
-  refreshAll();
+  refreshDiffTabsUI();
+  enterGame1Tier();
 })();
 </script>
 </body>
 </html>
+ 
+
+
