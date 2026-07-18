@@ -264,6 +264,85 @@
   .wordbank.answered .row button{opacity:.4;pointer-events:none;}
   .wordbank .control-row{margin-top:8px;margin-bottom:0;gap:8px;}
   .wordbank .control-row button{padding:7px 16px;}
+
+  /* ---- 難易度設定(管理者向け・?admin=1のときだけ表示) ---- */
+  .diff-tabs-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .diff-tabs-row .diff-tabs{flex:1;margin-bottom:0;}
+  .gear-btn{
+    flex-shrink:0;width:38px;height:38px;font-size:17px;line-height:1;
+    border-radius:50%;border:2px solid var(--border);background:var(--surface);color:var(--text-muted);
+    box-shadow:1px 2px 0 var(--shadow);transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .gear-btn:active{transform:translate(1px,2px) rotate(20deg);box-shadow:0 0 0 var(--shadow);}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(40,36,26,0.45);
+    display:flex;align-items:flex-end;justify-content:center;z-index:100;
+  }
+  .modal-box{
+    width:100%;max-width:480px;max-height:88vh;overflow-y:auto;
+    background:var(--paper);border-radius:22px 22px 0 0;
+    border:2.5px solid var(--ink);border-bottom:none;
+    padding:18px 18px 24px;box-shadow:0 -4px 0 var(--shadow);
+    font-family:var(--font-hand);
+  }
+  @media (min-width:560px){
+    .modal-overlay{align-items:center;}
+    .modal-box{border-radius:20px;border-bottom:2.5px solid var(--ink);box-shadow:2px 4px 0 var(--shadow);}
+  }
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .modal-header h2{font-size:18px;font-weight:800;margin:0;color:var(--ink);}
+  .modal-close{
+    width:32px;height:32px;font-size:18px;border-radius:50%;
+    border:2px solid var(--border);background:var(--surface);color:var(--text-muted);
+  }
+  .modal-game-tabs, .modal-tier-tabs{display:flex;gap:6px;margin-bottom:10px;}
+  .modal-game-tabs button, .modal-tier-tabs button{
+    flex:1;font-size:13px;font-weight:700;padding:8px 4px;
+    border-radius:12px 10px 13px 11px;border:2px solid var(--border);
+    background:var(--surface);color:var(--text-muted);
+  }
+  .modal-game-tabs button.active, .modal-tier-tabs button.active{
+    border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft);font-weight:800;
+  }
+  .settings-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 2px;border-bottom:1px dashed var(--border);
+  }
+  .settings-row:last-of-type{border-bottom:none;}
+  .settings-label{font-size:14px;font-weight:700;color:var(--text);}
+  .stepper, .stepper-range{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .stepper button{
+    width:28px;height:28px;font-size:16px;font-weight:800;line-height:1;
+    border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--accent-ink);
+  }
+  .stepper button:active{transform:translate(1px,1px);}
+  .stepper-value{min-width:22px;text-align:center;font-size:15px;font-weight:800;color:var(--ink);}
+  .stepper-tilde{color:var(--text-muted);font-size:13px;}
+  .ring-checkboxes{display:flex;gap:10px;}
+  .ring-checkbox{display:flex;align-items:center;gap:3px;font-size:13px;font-weight:700;color:var(--text);}
+  .ring-checkbox input{width:16px;height:16px;accent-color:var(--accent);}
+  .settings-toggle{
+    font-size:13px;font-weight:800;padding:6px 16px;border-radius:999px;
+    border:2px solid var(--border);background:var(--surface);color:var(--text-muted);
+  }
+  .settings-toggle.on{border-color:var(--accent);color:#fff;background:var(--accent);}
+  .settings-warning{
+    margin-top:10px;padding:10px 12px;font-size:12.5px;font-weight:700;line-height:1.6;
+    color:#a6480f;background:#fdf0dd;border:2px dashed var(--warning);border-radius:10px 8px 11px 9px;
+  }
+  .modal-actions{display:flex;gap:8px;margin-top:14px;}
+  .modal-actions button{
+    flex:1;font-size:13px;font-weight:700;padding:9px 6px;
+    border-radius:12px 10px 13px 11px;border:2px solid var(--border);
+    background:var(--surface);color:var(--text-muted);
+  }
+  #settings-export-btn{border-color:var(--accent);color:var(--accent-ink);}
+  .settings-export-area{
+    width:100%;height:120px;margin-top:10px;font-family:var(--font-mono);font-size:11px;
+    border:2px dashed var(--border);border-radius:10px;padding:8px;box-sizing:border-box;
+    background:var(--bg);color:var(--text);
+  }
 </style>
 </head>
 <body>
@@ -275,11 +354,14 @@
       <button class="mode-tab" data-mode="game2">名付け</button>
     </div>
   </header>
-  <div class="diff-tabs" id="diff-tabs">
-    <button class="diff-tab active" data-diff="practice">練習</button>
-    <button class="diff-tab" data-diff="easy">やさしめ</button>
-    <button class="diff-tab" data-diff="medium">まあまあ</button>
-    <button class="diff-tab" data-diff="hard">そこそこ</button>
+  <div class="diff-tabs-row">
+    <div class="diff-tabs" id="diff-tabs">
+      <button class="diff-tab active" data-diff="practice">練習</button>
+      <button class="diff-tab" data-diff="easy">やさしめ</button>
+      <button class="diff-tab" data-diff="medium">まあまあ</button>
+      <button class="diff-tab" data-diff="hard">そこそこ</button>
+    </div>
+    <button id="settings-gear" class="gear-btn" style="display:none;" title="難易度設定">⚙</button>
   </div>
   <div class="objective" id="objective" style="display:none;"></div>
   <div class="grid" id="grid"></div>
@@ -287,6 +369,31 @@
   <p class="hint" id="hint"><span class="keycap">タップ</span>まわす　<span class="keycap">2タップ</span>逆にまわす　<span class="keycap">3タップ</span>けす　<span class="keycap">ドラッグ</span>おく・うごかす</p>
   <div class="status" id="status">パネルをグリッドに配置してください</div>
   <div class="wordbank" id="wordbank" style="display:none;"></div>
+</div>
+
+<div class="modal-overlay" id="settings-modal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>難易度設定</h2>
+      <button id="settings-close" class="modal-close" type="button">×</button>
+    </div>
+    <div class="modal-game-tabs" id="modal-game-tabs">
+      <button class="modal-game-tab active" data-game="game1">並べ</button>
+      <button class="modal-game-tab" data-game="game2">名付け</button>
+    </div>
+    <div class="modal-tier-tabs" id="modal-tier-tabs">
+      <button class="modal-tier-tab active" data-tier="easy">やさしめ</button>
+      <button class="modal-tier-tab" data-tier="medium">まあまあ</button>
+      <button class="modal-tier-tab" data-tier="hard">そこそこ</button>
+    </div>
+    <div id="settings-form"></div>
+    <div id="settings-warning" class="settings-warning" style="display:none;"></div>
+    <div class="modal-actions">
+      <button id="settings-export-btn" type="button">コードとして書き出す</button>
+      <button id="settings-reset-btn" type="button">既定値に戻す</button>
+    </div>
+    <textarea id="settings-export-area" class="settings-export-area" style="display:none;" readonly spellcheck="false"></textarea>
+  </div>
 </div>
 
 <script>
@@ -1023,16 +1130,16 @@
     return { w: maxC - minC + 1, h: maxR - minR + 1 };
   }
 
-  // opts: { maxTypes, lenMin, lenMax, subMin, subMax, useBent, forceTurn, forceRingSubstituent, ringSizes, bendRange, allowMethane, maxWidth }
+  // opts: { maxTypes, lenMin, lenMax, subMin, subMax, useBent, forceTurn, forceRingSubstituent, ringSizes, bendRange, allowMethane, maxWidth, maxHeight }
   //   maxTypes: この問題で許容する置換基の「種類数」
   //   useBent: 屈曲した主鎖を使うか / forceTurn: できるだけ曲げるように誘導するか
   //   ringSizes: 環のサイズ候補(例: [4,6]) / bendRange: [min,max]で折れ曲がり炭素数を指定(省略時は無制限)
   //   allowMethane: 炭素1個だけの構造(ハロゲン化メタン)も出題対象に含めるか
-  //   maxWidth: 出題する構造が収まるべき列数の上限(盤面の左右を狭めている難度で使う)
+  //   maxWidth / maxHeight: 出題する構造が収まるべき列数・行数の上限(盤面を狭めている難度で使う)
   function generateStructureWithOptions(opts) {
     const {
       maxTypes = 1, useBent = false, forceTurn = false, forceRingSubstituent = false,
-      ringSizes = [4, 6], bendRange = null, allowMethane = false, maxWidth = COLS,
+      ringSizes = [4, 6], bendRange = null, allowMethane = false, maxWidth = COLS, maxHeight = ROWS,
     } = opts || {};
     for (let attempt = 0; attempt < 120; attempt++) {
       try {
@@ -1047,18 +1154,18 @@
         }
         // 盤面の使用可能な範囲に収まらない構造は出題しない(組み立て不可能になるため)
         const extent = gridExtent(g);
-        if (extent.w > maxWidth || extent.h > ROWS) continue;
+        if (extent.w > maxWidth || extent.h > maxHeight) continue;
         const result = generateName(g);
         // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
         // 意図せずmaxTypesを超えることがあるため、実際の結果を見てから判定する
-        if (result.ok && countDistinctTypesInName(result.name) <= maxTypes) return { grid: g, name: result.name };
+        if (result.ok && countDistinctTypesInName(result.name) <= maxTypes) return { grid: g, name: result.name, fellBack: false };
       } catch (e) { /* 稀に組み合わせが悪い場合は生成をやり直す */ }
     }
-    // 保険: 万一失敗してもエタンで確実に成功させる
+    // 保険: 万一失敗してもエタンで確実に成功させる(fellBack:trueで「設定が厳しすぎる」ことを呼び出し元に伝える)
     const g = emptyGrid();
     g[2][3] = panelFor(1, ['E']);
     g[2][4] = panelFor(1, ['W']);
-    return { grid: g, name: generateName(g).name };
+    return { grid: g, name: generateName(g).name, fellBack: true };
   }
 
   // ============================================================
@@ -1217,27 +1324,103 @@
     }
   }
 
-  // アルカン並べの「そこそこ」難度では、盤面の左右1列ずつを使用不可にして実質5列で解かせる。
-  // ただしグリッド自体は常に7列のまま(マスの大きさは変えない)で、両端の列は非表示にして
-  // 背景の方眼罫がそのまま見える状態にする。
-  function hiddenColCount() {
-    return (currentMode === 'game1' && difficulty === 'hard') ? 1 : 0;
+  // ============================================================
+  // 難易度設定(既定値 + localStorage読み込み)
+  // ============================================================
+  // モーダルで編集できる項目の既定値。ここが「今の設定」の基準になる。
+  const DEFAULT_GAME1_OPTS = {
+    easy:   { maxTypes: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5 },
+    medium: { maxTypes: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5 },
+    hard:   { maxTypes: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5 },
+  };
+  const DEFAULT_GAME2_OPTS = {
+    easy:   { maxTypes: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 3, ringSizes: [4, 6],     forceRingSubstituent: false, bendMin: 0, bendMax: 0 },
+    medium: { maxTypes: 1, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  bendMin: 0, bendMax: 3 },
+    hard:   { maxTypes: 1, lenMin: 6, lenMax: 10, subMin: 4, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  bendMin: 4, bendMax: 99 },
+  };
+  // モーダルには出さず内部で固定する値。
+  // 屈曲主鎖: 並べ・名付けとも常にON(並べは盤面の曲がりが見えないため露出の意味が薄く、
+  //           名付けは折れ曲がり炭素数の方で直接制御できるため)。
+  // ハロゲン化メタン: 既存の難度別パターン(やさしめのみ出題)を維持。
+  const FORCE_TURN = {
+    game1: { easy: false, medium: false, hard: true },
+    game2: { easy: false, medium: false, hard: true },
+  };
+  const ALLOW_METHANE = { easy: true, medium: false, hard: false };
+
+  const SETTINGS_KEY = 'alkane-puzzle-settings-v1';
+  function loadGameSettings() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)); } catch (e) { saved = null; }
+    const merge = (defaults, savedGame) => {
+      const out = {};
+      for (const tier of ['easy', 'medium', 'hard']) {
+        out[tier] = { ...defaults[tier], ...((savedGame && savedGame[tier]) || {}) };
+      }
+      return out;
+    };
+    return {
+      game1: merge(DEFAULT_GAME1_OPTS, saved && saved.game1),
+      game2: merge(DEFAULT_GAME2_OPTS, saved && saved.game2),
+    };
   }
-  function isPlayableCol(c) {
-    const h = hiddenColCount();
-    return c >= h && c < COLS - h;
-  }
-  // 使用可能なマスかどうか(盤面外・非表示列はfalse)
-  function isPlayableCell(r, c) {
-    return r >= 0 && r < ROWS && c >= 0 && c < COLS && isPlayableCol(c);
+  let gameSettings = loadGameSettings();
+  function saveGameSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings)); } catch (e) { /* 保存できなくても致命的ではない */ }
   }
 
-  // 非表示列の見た目を更新し、その列に残っているパネルは取り除く。
+  function buildGame1Opts(tier) {
+    const s = gameSettings.game1[tier];
+    return {
+      maxTypes: s.maxTypes, lenMin: s.lenMin, lenMax: s.lenMax, subMin: s.subMin, subMax: s.subMax,
+      ringSizes: s.ringSizes.length ? s.ringSizes : [6],
+      forceRingSubstituent: s.forceRingSubstituent,
+      useBent: true, forceTurn: FORCE_TURN.game1[tier], allowMethane: ALLOW_METHANE[tier],
+      maxWidth: s.gridCols, maxHeight: s.gridRows,
+    };
+  }
+  function buildGame2Opts(tier) {
+    const s = gameSettings.game2[tier];
+    return {
+      maxTypes: s.maxTypes, lenMin: s.lenMin, lenMax: s.lenMax, subMin: s.subMin, subMax: s.subMax,
+      ringSizes: s.ringSizes.length ? s.ringSizes : [6],
+      forceRingSubstituent: s.forceRingSubstituent,
+      useBent: true, forceTurn: FORCE_TURN.game2[tier], allowMethane: ALLOW_METHANE[tier],
+      bendRange: [s.bendMin, s.bendMax],
+    };
+  }
+
+  // アルカン並べの各難度で設定された「枠数(横×縦)」だけを使用可能にする。
+  // グリッド自体は常に最大サイズ(7列×5行)のまま(マスの大きさは変えない)で、
+  // はみ出す分は上下左右対称に非表示にし、背景の方眼罫がそのまま見える状態にする。
+  function playableSize() {
+    if (currentMode === 'game1' && difficulty !== 'practice') {
+      const s = gameSettings.game1[difficulty];
+      return { cols: Math.min(s.gridCols, COLS), rows: Math.min(s.gridRows, ROWS) };
+    }
+    return { cols: COLS, rows: ROWS };
+  }
+  function isPlayableCol(c) {
+    const { cols } = playableSize();
+    const hidden = Math.floor((COLS - cols) / 2);
+    return c >= hidden && c < COLS - hidden;
+  }
+  function isPlayableRow(r) {
+    const { rows } = playableSize();
+    const hidden = Math.floor((ROWS - rows) / 2);
+    return r >= hidden && r < ROWS - hidden;
+  }
+  // 使用可能なマスかどうか(盤面外・非表示のマスはfalse)
+  function isPlayableCell(r, c) {
+    return r >= 0 && r < ROWS && c >= 0 && c < COLS && isPlayableCol(c) && isPlayableRow(r);
+  }
+
+  // 非表示マスの見た目を更新し、そこに残っているパネルは取り除く。
   function applyGridSize() {
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        const playable = isPlayableCol(c);
-        if (!playable && grid[r][c]) grid[r][c] = null; // 隠れる列に残ったパネルは消す
+        const playable = isPlayableCol(c) && isPlayableRow(r);
+        if (!playable && grid[r][c]) grid[r][c] = null; // 隠れるマスに残ったパネルは消す
         if (cellEls[r] && cellEls[r][c]) cellEls[r][c].classList.toggle('hidden-col', !playable);
       }
     }
@@ -1530,6 +1713,7 @@
     const target = document.elementFromPoint(e.clientX, e.clientY);
     let cellEl = target && target.closest('.cell');
     dragState.ghost.remove();
+    nameRevealed = false; // パネルを操作したら「名前を表示」前の状態に戻す(練習モード)
 
     // 非表示列(使用不可のマス)には置けない
     if (cellEl && !isPlayableCell(+cellEl.dataset.row, +cellEl.dataset.col)) cellEl = null;
@@ -1610,6 +1794,7 @@
         tapCount = 0;
         if (grid[r][c] === panelAtTapTime) {
           grid[r][c] = null;
+          nameRevealed = false; // パネルを操作したら「名前を表示」前の状態に戻す(練習モード)
           playDeleteSound();
           refreshAll();
         }
@@ -1627,6 +1812,7 @@
         if (panel && panel === panelAtTapTime) {
           const delta = tapCount === 1 ? 90 : -90; // 1回=時計回り、2回=反時計回り
           panel.rotation = ((panel.rotation + delta) % 360 + 360) % 360;
+          nameRevealed = false; // パネルを操作したら「名前を表示」前の状態に戻す(練習モード)
           if (delta === 90) playRotateCWSound(); else playRotateCCWSound();
           refreshAll();
         }
@@ -1658,26 +1844,9 @@
   // ============================================================
   let game1Checked = null; // null | 'correct' | 'incorrect'
 
-  // 主鎖=main chain, 側鎖=substituent(種類数はmaxTypes, 数はsubMin~subMax)
-  const GAME1_OPTS = {
-    easy: {
-      maxTypes: 1, lenMin: 1, lenMax: 6, subMin: 0, subMax: 4,
-      ringSizes: [4, 6], allowMethane: true, useBent: false, forceRingSubstituent: false,
-    },
-    medium: {
-      maxTypes: 2, lenMin: 4, lenMax: 8, subMin: 3, subMax: 6,
-      ringSizes: [6, 8], allowMethane: false, useBent: true, forceTurn: false, forceRingSubstituent: true,
-    },
-    hard: {
-      maxTypes: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6,
-      ringSizes: [6, 8, 10], allowMethane: false, useBent: true, forceTurn: true, forceRingSubstituent: true,
-      maxWidth: 5, // 左右1列ずつを隠して実質5列にするため、5列に収まる構造だけを出題する
-    },
-  };
-
   function startGame1() {
     interactionsEnabled = true;
-    const { name } = generateStructureWithOptions(GAME1_OPTS[difficulty]);
+    const { name } = generateStructureWithOptions(buildGame1Opts(difficulty));
     targetName = name;
     grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     game1Checked = null;
@@ -1715,21 +1884,6 @@
   // ============================================================
   // ゲーム②(構造を見て名前を当てる)
   // ============================================================
-  const GAME2_OPTS = {
-    easy: {
-      maxTypes: 1, lenMin: 1, lenMax: 6, subMin: 0, subMax: 3,
-      ringSizes: [4, 6], allowMethane: true, useBent: false, forceRingSubstituent: false,
-    },
-    medium: {
-      maxTypes: 1, lenMin: 4, lenMax: 8, subMin: 3, subMax: 6,
-      ringSizes: [6, 8], allowMethane: false, useBent: true, forceTurn: false, bendRange: [0, 3], forceRingSubstituent: true,
-    },
-    hard: {
-      maxTypes: 1, lenMin: 6, lenMax: 10, subMin: 4, subMax: 6,
-      ringSizes: [6, 8, 10], allowMethane: false, useBent: true, forceTurn: true, bendRange: [4, Infinity], forceRingSubstituent: true,
-    },
-  };
-
   // 環の名前は「シクロ」+ 鎖の名前 の組み合わせで作らせる(シクロヘキサン等の完成形は語群に置かない)
   const BASE_NAME_SET = new Set(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン']);
   const CYCLO_TOKEN = 'シクロ';
@@ -1772,7 +1926,7 @@
 
   function startGame2() {
     interactionsEnabled = false;
-    const { grid: g, name } = generateStructureWithOptions(GAME2_OPTS[difficulty]);
+    const { grid: g, name } = generateStructureWithOptions(buildGame2Opts(difficulty));
     targetName = name;
     grid = g;
     answerTokens = [];
@@ -1912,6 +2066,199 @@
       startGame2();
     }
   }
+
+  // ============================================================
+  // 難易度設定モーダル(管理者向け・?admin=1のときだけ使える)
+  // ============================================================
+  const ADMIN_MODE = new URLSearchParams(location.search).get('admin') === '1';
+  const modalState = { game: 'game1', tier: 'easy' };
+
+  function stepperControl(value, onMinus, onPlus, displayText) {
+    const stepper = document.createElement('div');
+    stepper.className = 'stepper';
+    const minus = document.createElement('button');
+    minus.type = 'button'; minus.textContent = '−'; minus.addEventListener('click', onMinus);
+    const val = document.createElement('span');
+    val.className = 'stepper-value'; val.textContent = displayText !== undefined ? displayText : value;
+    const plus = document.createElement('button');
+    plus.type = 'button'; plus.textContent = '＋'; plus.addEventListener('click', onPlus);
+    stepper.append(minus, val, plus);
+    return stepper;
+  }
+
+  function makeStepperRow(label, s, key, lo, hi) {
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    const lab = document.createElement('span'); lab.className = 'settings-label'; lab.textContent = label;
+    row.appendChild(lab);
+    row.appendChild(stepperControl(s[key],
+      () => { if (s[key] > lo) { s[key]--; onSettingsChanged(); } },
+      () => { if (s[key] < hi) { s[key]++; onSettingsChanged(); } }));
+    return row;
+  }
+
+  function makeRangeStepperRow(label, s, minKey, maxKey, lo, hi) {
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    const lab = document.createElement('span'); lab.className = 'settings-label'; lab.textContent = label;
+    const wrap = document.createElement('div'); wrap.className = 'stepper-range';
+    wrap.appendChild(stepperControl(s[minKey],
+      () => { if (s[minKey] > lo) { s[minKey]--; if (s[minKey] > s[maxKey]) s[maxKey] = s[minKey]; onSettingsChanged(); } },
+      () => { if (s[minKey] < s[maxKey]) { s[minKey]++; onSettingsChanged(); } }));
+    const tilde = document.createElement('span'); tilde.className = 'stepper-tilde'; tilde.textContent = '〜';
+    wrap.appendChild(tilde);
+    wrap.appendChild(stepperControl(s[maxKey],
+      () => { if (s[maxKey] > s[minKey]) { s[maxKey]--; onSettingsChanged(); } },
+      () => { if (s[maxKey] < hi) { s[maxKey]++; if (s[maxKey] < s[minKey]) s[minKey] = s[maxKey]; onSettingsChanged(); } }));
+    row.append(lab, wrap);
+    return row;
+  }
+
+  function makeRingSizeRow(label, s) {
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    const lab = document.createElement('span'); lab.className = 'settings-label'; lab.textContent = label;
+    const wrap = document.createElement('div'); wrap.className = 'ring-checkboxes';
+    [4, 6, 8, 10].forEach((size) => {
+      const labelEl = document.createElement('label'); labelEl.className = 'ring-checkbox';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = s.ringSizes.includes(size);
+      cb.addEventListener('change', () => {
+        const set = new Set(s.ringSizes);
+        if (cb.checked) set.add(size);
+        else if (set.size > 1) set.delete(size); // 最低1つは選択された状態を保つ
+        else { cb.checked = true; return; }
+        s.ringSizes = [...set].sort((a, b) => a - b);
+        onSettingsChanged();
+      });
+      labelEl.append(cb, document.createTextNode(size));
+      wrap.appendChild(labelEl);
+    });
+    row.append(lab, wrap);
+    return row;
+  }
+
+  function makeToggleRow(label, s, key) {
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    const lab = document.createElement('span'); lab.className = 'settings-label'; lab.textContent = label;
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'settings-toggle' + (s[key] ? ' on' : '');
+    toggle.textContent = s[key] ? 'ON' : 'OFF';
+    toggle.addEventListener('click', () => { s[key] = !s[key]; onSettingsChanged(); });
+    row.appendChild(lab); row.appendChild(toggle);
+    return row;
+  }
+
+  function renderSettingsForm() {
+    const { game, tier } = modalState;
+    const s = gameSettings[game][tier];
+    const form = document.getElementById('settings-form');
+    form.innerHTML = '';
+    form.appendChild(makeRangeStepperRow('主鎖炭素数', s, 'lenMin', 'lenMax', 1, 10));
+    form.appendChild(makeStepperRow('側鎖種類数', s, 'maxTypes', 1, 6));
+    form.appendChild(makeRangeStepperRow('側鎖数', s, 'subMin', 'subMax', 0, 10));
+    form.appendChild(makeRingSizeRow('シクロ主鎖の炭素数', s));
+    if (game === 'game1') {
+      form.appendChild(makeStepperRow('枠数(横)', s, 'gridCols', 3, COLS));
+      form.appendChild(makeStepperRow('枠数(縦)', s, 'gridRows', 3, ROWS));
+    } else {
+      form.appendChild(makeRangeStepperRow('折れ曲がり炭素数', s, 'bendMin', 'bendMax', 0, 10));
+    }
+    form.appendChild(makeToggleRow('環に置換基を必ず付ける', s, 'forceRingSubstituent'));
+    updateFeasibilityWarning();
+  }
+
+  function onSettingsChanged() {
+    saveGameSettings();
+    renderSettingsForm(); // 全体を再描画して値のズレを防ぐ
+    // 編集中の設定が今まさに表示されている難度と同じなら、盤面サイズなどを即座に反映する
+    if (modalState.game === 'game1' && currentMode === 'game1' && modalState.tier === difficulty) {
+      applyGridSize();
+      refreshAll();
+    }
+  }
+
+  // 現在フォームに表示中の設定で試しにN回生成し、失敗(保険のエタンにフォールバック)しすぎていないか確認する
+  function updateFeasibilityWarning() {
+    const { game, tier } = modalState;
+    const opts = game === 'game1' ? buildGame1Opts(tier) : buildGame2Opts(tier);
+    const N = 20;
+    let fallbackCount = 0;
+    for (let i = 0; i < N; i++) {
+      if (generateStructureWithOptions(opts).fellBack) fallbackCount++;
+    }
+    const warnEl = document.getElementById('settings-warning');
+    if (fallbackCount > N * 0.25) {
+      warnEl.style.display = 'block';
+      warnEl.textContent = `⚠️ この設定では出題の生成に失敗することが多いようです(${N}回中${fallbackCount}回、保険のエタンで代用)。範囲を緩めるか、枠を広げることをおすすめします。`;
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+
+  function exportSettingsAsCode() {
+    const fmtTier = (s, isGame1) => {
+      const common = `maxTypes: ${s.maxTypes}, lenMin: ${s.lenMin}, lenMax: ${s.lenMax}, subMin: ${s.subMin}, subMax: ${s.subMax}, ringSizes: [${s.ringSizes.join(', ')}]`;
+      const rest = isGame1
+        ? `forceRingSubstituent: ${s.forceRingSubstituent}, gridCols: ${s.gridCols}, gridRows: ${s.gridRows}`
+        : `forceRingSubstituent: ${s.forceRingSubstituent}, bendMin: ${s.bendMin}, bendMax: ${s.bendMax}`;
+      return `    ${common}, ${rest}`;
+    };
+    const fmtGame = (opts, isGame1) => ['easy', 'medium', 'hard']
+      .map((t) => `    ${t}: { ${fmtTier(opts[t], isGame1).trim().replace(/^    /, '')} },`)
+      .join('\n');
+    const code = `  const DEFAULT_GAME1_OPTS = {\n${fmtGame(gameSettings.game1, true)}\n  };\n\n`
+      + `  const DEFAULT_GAME2_OPTS = {\n${fmtGame(gameSettings.game2, false)}\n  };`;
+    const area = document.getElementById('settings-export-area');
+    area.style.display = 'block';
+    area.value = code;
+    area.select();
+    try { document.execCommand('copy'); } catch (e) { /* 失敗しても表示されたテキストを手動でコピーできる */ }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).catch(() => {});
+  }
+
+  function openSettingsModal() {
+    document.getElementById('settings-modal').style.display = 'flex';
+    document.getElementById('settings-export-area').style.display = 'none';
+    renderSettingsForm();
+  }
+  function closeSettingsModal() {
+    document.getElementById('settings-modal').style.display = 'none';
+  }
+
+  if (ADMIN_MODE) {
+    document.getElementById('settings-gear').style.display = 'inline-flex';
+    document.getElementById('settings-gear').style.alignItems = 'center';
+    document.getElementById('settings-gear').style.justifyContent = 'center';
+  }
+  document.getElementById('settings-gear').addEventListener('click', openSettingsModal);
+  document.getElementById('settings-close').addEventListener('click', closeSettingsModal);
+  document.getElementById('settings-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'settings-modal') closeSettingsModal(); // 背景タップで閉じる
+  });
+  document.querySelectorAll('.modal-game-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      modalState.game = btn.dataset.game;
+      document.querySelectorAll('.modal-game-tab').forEach((b) => b.classList.toggle('active', b === btn));
+      renderSettingsForm();
+    });
+  });
+  document.querySelectorAll('.modal-tier-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      modalState.tier = btn.dataset.tier;
+      document.querySelectorAll('.modal-tier-tab').forEach((b) => b.classList.toggle('active', b === btn));
+      renderSettingsForm();
+    });
+  });
+  document.getElementById('settings-export-btn').addEventListener('click', exportSettingsAsCode);
+  document.getElementById('settings-reset-btn').addEventListener('click', () => {
+    const { game, tier } = modalState;
+    const defaults = game === 'game1' ? DEFAULT_GAME1_OPTS : DEFAULT_GAME2_OPTS;
+    gameSettings[game][tier] = { ...defaults[tier] };
+    onSettingsChanged();
+  });
 
   // ============================================================
   // 初期化
