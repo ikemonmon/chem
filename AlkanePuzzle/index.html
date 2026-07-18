@@ -48,6 +48,9 @@
   body{
     margin:0;
     overflow-x:hidden;
+    /* ダブルタップによる拡大縮小を抑止する(user-scalable=noはiOS Safariで無視されるため、
+       touch-actionで明示する。グリッドのマス側は touch-action:none で別途上書きしている) */
+    touch-action:manipulation;
     /* 方眼ノートの罫 + 生成りの紙 */
     background:
       linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/22px 22px,
@@ -240,7 +243,7 @@
     color:var(--text-muted);line-height:1.5;
   }
   /* 回答確定後(結果表示中)は高さを固定せず、正解スタンプがはみ出して見えるようにする */
-  .wordbank .preview.result{height:auto;min-height:62px;overflow:visible;}
+  .wordbank .preview.result{height:auto;min-height:62px;overflow:visible;padding-right:104px;}
   .wordbank .preview .name{color:var(--accent-ink);}
   .wordbank .preview button{
     margin-top:10px;font-size:14px;font-weight:800;padding:8px 20px;
@@ -264,6 +267,23 @@
   .wordbank.answered .row button{opacity:.4;pointer-events:none;}
   .wordbank .control-row{margin-top:8px;margin-bottom:0;gap:8px;}
   .wordbank .control-row button{padding:7px 16px;}
+
+  /* 解答欄では文字が隠れないよう、スタンプを右寄せ・少し小さめにする */
+  .stamp.stamp-side{
+    left:auto;right:6px;top:50%;width:96px;height:96px;
+    transform:translate(0,-50%) rotate(-9deg) scale(0);
+    animation:stamp-in-side .5s cubic-bezier(.2,1.5,.4,1) forwards;
+  }
+  .stamp.stamp-side.tappable::after{left:50%;bottom:-18px;transform:translateX(-50%);}
+  @keyframes stamp-in-side{
+    0%{transform:translate(0,-50%) rotate(-9deg) scale(2.3);opacity:0;}
+    55%{transform:translate(0,-50%) rotate(-9deg) scale(.86);opacity:1;}
+    100%{transform:translate(0,-50%) rotate(-9deg) scale(1);opacity:1;}
+  }
+  .retry-hint{font-size:13px;font-weight:700;color:var(--accent-ink);}
+  @media (prefers-reduced-motion: reduce){
+    .stamp.stamp-side{animation:none;transform:translate(0,-50%) rotate(-9deg) scale(1);}
+  }
 
   /* ---- 難易度設定(管理者向け・?admin=1のときだけ表示) ---- */
   .diff-tabs-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
@@ -367,7 +387,7 @@
   <div class="grid" id="grid"></div>
   <div class="palette" id="palette"></div>
   <p class="hint" id="hint"><span class="keycap">タップ</span>まわす　<span class="keycap">2タップ</span>逆にまわす　<span class="keycap">3タップ</span>けす　<span class="keycap">ドラッグ</span>おく・うごかす</p>
-  <div class="status" id="status">パネルをグリッドに配置してください</div>
+  <div class="status" id="status">原子を並べてください</div>
   <div class="wordbank" id="wordbank" style="display:none;"></div>
 </div>
 
@@ -802,6 +822,15 @@
     const shuffled = shuffle([...pool]);
     return shuffled.slice(0, count);
   }
+  // 側鎖の「種類数」の範囲([min,max])に従って、実際に使う置換基の種類を選ぶ。
+  // 空きスロット数より多くの種類は使えないので、そこでも頭打ちにする。
+  function pickSpeciesForRange(typeRange, slotCount) {
+    const [rawMin, rawMax] = Array.isArray(typeRange) ? typeRange : [1, typeRange || 1];
+    const hi = Math.max(1, Math.min(rawMax, SUBSTITUENT_SPECIES.length, Math.max(1, slotCount)));
+    const lo = Math.max(1, Math.min(rawMin, hi));
+    const count = randInt(lo, hi);
+    return shuffle([...SUBSTITUENT_SPECIES]).slice(0, count);
+  }
 
   // targetDirsが欲しいときに、その活性方向の組を実現するtype/rotationを逆算する
   // (手計算で回転角を出すよりも間違いにくいので、生成ロジックは基本これ経由にする)
@@ -842,7 +871,7 @@
 
   // 鎖状(アルカン): 横一直線の主鎖 + 上下に伸びる置換基、という単純なレイアウトで生成する(かんたんモード用)。
   // 5行×7列に収めるため主鎖は最大7炭素までとする(命名エンジン自体は10炭素まで対応可能)。
-  function generateAlkaneGrid(maxTypes, opts) {
+  function generateAlkaneGrid(typeRange, opts) {
     const { lenMin = 2, lenMax = 7, subMin = 0, subMax = 3 } = opts || {};
     const len = randInt(Math.max(2, lenMin), Math.max(2, lenMax));
     const startCol = Math.floor((COLS - len) / 2);
@@ -853,9 +882,7 @@
     for (let i = 1; i < len - 1; i++) { slots.push([i, 'up']); slots.push([i, 'down']); }
     shuffle(slots);
 
-    const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.6)
-      ? pickUpToNDistinct(SUBSTITUENT_SPECIES, maxTypes)
-      : [choice(SUBSTITUENT_SPECIES)];
+    const distinctNames = pickSpeciesForRange(typeRange, slots.length);
 
     const count = Math.min(slots.length, randInt(subMin, subMax));
     const posInfo = {};
@@ -957,7 +984,7 @@
     return { path, occupied };
   }
 
-  function planBentSubstituents(path, occupied, maxTypes, subMin, subMax) {
+  function planBentSubstituents(path, occupied, typeRange, subMin, subMax) {
     const len = path.length;
     const slots = [];
     for (let i = 1; i < len - 1; i++) {
@@ -966,9 +993,7 @@
     }
     shuffle(slots);
 
-    const distinctNames = (maxTypes >= 2 && slots.length >= 2 && Math.random() < 0.6)
-      ? pickUpToNDistinct(SUBSTITUENT_SPECIES, maxTypes)
-      : [choice(SUBSTITUENT_SPECIES)];
+    const distinctNames = pickSpeciesForRange(typeRange, slots.length);
 
     const targetCount = randInt(subMin, subMax);
     const posInfo = {};
@@ -1023,7 +1048,7 @@
 
   // 難問モード用: 屈曲した主鎖 + 側鎖多め
   // bendRange: [min, max] で「折れ曲がり炭素(かど)の数」の範囲を指定(省略時は無制限)
-  function generateBentAlkaneGrid(maxTypes, opts, forceTurn, bendRange) {
+  function generateBentAlkaneGrid(typeRange, opts, forceTurn, bendRange) {
     const { lenMin = 6, lenMax = 9, subMin = 2, subMax = 4 } = opts || {};
     const [bendMin, bendMax] = bendRange || [0, Infinity];
     for (let attempt = 0; attempt < 60; attempt++) {
@@ -1033,7 +1058,7 @@
       const bends = countBends(walk.path);
       if (bends < bendMin || bends > bendMax) continue; // 指定した折れ曲がり数の範囲外ならやり直す
       const occupied = new Set(walk.occupied);
-      const posInfo = planBentSubstituents(walk.path, occupied, maxTypes, subMin, subMax);
+      const posInfo = planBentSubstituents(walk.path, occupied, typeRange, subMin, subMax);
       return buildBentGrid(walk.path, posInfo);
     }
     return null; // 呼び出し元でリトライ
@@ -1059,27 +1084,54 @@
     10: makeRingTemplate(5),  // シクロデカン
   };
 
-  function generateCycloalkaneGrid(forceSubstituent, ringSizes) {
+  // 環に付ける置換基は、設定された側鎖数(subMin〜subMax)に従って複数付ける。
+  // 環のどの炭素の、どの空き方向に付けるかはランダムに選び、盤面からはみ出す配置は諦める。
+  function generateCycloalkaneGrid(forceSubstituent, ringSizes, subMin, subMax) {
     const ringSize = choice(ringSizes || [4, 6]);
     const tmpl = RING_TEMPLATES[ringSize];
     const baseRow = Math.floor((ROWS - tmpl.height) / 2);
     const baseCol = Math.floor((COLS - tmpl.width) / 2);
     const grid = emptyGrid();
+    const occupied = new Set();
     for (const cell of tmpl.cells) {
-      grid[baseRow + cell.dr][baseCol + cell.dc] = panelForDirections(cell.dirs);
+      const r = baseRow + cell.dr, c = baseCol + cell.dc;
+      grid[r][c] = panelForDirections(cell.dirs);
+      occupied.add(`${r},${c}`);
     }
 
-    if (forceSubstituent || Math.random() < 0.5) {
-      const cell = choice(tmpl.cells);
-      const dir = choice(cell.free);
+    // 付ける個数を決める(subMin/subMaxが未指定なら従来通り0個か1個)
+    let want;
+    if (subMin === undefined || subMax === undefined) {
+      want = (forceSubstituent || Math.random() < 0.5) ? 1 : 0;
+    } else {
+      want = randInt(subMin, subMax);
+      if (forceSubstituent && want < 1) want = 1;
+    }
+    if (want <= 0) return grid;
+
+    // 「環のどのマスの、どの空き方向か」の候補を全部集めてシャッフルし、置ける所から順に使う
+    const slots = [];
+    for (const cell of tmpl.cells) for (const dir of cell.free) slots.push({ cell, dir });
+    shuffle(slots);
+
+    let placed = 0;
+    for (const { cell, dir } of slots) {
+      if (placed >= want) break;
       const r0 = baseRow + cell.dr, c0 = baseCol + cell.dc;
-      grid[r0][c0] = panelForDirections([...cell.dirs, dir]);
       const [ddr, ddc] = DELTA[dir];
+      const tr = r0 + ddr, tc = c0 + ddc;
+      if (tr < 0 || tr >= ROWS || tc < 0 || tc >= COLS) continue;
+      if (occupied.has(`${tr},${tc}`)) continue;
+      // 同じ環炭素に既に別の置換基を付けている場合は、その分も含めて手を張り直す
+      const existing = getActiveDirections(grid[r0][c0]);
+      grid[r0][c0] = panelForDirections([...existing, dir]);
       const name = choice(RING_SUBSTITUENT_SPECIES);
       const panel = panelFor(1, [OPPOSITE[dir]]);
       const el = HALOGEN_ELEMENT_BY_NAME[name];
       if (el) panel.element = el;
-      grid[r0 + ddr][c0 + ddc] = panel;
+      grid[tr][tc] = panel;
+      occupied.add(`${tr},${tc}`);
+      placed++;
     }
     return grid;
   }
@@ -1130,35 +1182,41 @@
     return { w: maxC - minC + 1, h: maxR - minR + 1 };
   }
 
-  // opts: { maxTypes, lenMin, lenMax, subMin, subMax, useBent, forceTurn, forceRingSubstituent, ringSizes, bendRange, allowMethane, maxWidth, maxHeight }
-  //   maxTypes: この問題で許容する置換基の「種類数」
+  // opts: { typeMin, typeMax, lenMin, lenMax, subMin, subMax, useBent, forceTurn, forceRingSubstituent, ringSizes, bendRange, allowMethane, maxWidth, maxHeight }
+  //   typeMin / typeMax: この問題で使う置換基の「種類数」の範囲
   //   useBent: 屈曲した主鎖を使うか / forceTurn: できるだけ曲げるように誘導するか
   //   ringSizes: 環のサイズ候補(例: [4,6]) / bendRange: [min,max]で折れ曲がり炭素数を指定(省略時は無制限)
   //   allowMethane: 炭素1個だけの構造(ハロゲン化メタン)も出題対象に含めるか
   //   maxWidth / maxHeight: 出題する構造が収まるべき列数・行数の上限(盤面を狭めている難度で使う)
   function generateStructureWithOptions(opts) {
     const {
-      maxTypes = 1, useBent = false, forceTurn = false, forceRingSubstituent = false,
+      typeMin = 1, typeMax = 1, useBent = false, forceTurn = false, forceRingSubstituent = false,
       ringSizes = [4, 6], bendRange = null, allowMethane = false, maxWidth = COLS, maxHeight = ROWS,
     } = opts || {};
+    const typeRange = [typeMin, typeMax];
     for (let attempt = 0; attempt < 120; attempt++) {
       try {
         let g;
         if (allowMethane && Math.random() < 0.15) {
           g = generateMethaneGrid();
         } else if (Math.random() < 0.75) {
-          g = useBent ? generateBentAlkaneGrid(maxTypes, opts, forceTurn, bendRange) : generateAlkaneGrid(maxTypes, opts);
+          g = useBent ? generateBentAlkaneGrid(typeRange, opts, forceTurn, bendRange) : generateAlkaneGrid(typeRange, opts);
           if (!g) continue;
         } else {
-          g = generateCycloalkaneGrid(forceRingSubstituent, ringSizes);
+          g = generateCycloalkaneGrid(forceRingSubstituent, ringSizes, opts.subMin, opts.subMax);
         }
         // 盤面の使用可能な範囲に収まらない構造は出題しない(組み立て不可能になるため)
         const extent = gridExtent(g);
         if (extent.w > maxWidth || extent.h > maxHeight) continue;
         const result = generateName(g);
+        if (!result.ok) continue;
         // 分岐の位置によっては最長鎖ルールの都合で主鎖の解釈が変わり、
-        // 意図せずmaxTypesを超えることがあるため、実際の結果を見てから判定する
-        if (result.ok && countDistinctTypesInName(result.name) <= maxTypes) return { grid: g, name: result.name, fellBack: false };
+        // 意図せず種類数が設定範囲から外れることがあるため、実際の結果を見てから判定する。
+        // ただし置換基が1つも無い構造(種類数0)は、下限が何であっても許容する。
+        const typeCount = countDistinctTypesInName(result.name);
+        if (typeCount > typeMax) continue;
+        if (typeCount > 0 && typeCount < typeMin) continue;
+        return { grid: g, name: result.name, fellBack: false };
       } catch (e) { /* 稀に組み合わせが悪い場合は生成をやり直す */ }
     }
     // 保険: 万一失敗してもエタンで確実に成功させる(fellBack:trueで「設定が厳しすぎる」ことを呼び出し元に伝える)
@@ -1181,6 +1239,7 @@
   let nameRevealed = false; // 自由に組むモードで名前を表示済みかどうか
   let targetName = '';
   let answerTokens = [];
+  let game2WrongTimer = null; // 「誤」スタンプを自動で消すためのタイマー
 
   function isPracticeTier() { return currentMode === 'game1' && difficulty === 'practice'; }
 
@@ -1191,6 +1250,7 @@
   resetBtn.id = 'reset-btn';
   resetBtn.textContent = 'クリア';
   resetBtn.addEventListener('click', () => {
+    playUiClickSound();
     grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     nameRevealed = false;
     wasStructureValid = false;
@@ -1329,14 +1389,14 @@
   // ============================================================
   // モーダルで編集できる項目の既定値。ここが「今の設定」の基準になる。
   const DEFAULT_GAME1_OPTS = {
-    easy:   { maxTypes: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5 },
-    medium: { maxTypes: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5 },
-    hard:   { maxTypes: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5 },
+    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5 },
+    medium: { typeMin: 1, typeMax: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5 },
+    hard:   { typeMin: 1, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5 },
   };
   const DEFAULT_GAME2_OPTS = {
-    easy:   { maxTypes: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 3, ringSizes: [4, 6],     forceRingSubstituent: false, bendMin: 0, bendMax: 0 },
-    medium: { maxTypes: 1, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  bendMin: 0, bendMax: 3 },
-    hard:   { maxTypes: 1, lenMin: 6, lenMax: 10, subMin: 4, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  bendMin: 4, bendMax: 99 },
+    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 3, ringSizes: [4, 6],     forceRingSubstituent: false, bendMin: 0, bendMax: 0 },
+    medium: { typeMin: 1, typeMax: 1, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  bendMin: 0, bendMax: 3 },
+    hard:   { typeMin: 1, typeMax: 1, lenMin: 6, lenMax: 10, subMin: 4, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  bendMin: 4, bendMax: 99 },
   };
   // モーダルには出さず内部で固定する値。
   // 屈曲主鎖: 並べ・名付けとも常にON(並べは盤面の曲がりが見えないため露出の意味が薄く、
@@ -1348,7 +1408,7 @@
   };
   const ALLOW_METHANE = { easy: true, medium: false, hard: false };
 
-  const SETTINGS_KEY = 'alkane-puzzle-settings-v1';
+  const SETTINGS_KEY = 'alkane-puzzle-settings-v2';
   function loadGameSettings() {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)); } catch (e) { saved = null; }
@@ -1372,7 +1432,7 @@
   function buildGame1Opts(tier) {
     const s = gameSettings.game1[tier];
     return {
-      maxTypes: s.maxTypes, lenMin: s.lenMin, lenMax: s.lenMax, subMin: s.subMin, subMax: s.subMax,
+      typeMin: s.typeMin, typeMax: s.typeMax, lenMin: s.lenMin, lenMax: s.lenMax, subMin: s.subMin, subMax: s.subMax,
       ringSizes: s.ringSizes.length ? s.ringSizes : [6],
       forceRingSubstituent: s.forceRingSubstituent,
       useBent: true, forceTurn: FORCE_TURN.game1[tier], allowMethane: ALLOW_METHANE[tier],
@@ -1382,7 +1442,7 @@
   function buildGame2Opts(tier) {
     const s = gameSettings.game2[tier];
     return {
-      maxTypes: s.maxTypes, lenMin: s.lenMin, lenMax: s.lenMax, subMin: s.subMin, subMax: s.subMax,
+      typeMin: s.typeMin, typeMax: s.typeMax, lenMin: s.lenMin, lenMax: s.lenMax, subMin: s.subMin, subMax: s.subMax,
       ringSizes: s.ringSizes.length ? s.ringSizes : [6],
       forceRingSubstituent: s.forceRingSubstituent,
       useBent: true, forceTurn: FORCE_TURN.game2[tier], allowMethane: ALLOW_METHANE[tier],
@@ -1539,7 +1599,7 @@
     if (mismatches.length > 0) {
       statusEl.textContent = `不整合: ${mismatches.length}箇所\n結合の手が揃っていないマスがあります`;
     } else if (!hasAnyPanel) {
-      statusEl.textContent = 'パネルをグリッドに配置してください';
+      statusEl.textContent = '原子を並べてください';
     } else if (islands.size > 0) {
       statusEl.textContent = `孤立フラグメントがあります(${islands.size}マス)\nひとつの分子になるよう繋げてください`;
     } else if (nameResult && nameResult.ok) {
@@ -1548,7 +1608,7 @@
       } else {
         statusEl.innerHTML = `<button id="reveal-name-btn">名前を表示</button>`;
         const revealBtn = document.getElementById('reveal-name-btn');
-        if (revealBtn) revealBtn.addEventListener('click', () => { nameRevealed = true; refreshAll(); });
+        if (revealBtn) revealBtn.addEventListener('click', () => { playUiClickSound(); nameRevealed = true; refreshAll(); });
       }
     } else if (nameResult) {
       statusEl.textContent = `判定エラー: ${nameResult.error}`;
@@ -1569,10 +1629,20 @@
     if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
-  // 最初のタップ(どこでもよい)で即座にAudioContextを起動しておく。
-  // setTimeout内などユーザー操作から間接的なタイミングでresume()を呼ぶとブラウザに無視されることがあるため、
-  // 画面に最初に触れた瞬間(直接のジェスチャー)に確実に起動させておく。
-  window.addEventListener('pointerdown', () => getAudioCtx(), { once: true, passive: true });
+  // ユーザー操作のたびにAudioContextの起動を試み、実際にrunningになるまで諦めない。
+  // (once:trueの1回きりだと、最初のタップでのresume()がブラウザに拒否された場合に
+  //  以後ずっと無音のままになってしまうため。特にiOS Safariで起こりやすい)
+  function unlockAudio() {
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'running') {
+      window.removeEventListener('pointerdown', unlockAudio, true);
+      window.removeEventListener('touchend', unlockAudio, true);
+      window.removeEventListener('click', unlockAudio, true);
+    }
+  }
+  window.addEventListener('pointerdown', unlockAudio, { capture: true, passive: true });
+  window.addEventListener('touchend', unlockAudio, { capture: true, passive: true });
+  window.addEventListener('click', unlockAudio, { capture: true, passive: true });
 
   function playTone({ freqStart, freqEnd, duration, type, volume }) {
     const ctx = getAudioCtx();
@@ -1633,6 +1703,8 @@
   function playRotateCCWSound() { playClick({ freq: 1700, duration: 0.025, volume: 0.3, q: 1.3 }); }
   // 削除: 低めで少し長さのあるカチッという音
   function playDeleteSound() { playClick({ freq: 900, duration: 0.045, volume: 0.32, q: 0.9 }); }
+  // タブやボタンなど、UI操作全般の軽いクリック音
+  function playUiClickSound() { playClick({ freq: 1900, duration: 0.028, volume: 0.26, q: 1.0 }); }
   // 構造が正常になった瞬間: 明るい2音の上昇チャイム + ふわっと軽いきらめき
   function playValidSound() {
     playTone({ freqStart: 660, freqEnd: 700, duration: 0.09, type: 'sine', volume: 0.14 });
@@ -1673,7 +1745,10 @@
         const icon = document.createElement('div');
         icon.className = 'icon';
         if (item.kind === 'carbon') {
+          // まっすぐの2級炭素(type2)は既定だと縦向きなので、デッキ上では横向きに見せる
+          const iconRotation = item.type === 2 ? 90 : 0;
           icon.innerHTML = svgIcon(item.type, [], 0, false, 'C');
+          if (iconRotation) icon.style.transform = `rotate(${iconRotation}deg)`;
         } else {
           icon.innerHTML = svgIcon(1, [], 0, false, item.element);
         }
@@ -1693,12 +1768,15 @@
   function startPaletteDrag(e, item) {
     const type = item.kind === 'carbon' ? item.type : 1;
     const element = item.kind === 'carbon' ? 'C' : item.element;
+    // デッキ上での見た目の向きをそのまま初期の回転角として引き継ぐ(type2は横向き)
+    const rotation = (item.kind === 'carbon' && item.type === 2) ? 90 : 0;
     const ghost = document.createElement('div');
     ghost.className = 'ghost';
     ghost.innerHTML = svgIcon(type, [], 0, false, element);
+    if (rotation) ghost.style.transform = `rotate(${rotation}deg)`;
     document.body.appendChild(ghost);
     moveGhost(ghost, e.clientX, e.clientY);
-    dragState = { mode: 'new', type, element, ghost };
+    dragState = { mode: 'new', type, element, ghost, rotation };
     window.addEventListener('pointermove', onDragMove);
     window.addEventListener('pointerup', onDragEnd);
   }
@@ -1721,7 +1799,7 @@
     if (cellEl) {
       const r = +cellEl.dataset.row, c = +cellEl.dataset.col;
       if (dragState.mode === 'new') {
-        grid[r][c] = { type: dragState.type, rotation: 0, element: dragState.element }; // 既にパネルがあっても確認なしで上書き
+        grid[r][c] = { type: dragState.type, rotation: dragState.rotation || 0, element: dragState.element }; // 既にパネルがあっても確認なしで上書き
         playPlaceSound();
       } else if (dragState.mode === 'move') {
         const { fromR, fromC, panel } = dragState;
@@ -1926,6 +2004,7 @@
 
   function startGame2() {
     interactionsEnabled = false;
+    if (game2WrongTimer) { clearTimeout(game2WrongTimer); game2WrongTimer = null; }
     const { grid: g, name } = generateStructureWithOptions(buildGame2Opts(difficulty));
     targetName = name;
     grid = g;
@@ -1951,23 +2030,32 @@
     const preview = document.getElementById('answer-preview');
     const correct = reconstructed !== null && reconstructed === targetName;
 
-    document.getElementById('wordbank').classList.add('answered');
-    preview.classList.add('result');
-
     if (correct) {
       playCorrectSound();
-      preview.innerHTML = `<span class="stamp tappable" id="correct-stamp2">${correctStampSVG()}</span>正解！ <span class="name">${targetName}</span>`;
+      document.getElementById('wordbank').classList.add('answered');
+      preview.classList.add('result');
+      // スタンプは右側にずらして、解答の文字が隠れないようにする
+      preview.innerHTML = `<span class="stamp tappable stamp-side" id="correct-stamp2">${correctStampSVG()}</span>正解！ <span class="name">${targetName}</span>`;
       const stamp = document.getElementById('correct-stamp2');
       if (stamp) stamp.addEventListener('click', startGame2);
-    } else if (reconstructed === null) {
-      playIncorrectSound();
-      preview.innerHTML = `入力の並びが正しくありません<br>正解は <span class="name">${targetName}</span> でした<br><button id="next-btn2">次の問題</button>`;
-      document.getElementById('next-btn2').addEventListener('click', startGame2);
-    } else {
-      playIncorrectSound();
-      preview.innerHTML = `不正解…あなたの回答: ${reconstructed}<br>正解は <span class="name">${targetName}</span> でした<br><button id="next-btn2">次の問題</button>`;
-      document.getElementById('next-btn2').addEventListener('click', startGame2);
+      return;
     }
+
+    // 不正解: 答えは見せず、「誤」スタンプを出して同じ問題にもう一度挑戦できるようにする。
+    // (語群は操作可能なままにしておき、スタンプは少ししたら自動で消す)
+    playIncorrectSound();
+    preview.classList.add('result');
+    const message = reconstructed === null ? '入力の並びが正しくありません' : `あなたの回答: ${reconstructed}`;
+    preview.innerHTML = `<span class="stamp stamp-side" id="wrong-stamp2">${wrongStampSVG()}</span>${message}<br><span class="retry-hint">もう一度挑戦してみましょう</span>`;
+    if (game2WrongTimer) clearTimeout(game2WrongTimer);
+    game2WrongTimer = setTimeout(() => {
+      game2WrongTimer = null;
+      const p = document.getElementById('answer-preview');
+      if (!p) return;
+      p.classList.remove('result');
+      answerTokens = [];
+      updateAnswerPreview();
+    }, 1600);
   }
 
   function buildWordBank() {
@@ -1985,8 +2073,8 @@
       { cls: 'cat-number', tokens: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
       { cls: 'cat-multiplier', tokens: shuffle(['ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']) },
       { cls: 'cat-subname', tokens: shuffle(['メチル', 'エチル', 'フルオロ', 'クロロ', 'ブロモ', 'ヨード']) },
-      // 環の名前は「シクロ」+ 鎖の名前 で組み立てさせる。「シクロ」はシャッフルせず末尾に固定する。
-      { cls: 'cat-basename', tokens: [...shuffle(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン']), 'シクロ'] },
+      // 環の名前は「シクロ」+ 鎖の名前 で組み立てさせる。「シクロ」はシャッフルせず先頭に固定する。
+      { cls: 'cat-basename', tokens: ['シクロ', ...shuffle(['メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン'])] },
     ];
     for (const { cls, tokens } of rows) {
       const rowEl = document.createElement('div');
@@ -1994,7 +2082,13 @@
       for (const token of tokens) {
         const btn = document.createElement('button');
         btn.textContent = token;
-        btn.addEventListener('click', () => { answerTokens.push(token); updateAnswerPreview(); playPlaceSound(); });
+        btn.addEventListener('click', () => {
+          // 「誤」スタンプ表示中に入力を始めたら、すぐにスタンプを消して入力欄に戻す
+          if (game2WrongTimer) { clearTimeout(game2WrongTimer); game2WrongTimer = null; answerTokens = []; }
+          answerTokens.push(token);
+          updateAnswerPreview();
+          playPlaceSound();
+        });
         rowEl.appendChild(btn);
       }
       wb.appendChild(rowEl);
@@ -2157,7 +2251,7 @@
     const form = document.getElementById('settings-form');
     form.innerHTML = '';
     form.appendChild(makeRangeStepperRow('主鎖炭素数', s, 'lenMin', 'lenMax', 1, 10));
-    form.appendChild(makeStepperRow('側鎖種類数', s, 'maxTypes', 1, 6));
+    form.appendChild(makeRangeStepperRow('側鎖種類数', s, 'typeMin', 'typeMax', 1, 6));
     form.appendChild(makeRangeStepperRow('側鎖数', s, 'subMin', 'subMax', 0, 10));
     form.appendChild(makeRingSizeRow('シクロ主鎖の炭素数', s));
     if (game === 'game1') {
@@ -2200,7 +2294,7 @@
 
   function exportSettingsAsCode() {
     const fmtTier = (s, isGame1) => {
-      const common = `maxTypes: ${s.maxTypes}, lenMin: ${s.lenMin}, lenMax: ${s.lenMax}, subMin: ${s.subMin}, subMax: ${s.subMax}, ringSizes: [${s.ringSizes.join(', ')}]`;
+      const common = `typeMin: ${s.typeMin}, typeMax: ${s.typeMax}, lenMin: ${s.lenMin}, lenMax: ${s.lenMax}, subMin: ${s.subMin}, subMax: ${s.subMax}, ringSizes: [${s.ringSizes.join(', ')}]`;
       const rest = isGame1
         ? `forceRingSubstituent: ${s.forceRingSubstituent}, gridCols: ${s.gridCols}, gridRows: ${s.gridRows}`
         : `forceRingSubstituent: ${s.forceRingSubstituent}, bendMin: ${s.bendMin}, bendMax: ${s.bendMax}`;
@@ -2264,10 +2358,11 @@
   // 初期化
   // ============================================================
   document.querySelectorAll('.mode-tab').forEach((btn) => {
-    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    btn.addEventListener('click', () => { playUiClickSound(); setMode(btn.dataset.mode); });
   });
   document.querySelectorAll('.diff-tab').forEach((btn) => {
     btn.addEventListener('click', () => {
+      playUiClickSound();
       difficulty = btn.dataset.diff;
       refreshDiffTabsUI();
       applyGridSize();
