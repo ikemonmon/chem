@@ -1064,17 +1064,13 @@
     return null; // 呼び出し元でリトライ
   }
 
-  // 環状(シクロアルカン): 2行×N列の「細長い六角形」型のリングを、活性方向(dirs)から自動生成する。
-  // 置換基はメチルまたはハロゲン1個のみ(はみ出し防止のため。エチルや複数置換基は今後の拡張候補)。
-  // width(列数)が同じであれば何員環でも同じ形のロジックで組めるので、テンプレートは関数で生成する。
+  // 環状(シクロアルカン)のテンプレート: 2行×N列の「細長い長方形」の形。
+  // 置換基の安全な取り付け位置などは buildRingGridFromPath 側で汎用的に計算するので、
+  // ここでは経路(隣接するマスを順にたどった座標の並び)だけを持つ。
   function makeRingTemplate(width) {
     const cells = [];
-    cells.push({ dr: 0, dc: 0, dirs: ['E', 'S'], free: ['N', 'W'] });
-    for (let i = 1; i < width - 1; i++) cells.push({ dr: 0, dc: i, dirs: ['W', 'E'], free: ['N'] });
-    cells.push({ dr: 0, dc: width - 1, dirs: ['W', 'S'], free: ['N', 'E'] });
-    cells.push({ dr: 1, dc: width - 1, dirs: ['N', 'W'], free: ['S', 'E'] });
-    for (let i = width - 2; i >= 1; i--) cells.push({ dr: 1, dc: i, dirs: ['E', 'W'], free: ['S'] });
-    cells.push({ dr: 1, dc: 0, dirs: ['E', 'N'], free: ['S', 'W'] });
+    for (let c = 0; c < width; c++) cells.push([0, c]);
+    for (let c = width - 1; c >= 0; c--) cells.push([1, c]);
     return { width, height: 2, cells };
   }
   const RING_TEMPLATES = {
@@ -1084,20 +1080,81 @@
     10: makeRingTemplate(5),  // シクロデカン
   };
 
-  // 環に付ける置換基は、設定された側鎖数(subMin〜subMax)に従って複数付ける。
-  // 環のどの炭素の、どの空き方向に付けるかはランダムに選び、盤面からはみ出す配置は諦める。
-  function generateCycloalkaneGrid(forceSubstituent, ringSizes, subMin, subMax) {
-    const ringSize = choice(ringSizes || [4, 6]);
-    const tmpl = RING_TEMPLATES[ringSize];
-    const baseRow = Math.floor((ROWS - tmpl.height) / 2);
-    const baseCol = Math.floor((COLS - tmpl.width) / 2);
-    const grid = emptyGrid();
-    const occupied = new Set();
-    for (const cell of tmpl.cells) {
-      const r = baseRow + cell.dr, c = baseCol + cell.dc;
-      grid[r][c] = panelForDirections(cell.dirs);
-      occupied.add(`${r},${c}`);
+  // 環(閉じた経路)上の位置iにおける、隣接パネルへの活性方向を求める(環は常に閉じているので前後は巡回する)
+  function computeRingDirs(path, i) {
+    const n = path.length;
+    const prev = path[(i - 1 + n) % n];
+    const next = path[(i + 1) % n];
+    return [directionBetween(path[i], prev), directionBetween(path[i], next)];
+  }
+
+  // 盤面上をランダムに一周し、指定サイズちょうどで始点に隣接して戻れる閉路を探す
+  // (長方形以外の、L字や階段状の環を作るための乱歩探索。バックトラック付き)
+  function tryGenerateRingWalk(size) {
+    const startR = randInt(0, ROWS - 1);
+    const startC = randInt(0, COLS - 1);
+    const path = [[startR, startC]];
+    const occupied = new Set([`${startR},${startC}`]);
+    let budget = 4000; // 探索が長引きすぎないための上限(超えたら諦めてリトライは呼び出し元に任せる)
+
+    function backtrack() {
+      if (--budget <= 0) return false;
+      const [r, c] = path[path.length - 1];
+      if (path.length === size) {
+        const [sr, sc] = path[0];
+        return Math.abs(r - sr) + Math.abs(c - sc) === 1; // 始点に隣接していれば閉じられる
+      }
+      for (const d of shuffle(['N', 'E', 'S', 'W'])) {
+        const [dr, dc] = DELTA[d];
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        const key = `${nr},${nc}`;
+        if (occupied.has(key)) continue;
+        path.push([nr, nc]);
+        occupied.add(key);
+        if (backtrack()) return true;
+        path.pop();
+        occupied.delete(key);
+      }
+      return false;
     }
+
+    return backtrack() ? { path, occupied } : null;
+  }
+
+  // 環の経路(path: [r,c]の配列。順に隣接し、最後は始点に隣接して閉じている)から、
+  // 実際のグリッドを組み立てる。置換基は「環の他の炭素と隣接してしまわない」安全な位置にのみ置く。
+  function buildRingGridFromPath(path, forceSubstituent, subMin, subMax) {
+    const size = path.length;
+    const grid = emptyGrid();
+    const occupied = new Set(path.map(([r, c]) => `${r},${c}`));
+    for (let i = 0; i < size; i++) {
+      const [r, c] = path[i];
+      grid[r][c] = panelForDirections(computeRingDirs(path, i));
+    }
+
+    // 置換基を安全に置ける候補(環の別の炭素と隣接しない位置)を集める
+    const slots = [];
+    for (let i = 0; i < size; i++) {
+      const [r, c] = path[i];
+      const ringDirs = computeRingDirs(path, i);
+      for (const d of ['N', 'E', 'S', 'W']) {
+        if (ringDirs.includes(d)) continue;
+        const [dr, dc] = DELTA[d];
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        if (occupied.has(`${nr},${nc}`)) continue;
+        let safe = true;
+        for (const d2 of ['N', 'E', 'S', 'W']) {
+          const [dr2, dc2] = DELTA[d2];
+          const nnr = nr + dr2, nnc = nc + dc2;
+          if (nnr === r && nnc === c) continue; // 自分の付け根はOK
+          if (occupied.has(`${nnr},${nnc}`)) { safe = false; break; }
+        }
+        if (safe) slots.push({ r, c, dir: d, nr, nc });
+      }
+    }
+    shuffle(slots);
 
     // 付ける個数を決める(subMin/subMaxが未指定なら従来通り0個か1個)
     let want;
@@ -1107,33 +1164,44 @@
       want = randInt(subMin, subMax);
       if (forceSubstituent && want < 1) want = 1;
     }
-    if (want <= 0) return grid;
-
-    // 「環のどのマスの、どの空き方向か」の候補を全部集めてシャッフルし、置ける所から順に使う
-    const slots = [];
-    for (const cell of tmpl.cells) for (const dir of cell.free) slots.push({ cell, dir });
-    shuffle(slots);
 
     let placed = 0;
-    for (const { cell, dir } of slots) {
+    for (const slot of slots) {
       if (placed >= want) break;
-      const r0 = baseRow + cell.dr, c0 = baseCol + cell.dc;
-      const [ddr, ddc] = DELTA[dir];
-      const tr = r0 + ddr, tc = c0 + ddc;
-      if (tr < 0 || tr >= ROWS || tc < 0 || tc >= COLS) continue;
-      if (occupied.has(`${tr},${tc}`)) continue;
-      // 同じ環炭素に既に別の置換基を付けている場合は、その分も含めて手を張り直す
-      const existing = getActiveDirections(grid[r0][c0]);
-      grid[r0][c0] = panelForDirections([...existing, dir]);
+      if (occupied.has(`${slot.nr},${slot.nc}`)) continue; // 既に他の置換基が使った
+      const existing = getActiveDirections(grid[slot.r][slot.c]);
+      grid[slot.r][slot.c] = panelForDirections([...existing, slot.dir]);
       const name = choice(RING_SUBSTITUENT_SPECIES);
-      const panel = panelFor(1, [OPPOSITE[dir]]);
+      const panel = panelFor(1, [OPPOSITE[slot.dir]]);
       const el = HALOGEN_ELEMENT_BY_NAME[name];
       if (el) panel.element = el;
-      grid[tr][tc] = panel;
-      occupied.add(`${tr},${tc}`);
+      grid[slot.nr][slot.nc] = panel;
+      occupied.add(`${slot.nr},${slot.nc}`);
       placed++;
     }
     return grid;
+  }
+
+  // 環に付ける置換基は、設定された側鎖数(subMin〜subMax)に従って複数付ける。
+  // 環の形は、定番の長方形と、盤面を自由に這うランダムな形(L字・階段状など)を半々くらいで混ぜる。
+  function generateCycloalkaneGrid(forceSubstituent, ringSizes, subMin, subMax) {
+    const ringSize = choice(ringSizes || [4, 6]);
+    const tmpl = RING_TEMPLATES[ringSize];
+    const templatePath = () => {
+      const baseRow = Math.floor((ROWS - tmpl.height) / 2);
+      const baseCol = Math.floor((COLS - tmpl.width) / 2);
+      return tmpl.cells.map(([dr, dc]) => [baseRow + dr, baseCol + dc]);
+    };
+
+    if (Math.random() < 0.5) {
+      return buildRingGridFromPath(templatePath(), forceSubstituent, subMin, subMax);
+    }
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const walk = tryGenerateRingWalk(ringSize);
+      if (walk) return buildRingGridFromPath(walk.path, forceSubstituent, subMin, subMax);
+    }
+    // ランダムな形が見つからなければ長方形にフォールバック
+    return buildRingGridFromPath(templatePath(), forceSubstituent, subMin, subMax);
   }
 
   // 名前文字列に含まれる置換基の「種類数」を数える(メチル/エチルのみが対象なので単純な部分文字列チェックで十分)
@@ -1420,14 +1488,14 @@
   // ============================================================
   // モーダルで編集できる項目の既定値。ここが「今の設定」の基準になる。
   const DEFAULT_GAME1_OPTS = {
-     easy: { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6, subMin: 0, subMax: 4, ringSizes: [4, 6], forceRingSubstituent: false, gridCols: 7, gridRows: 5, traceEnabled: true },
-    medium: { typeMin: 1, typeMax: 2, lenMin: 4, lenMax: 8, subMin: 3, subMax: 6, ringSizes: [6, 8], forceRingSubstituent: true, gridCols: 7, gridRows: 5, traceEnabled: true },
-    hard: { typeMin: 2, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 4, subMax: 8, ringSizes: [6, 8, 10], forceRingSubstituent: true, gridCols: 5, gridRows: 5, traceEnabled: true },
+    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5, traceEnabled: false },
+    medium: { typeMin: 1, typeMax: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5, traceEnabled: false },
+    hard:   { typeMin: 1, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5, traceEnabled: false },
   };
   const DEFAULT_GAME2_OPTS = {
-    easy: { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6, subMin: 0, subMax: 3, ringSizes: [4, 6], forceRingSubstituent: false, bendMin: 0, bendMax: 1 },
-    medium: { typeMin: 1, typeMax: 1, lenMin: 4, lenMax: 8, subMin: 3, subMax: 6, ringSizes: [6, 8], forceRingSubstituent: true, bendMin: 2, bendMax: 3 },
-    hard: { typeMin: 1, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 4, subMax: 8, ringSizes: [6, 8, 10], forceRingSubstituent: true, bendMin: 4, bendMax: 99 },
+    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 3, ringSizes: [4, 6],     forceRingSubstituent: false, bendMin: 0, bendMax: 0 },
+    medium: { typeMin: 1, typeMax: 1, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  bendMin: 0, bendMax: 3 },
+    hard:   { typeMin: 1, typeMax: 1, lenMin: 6, lenMax: 10, subMin: 4, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  bendMin: 4, bendMax: 99 },
   };
   // モーダルには出さず内部で固定する値。
   // 屈曲主鎖: 並べ・名付けとも常にON(並べは盤面の曲がりが見えないため露出の意味が薄く、
