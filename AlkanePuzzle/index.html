@@ -174,6 +174,24 @@
   }
   .diff-tab:active{transform:translate(1px,2px);box-shadow:0 0 0 var(--shadow);}
   .diff-tab.active{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft);font-weight:800;}
+  .rules-content{font-family:var(--font-hand);}
+  .rules-section{margin-bottom:16px;}
+  .rules-section:last-child{margin-bottom:0;}
+  .rules-section h3{font-size:15px;font-weight:800;color:var(--accent-ink);margin:0 0 6px;}
+  .rules-section p{font-size:13.5px;line-height:1.7;color:var(--text);margin:0 0 6px;}
+  .rules-section ul{margin:4px 0;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text);}
+  .rules-section li{margin-bottom:4px;}
+  .rules-order{
+    font-family:var(--font-mono);font-size:12px;background:var(--bg);
+    border:1px dashed var(--border);border-radius:8px;padding:8px 10px;
+    color:var(--accent-ink);font-weight:700;line-height:1.6;
+  }
+  .rules-example{
+    background:var(--bg);border:2px dashed var(--border);border-radius:10px 8px 11px 9px;
+    padding:8px 12px;margin-bottom:8px;
+  }
+  .rules-example strong{font-size:14px;color:var(--accent-ink);}
+  .rules-example p{margin:4px 0 0;font-size:13px;}
 
   /* ---- お題カード(アルカン並べ) ---- */
   .objective{
@@ -249,6 +267,22 @@
     margin-top:10px;font-size:14px;font-weight:800;padding:8px 20px;
     border-radius:14px 12px 15px 11px;border:2.5px solid var(--accent-ink);
     background:var(--accent);color:#fff;box-shadow:1px 2px 0 var(--shadow);
+  }
+  .answer-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+  .answer-actions button{margin-top:0;}
+  .answer-actions button.secondary{
+    background:var(--surface);color:var(--accent-ink);border-color:var(--border);
+  }
+  /* 正答を確認した後、スタンプの代わりに表示するテキストだけの「タップで次へ」 */
+  .tap-next{
+    display:inline-block;cursor:pointer;pointer-events:auto;
+    font-size:12px;font-weight:700;color:var(--accent-ink);
+    background:var(--accent-soft);border:2px dashed var(--accent);border-radius:999px;
+    padding:6px 16px;margin-top:8px;
+    animation:hint-fade-in .4s ease .2s both;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .tap-next{animation:none;opacity:1;}
   }
   .wordbank .row{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;}
   .wordbank button{
@@ -377,6 +411,7 @@
   <div class="diff-tabs-row">
     <div class="diff-tabs" id="diff-tabs">
       <button class="diff-tab active" data-diff="practice">練習</button>
+      <button id="naming-rules-btn" class="diff-tab" style="display:none;" type="button">命名ルール</button>
       <button class="diff-tab" data-diff="easy">やさしめ</button>
       <button class="diff-tab" data-diff="medium">まあまあ</button>
       <button class="diff-tab" data-diff="hard">そこそこ</button>
@@ -413,6 +448,50 @@
       <button id="settings-reset-btn" type="button">既定値に戻す</button>
     </div>
     <textarea id="settings-export-area" class="settings-export-area" style="display:none;" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rules-modal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>命名ルールの基本</h2>
+      <button id="rules-close" class="modal-close" type="button">×</button>
+    </div>
+    <div class="rules-content">
+      <section class="rules-section">
+        <h3>① 置換基はアルファベット順に並べる</h3>
+        <p>名前の中で置換基（メチル・エチル・フルオロ…）を書く順番は、日本語の五十音順ではなく、<strong>英語のつづり（ローマ字表記）のアルファベット順</strong>で決まります。</p>
+        <p class="rules-order">bromo(ブロモ) &lt; chloro(クロロ) &lt; ethyl(エチル) &lt; fluoro(フルオロ) &lt; iodo(ヨード) &lt; methyl(メチル)</p>
+        <p>たとえばブロモとメチルが両方あるときは、位置番号に関係なく必ず「ブロモ」を先に書きます。</p>
+      </section>
+      <section class="rules-section">
+        <h3>② 数字（位置番号）の優先順位</h3>
+        <p>主鎖のどちらの端から1番と数えるかは、<strong>置換基の位置番号が全体としていちばん小さくなる方</strong>を選びます。</p>
+        <p>決め方：両方の数え方で出てくる番号を小さい順に並べて、1つずつ見比べます。最初に数字が違ったところで、小さい方を使っている数え方が正解です。</p>
+      </section>
+      <section class="rules-section">
+        <h3>③ シクロアルカン（環）の場合</h3>
+        <ul>
+          <li>置換基が1つだけなら、位置番号はいりません（例：メチルシクロヘキサン）</li>
+          <li>置換基が2つ以上なら、置換基のある炭素のどれかを1番として番号をつけ、②と同じルールでいちばん小さい番号の組み合わせを選びます</li>
+        </ul>
+      </section>
+      <section class="rules-section">
+        <h3>④ 具体例</h3>
+        <div class="rules-example">
+          <strong>4-ブロモ-2-メチルヘキサン</strong>
+          <p>ブロモは4番の位置にありますが、メチル（2番）より番号が大きくても、アルファベット順で先なので先に書きます。</p>
+        </div>
+        <div class="rules-example">
+          <strong>2,3-ジクロロペンタン</strong>
+          <p>逆から数えると3,4になりますが、2,3のほうが小さいのでこちらが正しい番号です。</p>
+        </div>
+        <div class="rules-example">
+          <strong>1,3-ジメチルシクロヘキサン</strong>
+          <p>環の置換基が2つあるので、位置番号が必要です。どちらの方向に数えても、いちばん小さくなる組み合わせ「1,3」を選びます。</p>
+        </div>
+      </section>
+    </div>
   </div>
 </div>
 
@@ -660,6 +739,25 @@
     return 0;
   }
 
+  // 置換基をアルファベット順(同名なら位置番号順)に並べたときの、位置番号だけの配列を作る。
+  // 「位置番号の組み合わせ」が同点の候補同士を比べるときのタイブレークに使う
+  // (IUPACの規則: 同点なら、アルファベット順で先に来る置換基により小さい番号を与える)。
+  function alphabeticalLocants(rawSubstituents, locantOf) {
+    return rawSubstituents
+      .map((s) => ({ order: SUBSTITUENT_ORDER[s.name], locant: locantOf(s) }))
+      .sort((a, b) => (a.order - b.order) || (a.locant - b.locant))
+      .map((x) => x.locant);
+  }
+
+  // 番号の付け方の候補を2段階で比較する。
+  // ①位置番号の組み合わせ全体(小さい方が優先)。②それが同点なら、アルファベット順で先に来る
+  // 置換基がより小さい番号になっている方を優先する。
+  function compareNumberingCandidates(a, b) {
+    const bySet = compareLocantArrays(a.locants, b.locants);
+    if (bySet !== 0) return bySet;
+    return compareLocantArrays(a.alphaLocants, b.alphaLocants);
+  }
+
   // メタン置換体(炭素が1個だけの構造)専用の名前組み立て。
   // 炭素が1個しかなく位置番号に意味がないため、位置番号(ロカント)を付けずに置換基名を連結する。
   // 例: クロロメタン、ジクロロメタン、トリクロロメタン、テトラクロロメタン、クロロフルオロメタン
@@ -724,8 +822,11 @@
         const orderedPath = reversed ? [...path].reverse() : path;
         const pathSet = new Set(orderedPath);
         const rawSubstituents = extractSubstituents(graph, pathSet);
-        const locants = rawSubstituents.map((s) => orderedPath.indexOf(s.backboneNode) + 1).sort((a, b) => a - b);
-        if (best === null || compareLocantArrays(locants, best.locants) < 0) best = { orderedPath, rawSubstituents, locants };
+        const locantOf = (s) => orderedPath.indexOf(s.backboneNode) + 1;
+        const locants = rawSubstituents.map(locantOf).sort((a, b) => a - b);
+        const alphaLocants = alphabeticalLocants(rawSubstituents, locantOf);
+        const candidate = { orderedPath, rawSubstituents, locants, alphaLocants };
+        if (best === null || compareNumberingCandidates(candidate, best) < 0) best = candidate;
       }
     }
     const locantedSubstituents = best.rawSubstituents.map((s) => ({ locant: best.orderedPath.indexOf(s.backboneNode) + 1, name: s.name }));
@@ -779,8 +880,11 @@
           const idx = ((startIdx + step * direction) % ringSize + ringSize) % ringSize;
           ordered.push(ring[idx]);
         }
-        const locants = rawSubstituents.map((s) => ordered.indexOf(s.backboneNode) + 1).sort((a, b) => a - b);
-        if (best === null || compareLocantArrays(locants, best.locants) < 0) best = { ordered, locants };
+        const locantOf = (s) => ordered.indexOf(s.backboneNode) + 1;
+        const locants = rawSubstituents.map(locantOf).sort((a, b) => a - b);
+        const alphaLocants = alphabeticalLocants(rawSubstituents, locantOf);
+        const candidate = { ordered, locants, alphaLocants };
+        if (best === null || compareNumberingCandidates(candidate, best) < 0) best = candidate;
       }
     }
     const locantedSubstituents = rawSubstituents.map((s) => ({ locant: best.ordered.indexOf(s.backboneNode) + 1, name: s.name }));
@@ -1064,17 +1168,13 @@
     return null; // 呼び出し元でリトライ
   }
 
-  // 環状(シクロアルカン): 2行×N列の「細長い六角形」型のリングを、活性方向(dirs)から自動生成する。
-  // 置換基はメチルまたはハロゲン1個のみ(はみ出し防止のため。エチルや複数置換基は今後の拡張候補)。
-  // width(列数)が同じであれば何員環でも同じ形のロジックで組めるので、テンプレートは関数で生成する。
+  // 環状(シクロアルカン)のテンプレート: 2行×N列の「細長い長方形」の形。
+  // 置換基の安全な取り付け位置などは buildRingGridFromPath 側で汎用的に計算するので、
+  // ここでは経路(隣接するマスを順にたどった座標の並び)だけを持つ。
   function makeRingTemplate(width) {
     const cells = [];
-    cells.push({ dr: 0, dc: 0, dirs: ['E', 'S'], free: ['N', 'W'] });
-    for (let i = 1; i < width - 1; i++) cells.push({ dr: 0, dc: i, dirs: ['W', 'E'], free: ['N'] });
-    cells.push({ dr: 0, dc: width - 1, dirs: ['W', 'S'], free: ['N', 'E'] });
-    cells.push({ dr: 1, dc: width - 1, dirs: ['N', 'W'], free: ['S', 'E'] });
-    for (let i = width - 2; i >= 1; i--) cells.push({ dr: 1, dc: i, dirs: ['E', 'W'], free: ['S'] });
-    cells.push({ dr: 1, dc: 0, dirs: ['E', 'N'], free: ['S', 'W'] });
+    for (let c = 0; c < width; c++) cells.push([0, c]);
+    for (let c = width - 1; c >= 0; c--) cells.push([1, c]);
     return { width, height: 2, cells };
   }
   const RING_TEMPLATES = {
@@ -1084,20 +1184,81 @@
     10: makeRingTemplate(5),  // シクロデカン
   };
 
-  // 環に付ける置換基は、設定された側鎖数(subMin〜subMax)に従って複数付ける。
-  // 環のどの炭素の、どの空き方向に付けるかはランダムに選び、盤面からはみ出す配置は諦める。
-  function generateCycloalkaneGrid(forceSubstituent, ringSizes, subMin, subMax) {
-    const ringSize = choice(ringSizes || [4, 6]);
-    const tmpl = RING_TEMPLATES[ringSize];
-    const baseRow = Math.floor((ROWS - tmpl.height) / 2);
-    const baseCol = Math.floor((COLS - tmpl.width) / 2);
-    const grid = emptyGrid();
-    const occupied = new Set();
-    for (const cell of tmpl.cells) {
-      const r = baseRow + cell.dr, c = baseCol + cell.dc;
-      grid[r][c] = panelForDirections(cell.dirs);
-      occupied.add(`${r},${c}`);
+  // 環(閉じた経路)上の位置iにおける、隣接パネルへの活性方向を求める(環は常に閉じているので前後は巡回する)
+  function computeRingDirs(path, i) {
+    const n = path.length;
+    const prev = path[(i - 1 + n) % n];
+    const next = path[(i + 1) % n];
+    return [directionBetween(path[i], prev), directionBetween(path[i], next)];
+  }
+
+  // 盤面上をランダムに一周し、指定サイズちょうどで始点に隣接して戻れる閉路を探す
+  // (長方形以外の、L字や階段状の環を作るための乱歩探索。バックトラック付き)
+  function tryGenerateRingWalk(size) {
+    const startR = randInt(0, ROWS - 1);
+    const startC = randInt(0, COLS - 1);
+    const path = [[startR, startC]];
+    const occupied = new Set([`${startR},${startC}`]);
+    let budget = 4000; // 探索が長引きすぎないための上限(超えたら諦めてリトライは呼び出し元に任せる)
+
+    function backtrack() {
+      if (--budget <= 0) return false;
+      const [r, c] = path[path.length - 1];
+      if (path.length === size) {
+        const [sr, sc] = path[0];
+        return Math.abs(r - sr) + Math.abs(c - sc) === 1; // 始点に隣接していれば閉じられる
+      }
+      for (const d of shuffle(['N', 'E', 'S', 'W'])) {
+        const [dr, dc] = DELTA[d];
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        const key = `${nr},${nc}`;
+        if (occupied.has(key)) continue;
+        path.push([nr, nc]);
+        occupied.add(key);
+        if (backtrack()) return true;
+        path.pop();
+        occupied.delete(key);
+      }
+      return false;
     }
+
+    return backtrack() ? { path, occupied } : null;
+  }
+
+  // 環の経路(path: [r,c]の配列。順に隣接し、最後は始点に隣接して閉じている)から、
+  // 実際のグリッドを組み立てる。置換基は「環の他の炭素と隣接してしまわない」安全な位置にのみ置く。
+  function buildRingGridFromPath(path, forceSubstituent, subMin, subMax) {
+    const size = path.length;
+    const grid = emptyGrid();
+    const occupied = new Set(path.map(([r, c]) => `${r},${c}`));
+    for (let i = 0; i < size; i++) {
+      const [r, c] = path[i];
+      grid[r][c] = panelForDirections(computeRingDirs(path, i));
+    }
+
+    // 置換基を安全に置ける候補(環の別の炭素と隣接しない位置)を集める
+    const slots = [];
+    for (let i = 0; i < size; i++) {
+      const [r, c] = path[i];
+      const ringDirs = computeRingDirs(path, i);
+      for (const d of ['N', 'E', 'S', 'W']) {
+        if (ringDirs.includes(d)) continue;
+        const [dr, dc] = DELTA[d];
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        if (occupied.has(`${nr},${nc}`)) continue;
+        let safe = true;
+        for (const d2 of ['N', 'E', 'S', 'W']) {
+          const [dr2, dc2] = DELTA[d2];
+          const nnr = nr + dr2, nnc = nc + dc2;
+          if (nnr === r && nnc === c) continue; // 自分の付け根はOK
+          if (occupied.has(`${nnr},${nnc}`)) { safe = false; break; }
+        }
+        if (safe) slots.push({ r, c, dir: d, nr, nc });
+      }
+    }
+    shuffle(slots);
 
     // 付ける個数を決める(subMin/subMaxが未指定なら従来通り0個か1個)
     let want;
@@ -1107,33 +1268,44 @@
       want = randInt(subMin, subMax);
       if (forceSubstituent && want < 1) want = 1;
     }
-    if (want <= 0) return grid;
-
-    // 「環のどのマスの、どの空き方向か」の候補を全部集めてシャッフルし、置ける所から順に使う
-    const slots = [];
-    for (const cell of tmpl.cells) for (const dir of cell.free) slots.push({ cell, dir });
-    shuffle(slots);
 
     let placed = 0;
-    for (const { cell, dir } of slots) {
+    for (const slot of slots) {
       if (placed >= want) break;
-      const r0 = baseRow + cell.dr, c0 = baseCol + cell.dc;
-      const [ddr, ddc] = DELTA[dir];
-      const tr = r0 + ddr, tc = c0 + ddc;
-      if (tr < 0 || tr >= ROWS || tc < 0 || tc >= COLS) continue;
-      if (occupied.has(`${tr},${tc}`)) continue;
-      // 同じ環炭素に既に別の置換基を付けている場合は、その分も含めて手を張り直す
-      const existing = getActiveDirections(grid[r0][c0]);
-      grid[r0][c0] = panelForDirections([...existing, dir]);
+      if (occupied.has(`${slot.nr},${slot.nc}`)) continue; // 既に他の置換基が使った
+      const existing = getActiveDirections(grid[slot.r][slot.c]);
+      grid[slot.r][slot.c] = panelForDirections([...existing, slot.dir]);
       const name = choice(RING_SUBSTITUENT_SPECIES);
-      const panel = panelFor(1, [OPPOSITE[dir]]);
+      const panel = panelFor(1, [OPPOSITE[slot.dir]]);
       const el = HALOGEN_ELEMENT_BY_NAME[name];
       if (el) panel.element = el;
-      grid[tr][tc] = panel;
-      occupied.add(`${tr},${tc}`);
+      grid[slot.nr][slot.nc] = panel;
+      occupied.add(`${slot.nr},${slot.nc}`);
       placed++;
     }
     return grid;
+  }
+
+  // 環に付ける置換基は、設定された側鎖数(subMin〜subMax)に従って複数付ける。
+  // 環の形は、定番の長方形と、盤面を自由に這うランダムな形(L字・階段状など)を半々くらいで混ぜる。
+  function generateCycloalkaneGrid(forceSubstituent, ringSizes, subMin, subMax) {
+    const ringSize = choice(ringSizes || [4, 6]);
+    const tmpl = RING_TEMPLATES[ringSize];
+    const templatePath = () => {
+      const baseRow = Math.floor((ROWS - tmpl.height) / 2);
+      const baseCol = Math.floor((COLS - tmpl.width) / 2);
+      return tmpl.cells.map(([dr, dc]) => [baseRow + dr, baseCol + dc]);
+    };
+
+    if (Math.random() < 0.5) {
+      return buildRingGridFromPath(templatePath(), forceSubstituent, subMin, subMax);
+    }
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const walk = tryGenerateRingWalk(ringSize);
+      if (walk) return buildRingGridFromPath(walk.path, forceSubstituent, subMin, subMax);
+    }
+    // ランダムな形が見つからなければ長方形にフォールバック
+    return buildRingGridFromPath(templatePath(), forceSubstituent, subMin, subMax);
   }
 
   // 名前文字列に含まれる置換基の「種類数」を数える(メチル/エチルのみが対象なので単純な部分文字列チェックで十分)
@@ -1420,14 +1592,14 @@
   // ============================================================
   // モーダルで編集できる項目の既定値。ここが「今の設定」の基準になる。
   const DEFAULT_GAME1_OPTS = {
-    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5, traceEnabled: false },
-    medium: { typeMin: 1, typeMax: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5, traceEnabled: false },
-    hard:   { typeMin: 1, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 3, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5, traceEnabled: false },
+    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 4, ringSizes: [4, 6],     forceRingSubstituent: false, gridCols: 7, gridRows: 5, traceEnabled: true },
+    medium: { typeMin: 1, typeMax: 2, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  gridCols: 7, gridRows: 5, traceEnabled: true },
+    hard:   { typeMin: 2, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 4, subMax: 8, ringSizes: [6, 8, 10], forceRingSubstituent: true,  gridCols: 5, gridRows: 5, traceEnabled: true },
   };
   const DEFAULT_GAME2_OPTS = {
-    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 3, ringSizes: [4, 6],     forceRingSubstituent: false, bendMin: 0, bendMax: 0 },
-    medium: { typeMin: 1, typeMax: 1, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  bendMin: 0, bendMax: 3 },
-    hard:   { typeMin: 1, typeMax: 1, lenMin: 6, lenMax: 10, subMin: 4, subMax: 6, ringSizes: [6, 8, 10], forceRingSubstituent: true,  bendMin: 4, bendMax: 99 },
+    easy:   { typeMin: 1, typeMax: 1, lenMin: 1, lenMax: 6,  subMin: 0, subMax: 3, ringSizes: [4, 6],     forceRingSubstituent: false, bendMin: 0, bendMax: 1 },
+    medium: { typeMin: 1, typeMax: 1, lenMin: 4, lenMax: 8,  subMin: 3, subMax: 6, ringSizes: [6, 8],     forceRingSubstituent: true,  bendMin: 2, bendMax: 3 },
+    hard:   { typeMin: 1, typeMax: 4, lenMin: 6, lenMax: 10, subMin: 4, subMax: 8, ringSizes: [6, 8, 10], forceRingSubstituent: true,  bendMin: 4, bendMax: 99 },
   };
   // モーダルには出さず内部で固定する値。
   // 屈曲主鎖: 並べ・名付けとも常にON(並べは盤面の曲がりが見えないため露出の意味が薄く、
@@ -1439,7 +1611,7 @@
   };
   const ALLOW_METHANE = { easy: true, medium: false, hard: false };
 
-  const SETTINGS_KEY = 'alkane-puzzle-settings-v2';
+  const SETTINGS_KEY = 'alkane-puzzle-settings-v3';
   function loadGameSettings() {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)); } catch (e) { saved = null; }
@@ -2127,13 +2299,16 @@
   // 数字・倍数詞・置換基名・(シクロ)・主鎖名のトークン列から、コンマ・ハイフンを自動で補って正式な名称文字列に組み立てる。
   // 例: ['2','2','3','トリ','メチル','ブタン'] -> '2,2,3-トリメチルブタン'
   // 例: ['ブロモ','シクロ','ヘキサン'] -> 'ブロモシクロヘキサン'
+  // 例: ['ジ','フルオロ','メタン'] -> 'ジフルオロメタン' (メタン置換体は位置番号なし)
   // 形式に合わない並びの場合はnullを返す。
   function reconstructNameFromTokens(tokens) {
     let i = 0;
     const groups = [];
+    let usedLocants = false; // 位置番号ありのグループを1つでも読んだか(連結記号の切り替えに使う)
 
     // 数字から始まる置換基グループ(位置番号あり)を読み取れるだけ読み取る
     while (i < tokens.length && /^\d+$/.test(tokens[i])) {
+      usedLocants = true;
       const locants = [];
       while (i < tokens.length && /^\d+$/.test(tokens[i])) { locants.push(tokens[i]); i++; }
       let multiplier = '';
@@ -2142,9 +2317,13 @@
       groups.push(`${locants.join(',')}-${multiplier}${tokens[i]}`);
       i++;
     }
-    // 位置番号を省略した置換基グループ(環の単置換のケース)
-    while (i < tokens.length && SUB_NAME_SET.has(tokens[i])) {
-      groups.push(tokens[i]);
+    // 位置番号を省略した置換基グループ(メタン置換体、または環の単置換のケース)。
+    // メタン置換体は同じ置換基が2個以上あるとき倍数詞(ジ・トリ・テトラ)だけが付き、位置番号は付かない。
+    while (i < tokens.length && (SUB_NAME_SET.has(tokens[i]) || MULTIPLIER_SET.has(tokens[i]))) {
+      let multiplier = '';
+      if (MULTIPLIER_SET.has(tokens[i])) { multiplier = tokens[i]; i++; }
+      if (i >= tokens.length || !SUB_NAME_SET.has(tokens[i])) return null;
+      groups.push(`${multiplier}${tokens[i]}`);
       i++;
     }
     // 「シクロ」があれば、その次に来る鎖の名前と繋げて環の名前にする
@@ -2155,7 +2334,8 @@
     i++;
     if (i !== tokens.length) return null; // 余分なトークンが残っている
 
-    return groups.join('-') + base;
+    // 位置番号ありの名前は各グループをハイフンで繋ぐが、メタン置換体(位置番号なし)はハイフンを挟まない
+    return groups.join(usedLocants ? '-' : '') + base;
   }
 
   function startGame2() {
@@ -2199,15 +2379,22 @@
     }
 
     // 不正解: 自分の回答を表示したまま「誤」スタンプを出す。正解は見せず、
-    // 「再挑戦」ボタンを押すまではその表示のまま維持する(同じ問題にもう一度挑戦できる)。
+    // 「再挑戦」または「正答を見る」を押すまではその表示のまま維持する。
     playIncorrectSound();
-    const message = reconstructed === null ? '入力の並びが正しくありません' : `あなたの回答: ${reconstructed}`;
-    preview.innerHTML = `<span class="stamp stamp-side" id="wrong-stamp2">${wrongStampSVG()}</span>${message}<br><button id="retry-btn2">再挑戦</button>`;
+    const message = reconstructed === null ? '入力の並びが正しくありません' : `回答: ${reconstructed}`;
+    preview.innerHTML = `<span class="stamp stamp-side" id="wrong-stamp2">${wrongStampSVG()}</span>${message}<br>`
+      + `<div class="answer-actions"><button id="retry-btn2">再挑戦</button><button id="reveal-answer-btn2" class="secondary">正答を見る</button></div>`;
     document.getElementById('retry-btn2').addEventListener('click', () => {
       document.getElementById('wordbank').classList.remove('answered');
       preview.classList.remove('result');
       answerTokens = [];
       updateAnswerPreview();
+    });
+    document.getElementById('reveal-answer-btn2').addEventListener('click', () => {
+      // ボタン類と「誤」スタンプを消すが、自分の回答はそのまま残し、正答とタップ誘導を添える
+      preview.innerHTML = `${message}<br>正答：<span class="name">${targetName}</span><br><span class="tap-next" id="tap-next2">タップで次へ</span>`;
+      const tapNext = document.getElementById('tap-next2');
+      if (tapNext) tapNext.addEventListener('click', startGame2);
     });
   }
 
@@ -2267,9 +2454,11 @@
   // モード切替
   // ============================================================
   function refreshDiffTabsUI() {
-    document.querySelectorAll('.diff-tab').forEach((b) => b.classList.toggle('active', b.dataset.diff === difficulty));
+    document.querySelectorAll('.diff-tab[data-diff]').forEach((b) => b.classList.toggle('active', b.dataset.diff === difficulty));
     const practiceBtn = document.querySelector('.diff-tab[data-diff="practice"]');
     if (practiceBtn) practiceBtn.style.display = currentMode === 'game1' ? '' : 'none';
+    const rulesBtn = document.getElementById('naming-rules-btn');
+    if (rulesBtn) rulesBtn.style.display = currentMode === 'game2' ? '' : 'none';
   }
 
   // アルカン並べ: 練習(お題なし・自由に組む)か、やさしめ/まあまあ/そこそこ(お題を当てる)かで表示を切り替える
@@ -2484,6 +2673,16 @@
   document.getElementById('settings-modal').addEventListener('click', (e) => {
     if (e.target.id === 'settings-modal') closeSettingsModal(); // 背景タップで閉じる
   });
+
+  document.getElementById('naming-rules-btn').addEventListener('click', () => {
+    document.getElementById('rules-modal').style.display = 'flex';
+  });
+  document.getElementById('rules-close').addEventListener('click', () => {
+    document.getElementById('rules-modal').style.display = 'none';
+  });
+  document.getElementById('rules-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'rules-modal') document.getElementById('rules-modal').style.display = 'none'; // 背景タップで閉じる
+  });
   document.querySelectorAll('.modal-game-tab').forEach((btn) => {
     btn.addEventListener('click', () => {
       modalState.game = btn.dataset.game;
@@ -2512,7 +2711,7 @@
   document.querySelectorAll('.mode-tab').forEach((btn) => {
     btn.addEventListener('click', () => { playUiClickSound(); setMode(btn.dataset.mode); });
   });
-  document.querySelectorAll('.diff-tab').forEach((btn) => {
+  document.querySelectorAll('.diff-tab[data-diff]').forEach((btn) => {
     btn.addEventListener('click', () => {
       playUiClickSound();
       difficulty = btn.dataset.diff;
