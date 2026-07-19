@@ -179,12 +179,21 @@
   .rules-section:last-child{margin-bottom:0;}
   .rules-section h3{font-size:15px;font-weight:800;color:var(--accent-ink);margin:0 0 6px;}
   .rules-section p{font-size:13.5px;line-height:1.7;color:var(--text);margin:0 0 6px;}
-  .rules-section ul{margin:4px 0;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text);}
+  .rules-section ul, .rules-section ol{margin:4px 0;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text);}
   .rules-section li{margin-bottom:4px;}
+  .rules-subhead{
+    font-size:14px;font-weight:800;color:var(--ink);
+    margin:14px 0 6px !important;padding-top:8px;border-top:1px dashed var(--border);
+  }
+  .rules-section .rules-subhead:first-of-type{border-top:none;padding-top:0;margin-top:4px !important;}
   .rules-order{
     font-family:var(--font-mono);font-size:12px;background:var(--bg);
     border:1px dashed var(--border);border-radius:8px;padding:8px 10px;
     color:var(--accent-ink);font-weight:700;line-height:1.6;
+  }
+  .rules-caption{
+    text-align:center;font-weight:800;color:var(--accent-ink);font-size:13px;
+    margin:2px 0 8px !important;
   }
   .rules-example{
     background:var(--bg);border:2px dashed var(--border);border-radius:10px 8px 11px 9px;
@@ -192,6 +201,20 @@
   }
   .rules-example strong{font-size:14px;color:var(--accent-ink);}
   .rules-example p{margin:4px 0 0;font-size:13px;}
+  .diagram-toggle{
+    margin-top:8px;font-size:12px;font-weight:700;padding:5px 14px;
+    border-radius:999px;border:2px solid var(--accent);background:var(--accent-soft);color:var(--accent-ink);
+  }
+  .diagram-toggle:active{transform:translate(1px,1px);}
+  .rule-diagram{
+    display:grid;gap:2px;margin:10px auto;width:fit-content;
+  }
+  .rule-diagram-cell{
+    width:36px;height:36px;
+    border:1px dashed var(--border);border-radius:6px;background:var(--paper);
+  }
+  .rule-diagram-cell.filled{border-style:solid;}
+  .rule-diagram-cell svg{width:100%;height:100%;display:block;}
 
   /* ---- お題カード(アルカン並べ) ---- */
   .objective{
@@ -459,36 +482,73 @@
     </div>
     <div class="rules-content">
       <section class="rules-section">
-        <h3>① 置換基はアルファベット順に並べる</h3>
-        <p>名前の中で置換基（メチル・エチル・フルオロ…）を書く順番は、日本語の五十音順ではなく、<strong>英語のつづり（ローマ字表記）のアルファベット順</strong>で決まります。</p>
+        <h3>① 全体の流れ</h3>
+        <p>化合物に名前をつけるのは、だいたい次の3ステップです。</p>
+        <ol>
+          <li>一番長い炭素のつながり（主鎖）を見つける</li>
+          <li>置換基に位置番号をつける（← ここが一番むずかしい）</li>
+          <li>決まった順番で名前を書く</li>
+        </ol>
+      </section>
+
+      <section class="rules-section">
+        <h3>② 番号などの考え方</h3>
+        <p class="rules-subhead">⑴ 位置番号の決め方</p>
+
+        <p><strong>⒜ 位置番号は「小さい組み合わせ」になる方を選ぶ</strong></p>
+        <p>主鎖には両端があるので、番号をどちらから数えるか選べます。<strong>置換基の位置番号を全部並べたとき、一番小さい並びになる方</strong>を選びます。決め方：辞書で単語を比べるときのように、1個目の数字を比べて、同じなら2個目、それも同じなら3個目…というように、<strong>違いが出るまで比べ続けます。</strong></p>
+        <div class="rule-diagram" id="diagram-rulea"></div>
+        <p class="rules-caption">5-ブロモ-2-クロロ-2-フルオロ-1-ヨード-4-メチルペンタン</p>
+        <p>炭素5個の鎖に、ヨード（1番）、クロロとフルオロ（2番、同じ炭素に2つ）、メチル（4番）、ブロモ（5番）がついています。この向きの位置番号は{1,2,2,4,5}です。</p>
+        <p>逆向きに数えると、位置番号は{1,2,4,4,5}になります。1個目（1）も2個目（2）も同じで、<strong>3個目で初めて2と4の違いが出ます。</strong>2&lt;4なので、{1,2,2,4,5}の向き（＝この名前）が正解です。「最初の2つが同じだから、もう気にしなくていい」と思ってしまうのが、よくある間違いです。</p>
+
+        <p><strong>⒝ 環（シクロアルカン）の場合</strong></p>
+        <p>環状分子は、番号を振る方向が時計回り・反時計回りの2通りあります。⒜と同じルールで、<strong>どちらの回り方が小さい番号になるか、両方試して</strong>比べます。なお、置換基が1つだけのときは位置番号は不要です（例：メチルシクロヘキサン）。</p>
+
+        <p><strong>⒞ それでも同点なら、アルファベット順で先に小さい番号</strong></p>
+        <p>⒜⒝をやってもまだ番号の組み合わせが完全に同じになることがあります。そのときだけ、<strong>英語のつづり（アルファベット順）で先に来る置換基に、小さい番号を与えます。</strong></p>
         <p class="rules-order">bromo(ブロモ) &lt; chloro(クロロ) &lt; ethyl(エチル) &lt; fluoro(フルオロ) &lt; iodo(ヨード) &lt; methyl(メチル)</p>
-        <p>たとえばブロモとメチルが両方あるときは、位置番号に関係なく必ず「ブロモ」を先に書きます。</p>
+
+        <p><strong>⒟ （コツ）環状分子では、置換基が2つついた炭素は「1番」の最有力候補</strong></p>
+        <p>環の炭素1個に置換基が2つついている場所があると、そこを1番にするだけで番号を2回小さく使えます。他のどの炭素を1番にしても、これより小さい並びには勝てません。<strong>このような炭素があれば、まずそこを1番の候補</strong>と考えると、番号付けがぐっと簡単になります。</p>
+
+        <p class="rules-subhead">⑵ 名前を書く順番は、いつもアルファベット順</p>
+        <p>位置番号が何番であっても、また⒞のような同点判定が必要だったかどうかに関わらず、<strong>名前の中で置換基を書く順番はいつもアルファベット順</strong>です。番号の大小とは関係ありません。</p>
       </section>
+
       <section class="rules-section">
-        <h3>② 数字（位置番号）の優先順位</h3>
-        <p>主鎖のどちらの端から1番と数えるかは、<strong>置換基の位置番号が全体としていちばん小さくなる方</strong>を選びます。</p>
-        <p>決め方：両方の数え方で出てくる番号を小さい順に並べて、1つずつ見比べます。最初に数字が違ったところで、小さい方を使っている数え方が正解です。</p>
-      </section>
-      <section class="rules-section">
-        <h3>③ シクロアルカン（環）の場合</h3>
-        <ul>
-          <li>置換基が1つだけなら、位置番号はいりません（例：メチルシクロヘキサン）</li>
-          <li>置換基が2つ以上なら、置換基のある炭素のどれかを1番として番号をつけ、②と同じルールでいちばん小さい番号の組み合わせを選びます</li>
-        </ul>
-      </section>
-      <section class="rules-section">
-        <h3>④ 具体例</h3>
+        <h3>③ 具体例</h3>
+
         <div class="rules-example">
-          <strong>4-ブロモ-2-メチルヘキサン</strong>
-          <p>ブロモは4番の位置にありますが、メチル（2番）より番号が大きくても、アルファベット順で先なので先に書きます。</p>
+          <strong>例1：基本パターン</strong>
+          <p>✅ 2-クロロ-3-メチルペンタン　❌ 4-クロロ-3-メチルペンタン</p>
+          <p>炭素5個の鎖に、クロロとメチルがついています。左から数えると{2,3}、右から数えると{4,3}→並べ直すと{3,4}。1個目を比べると2&lt;3なので、左から数えた方が正解です。</p>
+          <button class="diagram-toggle" data-diagram="ex1" type="button">図を見る</button>
+          <div class="rule-diagram" id="diagram-ex1" style="display:none;"></div>
         </div>
+
         <div class="rules-example">
-          <strong>2,3-ジクロロペンタン</strong>
-          <p>逆から数えると3,4になりますが、2,3のほうが小さいのでこちらが正しい番号です。</p>
+          <strong>例2：2個目まで比べて決まる</strong>
+          <p>✅ 6-ブロモ-2-クロロ-3-メチルヘプタン　❌ 2-ブロモ-6-クロロ-5-メチルヘプタン</p>
+          <p>炭素7個の鎖に、ブロモ・クロロ・メチルがついています。左から数えると{2,3,6}、右から数えると{2,5,6}。1個目はどちらも2で同点。2個目を見ると3&lt;5なので、左から数えた{2,3,6}が正解です。「1個目が同じだから気にしなくていい」と思うのはよくある間違いです。</p>
+          <button class="diagram-toggle" data-diagram="ex2" type="button">図を見る</button>
+          <div class="rule-diagram" id="diagram-ex2" style="display:none;"></div>
         </div>
+
         <div class="rules-example">
-          <strong>1,3-ジメチルシクロヘキサン</strong>
-          <p>環の置換基が2つあるので、位置番号が必要です。どちらの方向に数えても、いちばん小さくなる組み合わせ「1,3」を選びます。</p>
+          <strong>例3：環＋本当の同点（アルファベット順で決着）</strong>
+          <p>✅ 1-エチル-2-フルオロシクロヘキサン　❌ 2-エチル-1-フルオロシクロヘキサン</p>
+          <p>炭素6個の環に、エチルとフルオロが隣り合ってついています。時計回りでも反時計回りでも、位置番号は{1,2}のまま変わりません（本当の同点）。ここでアルファベット順の出番です。ethyl(エチル)のeはfluoro(フルオロ)のfより先に来るので、エチルに小さい番号「1」を与えます。</p>
+          <button class="diagram-toggle" data-diagram="ex3" type="button">図を見る</button>
+          <div class="rule-diagram" id="diagram-ex3" style="display:none;"></div>
+        </div>
+
+        <div class="rules-example">
+          <strong>例4：2置換炭素が1番の候補</strong>
+          <p>✅ 2,6-ジブロモ-1-ヨード-1,3-ジメチルシクロヘキサン</p>
+          <p>炭素6個の環に、ブロモが2つ、ヨードが1つ、メチルが2つついています。1つの炭素にヨードとメチルの両方がついている場所があるので、そこを1番にします。あとは時計回り・反時計回りどちらが小さいかを比べるだけです。</p>
+          <button class="diagram-toggle" data-diagram="ex4" type="button">図を見る</button>
+          <div class="rule-diagram" id="diagram-ex4" style="display:none;"></div>
         </div>
       </section>
     </div>
@@ -2672,6 +2732,139 @@
   document.getElementById('settings-close').addEventListener('click', closeSettingsModal);
   document.getElementById('settings-modal').addEventListener('click', (e) => {
     if (e.target.id === 'settings-modal') closeSettingsModal(); // 背景タップで閉じる
+  });
+
+  // ============================================================
+  // 命名ルール解説の図(パズル本体と同じ描画を使った小さな盤面)
+  // ============================================================
+  // 各セル: 炭素は dirs(活性方向の配列)、ハロゲンは element + dirs(結合方向1つ)で指定する。
+  // 座標はすべて、実際に使っているマスだけを切り出したローカル座標(0始まり)。
+  const RULE_DIAGRAMS = {
+    // ②⒜: 5-ブロモ-2-クロロ-2-フルオロ-1-ヨード-4-メチルペンタン
+    rulea: {
+      rows: 3, cols: 5,
+      cells: [
+        { r: 1, c: 0, dirs: ['E', 'N'] },
+        { r: 0, c: 0, element: 'I', dirs: ['S'] },
+        { r: 1, c: 1, dirs: ['W', 'E', 'N', 'S'] },
+        { r: 0, c: 1, element: 'Cl', dirs: ['S'] },
+        { r: 2, c: 1, element: 'F', dirs: ['N'] },
+        { r: 1, c: 2, dirs: ['W', 'E'] },
+        { r: 1, c: 3, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 3, dirs: ['S'] },
+        { r: 1, c: 4, dirs: ['W', 'N'] },
+        { r: 0, c: 4, element: 'Br', dirs: ['S'] },
+      ],
+    },
+    // 例1: 2-クロロ-3-メチルペンタン
+    ex1: {
+      rows: 2, cols: 5,
+      cells: [
+        { r: 1, c: 0, dirs: ['E'] },
+        { r: 1, c: 1, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 1, element: 'Cl', dirs: ['S'] },
+        { r: 1, c: 2, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 2, dirs: ['S'] },
+        { r: 1, c: 3, dirs: ['W', 'E'] },
+        { r: 1, c: 4, dirs: ['W'] },
+      ],
+    },
+    // 例2: 6-ブロモ-2-クロロ-3-メチルヘプタン
+    ex2: {
+      rows: 2, cols: 7,
+      cells: [
+        { r: 1, c: 0, dirs: ['E'] },
+        { r: 1, c: 1, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 1, element: 'Cl', dirs: ['S'] },
+        { r: 1, c: 2, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 2, dirs: ['S'] },
+        { r: 1, c: 3, dirs: ['W', 'E'] },
+        { r: 1, c: 4, dirs: ['W', 'E'] },
+        { r: 1, c: 5, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 5, element: 'Br', dirs: ['S'] },
+        { r: 1, c: 6, dirs: ['W'] },
+      ],
+    },
+    // 例3: 1-エチル-2-フルオロシクロヘキサン
+    ex3: {
+      rows: 3, cols: 4,
+      cells: [
+        { r: 1, c: 1, dirs: ['E', 'S', 'N'] },
+        { r: 0, c: 1, dirs: ['S', 'W'] },
+        { r: 0, c: 0, dirs: ['E'] },
+        { r: 1, c: 2, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 2, element: 'F', dirs: ['S'] },
+        { r: 1, c: 3, dirs: ['W', 'S'] },
+        { r: 2, c: 3, dirs: ['N', 'W'] },
+        { r: 2, c: 2, dirs: ['E', 'W'] },
+        { r: 2, c: 1, dirs: ['E', 'N'] },
+      ],
+    },
+    // 例4: 2,6-ジブロモ-1-ヨード-1,3-ジメチルシクロヘキサン
+    ex4: {
+      rows: 4, cols: 4,
+      cells: [
+        { r: 1, c: 1, dirs: ['E', 'S', 'N', 'W'] },
+        { r: 0, c: 1, element: 'I', dirs: ['S'] },
+        { r: 1, c: 0, dirs: ['E'] },
+        { r: 1, c: 2, dirs: ['W', 'E', 'N'] },
+        { r: 0, c: 2, element: 'Br', dirs: ['S'] },
+        { r: 1, c: 3, dirs: ['W', 'S', 'N'] },
+        { r: 0, c: 3, dirs: ['S'] },
+        { r: 2, c: 3, dirs: ['N', 'W'] },
+        { r: 2, c: 2, dirs: ['E', 'W'] },
+        { r: 2, c: 1, dirs: ['E', 'N', 'S'] },
+        { r: 3, c: 1, element: 'Br', dirs: ['N'] },
+      ],
+    },
+  };
+
+  function renderRuleDiagram(containerId, diagram) {
+    const el = document.getElementById(containerId);
+    if (!el || el.dataset.rendered) return; // 一度描画したら描き直さない
+    el.style.gridTemplateColumns = `repeat(${diagram.cols}, 1fr)`;
+    el.style.gridTemplateRows = `repeat(${diagram.rows}, 1fr)`;
+    const cellMap = new Map(diagram.cells.map((c) => [`${c.r},${c.c}`, c]));
+    for (let r = 0; r < diagram.rows; r++) {
+      for (let c = 0; c < diagram.cols; c++) {
+        const cellEl = document.createElement('div');
+        const data = cellMap.get(`${r},${c}`);
+        if (data) {
+          cellEl.className = 'rule-diagram-cell filled';
+          if (data.element) {
+            cellEl.innerHTML = svgIcon(1, null, 0, false, data.element, new Set(data.dirs));
+          } else {
+            const { type, rotation } = panelForDirections(data.dirs);
+            cellEl.innerHTML = svgIcon(type, [], rotation, false, 'C');
+          }
+        } else {
+          cellEl.className = 'rule-diagram-cell';
+        }
+        el.appendChild(cellEl);
+      }
+    }
+    el.dataset.rendered = '1';
+  }
+
+  // ②⒜の図は折りたたまず最初から表示する
+  renderRuleDiagram('diagram-rulea', RULE_DIAGRAMS.rulea);
+
+  // ③の4例は「図を見る」タップで初めて描画し、以後は表示/非表示を切り替えるだけにする
+  document.querySelectorAll('.diagram-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.diagram;
+      const container = document.getElementById(`diagram-${key}`);
+      if (!container) return;
+      const showing = container.style.display !== 'none';
+      if (showing) {
+        container.style.display = 'none';
+        btn.textContent = '図を見る';
+      } else {
+        renderRuleDiagram(`diagram-${key}`, RULE_DIAGRAMS[key]);
+        container.style.display = 'grid';
+        btn.textContent = '図を隠す';
+      }
+    });
   });
 
   document.getElementById('naming-rules-btn').addEventListener('click', () => {
