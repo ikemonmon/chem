@@ -227,8 +227,12 @@
     transition:transform .08s ease, box-shadow .08s ease;
   }
   .objective button:active{transform:translate(1px,2px);box-shadow:0 0 0 var(--shadow);}
+  .objective button.secondary{background:var(--surface);color:var(--text-muted);border-color:var(--border);}
   .objective-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;}
   .objective-actions button{margin-top:0;}
+  /* 不正解表示: お題テキストを左、次の問題へボタンを枠の右側に配置する */
+  .objective-row{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;}
+  .objective-row button{margin-top:0;flex-shrink:0;}
   .objective.success{background:var(--accent);border-color:var(--accent-ink);}
   .objective.success, .objective.success .name{color:#fff;}
   .objective.success button{background:#fff;color:var(--accent-ink);border-color:#fff;}
@@ -291,17 +295,6 @@
   .answer-actions button{margin-top:0;}
   .answer-actions button.secondary{
     background:var(--surface);color:var(--accent-ink);border-color:var(--border);
-  }
-  /* 正答を確認した後、スタンプの代わりに表示するテキストだけの「タップで次へ」 */
-  .tap-next{
-    display:inline-block;cursor:pointer;pointer-events:auto;
-    font-size:12px;font-weight:700;color:var(--accent-ink);
-    background:var(--accent-soft);border:2px dashed var(--accent);border-radius:999px;
-    padding:6px 16px;margin-top:8px;
-    animation:hint-fade-in .4s ease .2s both;
-  }
-  @media (prefers-reduced-motion: reduce){
-    .tap-next{animation:none;opacity:1;}
   }
   .wordbank .row{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;}
   .wordbank button{
@@ -2353,8 +2346,11 @@
       const stamp = document.getElementById('correct-stamp1');
       if (stamp) stamp.addEventListener('click', startGame1);
     } else if (game1Checked === 'incorrect') {
-      // 不正解スタンプを表示。チェックボタンは出さない(パネルを操作すると自動で消えて再表示される)
-      obj.innerHTML = `<span class="stamp" id="wrong-stamp1">${wrongStampSVG()}</span>お題：<span class="name">${targetName}</span>`;
+      // 不正解スタンプを表示。チェックボタンは出さず、枠の右側に次の問題へ進むボタンを置く
+      // (パネルを操作した場合は自動で消えてチェックボタンが再表示される)
+      obj.innerHTML = `<span class="stamp" id="wrong-stamp1">${wrongStampSVG()}</span>`
+        + `<div class="objective-row">お題：<span class="name">${targetName}</span><button id="next-btn1" class="secondary">次の問題へ</button></div>`;
+      document.getElementById('next-btn1').addEventListener('click', () => { playUiClickSound(); startGame1(); });
     } else {
       obj.innerHTML = `お題：<span class="name">${targetName}</span><div class="objective-actions"><button id="check-btn1">チェック</button></div>`;
       document.getElementById('check-btn1').addEventListener('click', checkGame1Answer);
@@ -2468,10 +2464,10 @@
     });
     document.getElementById('reveal-answer-btn2').addEventListener('click', () => {
       playUiClickSound();
-      // ボタン類と「誤」スタンプを消すが、自分の回答はそのまま残し、正答とタップ誘導を添える
-      preview.innerHTML = `${message}<br>正答：<span class="name">${targetName}</span><br><span class="tap-next" id="tap-next2">タップで次へ</span>`;
-      const tapNext = document.getElementById('tap-next2');
-      if (tapNext) tapNext.addEventListener('click', startGame2);
+      // ボタン類と「誤」スタンプを消すが、自分の回答はそのまま残し、正答と次の問題へ進むボタンを添える
+      preview.innerHTML = `${message}<br>正答：<span class="name">${targetName}</span>`
+        + `<div class="answer-actions"><button id="next-btn2" class="secondary">次の問題へ</button></div>`;
+      document.getElementById('next-btn2').addEventListener('click', () => { playUiClickSound(); startGame2(); });
     });
   }
 
