@@ -1963,8 +1963,8 @@
     lastIslands = islands;
 
     if (isNewValid) {
-      playValidSound();
       if (currentMode !== 'game2') {
+        playValidSound();
         highlightStartTime = Date.now();
         startHighlightAnimation();
       }
@@ -2460,12 +2460,14 @@
     preview.innerHTML = `<span class="stamp stamp-side" id="wrong-stamp2">${wrongStampSVG()}</span>${message}<br>`
       + `<div class="answer-actions"><button id="retry-btn2">再挑戦</button><button id="reveal-answer-btn2" class="secondary">正答を見る</button></div>`;
     document.getElementById('retry-btn2').addEventListener('click', () => {
+      playUiClickSound();
       document.getElementById('wordbank').classList.remove('answered');
       preview.classList.remove('result');
       answerTokens = [];
       updateAnswerPreview();
     });
     document.getElementById('reveal-answer-btn2').addEventListener('click', () => {
+      playUiClickSound();
       // ボタン類と「誤」スタンプを消すが、自分の回答はそのまま残し、正答とタップ誘導を添える
       preview.innerHTML = `${message}<br>正答：<span class="name">${targetName}</span><br><span class="tap-next" id="tap-next2">タップで次へ</span>`;
       const tapNext = document.getElementById('tap-next2');
@@ -2512,11 +2514,11 @@
     const undoBtn = document.createElement('button');
     undoBtn.textContent = '1つ戻す';
     undoBtn.className = 'secondary';
-    undoBtn.addEventListener('click', () => { answerTokens.pop(); updateAnswerPreview(); });
+    undoBtn.addEventListener('click', () => { playUiClickSound(); answerTokens.pop(); updateAnswerPreview(); });
     const clearBtn = document.createElement('button');
     clearBtn.textContent = 'クリア';
     clearBtn.className = 'secondary';
-    clearBtn.addEventListener('click', () => { answerTokens = []; updateAnswerPreview(); });
+    clearBtn.addEventListener('click', () => { playUiClickSound(); answerTokens = []; updateAnswerPreview(); });
     const submitBtn = document.createElement('button');
     submitBtn.textContent = '回答する';
     submitBtn.className = 'primary';
