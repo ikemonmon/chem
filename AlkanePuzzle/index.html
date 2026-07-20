@@ -201,11 +201,6 @@
   }
   .rules-example strong{font-size:14px;color:var(--accent-ink);}
   .rules-example p{margin:4px 0 0;font-size:13px;}
-  .diagram-toggle{
-    margin-top:8px;font-size:12px;font-weight:700;padding:5px 14px;
-    border-radius:999px;border:2px solid var(--accent);background:var(--accent-soft);color:var(--accent-ink);
-  }
-  .diagram-toggle:active{transform:translate(1px,1px);}
   .rule-diagram{
     display:grid;gap:2px;margin:10px auto;width:fit-content;
   }
@@ -214,6 +209,7 @@
     border:1px dashed var(--border);border-radius:6px;background:var(--paper);
   }
   .rule-diagram-cell.filled{border-style:solid;}
+  .rule-diagram-rotor{width:100%;height:100%;transform-origin:50% 50%;}
   .rule-diagram-cell svg{width:100%;height:100%;display:block;}
 
   /* ---- お題カード(アルカン並べ) ---- */
@@ -434,10 +430,10 @@
   <div class="diff-tabs-row">
     <div class="diff-tabs" id="diff-tabs">
       <button class="diff-tab active" data-diff="practice">練習</button>
-      <button id="naming-rules-btn" class="diff-tab" style="display:none;" type="button">命名ルール</button>
       <button class="diff-tab" data-diff="easy">やさしめ</button>
       <button class="diff-tab" data-diff="medium">まあまあ</button>
       <button class="diff-tab" data-diff="hard">そこそこ</button>
+      <button id="naming-rules-btn" class="diff-tab" style="display:none;" type="button">命名ルール</button>
     </div>
     <button id="settings-gear" class="gear-btn" style="display:none;" title="難易度設定">⚙</button>
   </div>
@@ -477,78 +473,97 @@
 <div class="modal-overlay" id="rules-modal" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
-      <h2>命名ルールの基本</h2>
+      <h2>置換基が2種類以上ある場合の命名法</h2>
       <button id="rules-close" class="modal-close" type="button">×</button>
     </div>
     <div class="rules-content">
       <section class="rules-section">
-        <h3>① 全体の流れ</h3>
-        <p>化合物に名前をつけるのは、だいたい次の3ステップです。</p>
+        <h3>全体の流れ</h3>
         <ol>
-          <li>一番長い炭素のつながり（主鎖）を見つける</li>
-          <li>置換基に位置番号をつける（← ここが一番むずかしい）</li>
-          <li>決まった順番で名前を書く</li>
+          <li>主鎖（最長の炭素鎖）または環を決める</li>
+          <li>置換基に位置番号をつける</li>
+          <li>決まった順番（アルファベット順）で名前を書く</li>
         </ol>
       </section>
 
       <section class="rules-section">
-        <h3>② 番号などの考え方</h3>
-        <p class="rules-subhead">⑴ 位置番号の決め方</p>
+        <h3>位置番号の決め方</h3>
 
-        <p><strong>⒜ 位置番号は「小さい組み合わせ」になる方を選ぶ</strong></p>
-        <p>主鎖には両端があるので、番号をどちらから数えるか選べます。<strong>置換基の位置番号を全部並べたとき、一番小さい並びになる方</strong>を選びます。決め方：辞書で単語を比べるときのように、1個目の数字を比べて、同じなら2個目、それも同じなら3個目…というように、<strong>違いが出るまで比べ続けます。</strong></p>
-        <div class="rule-diagram" id="diagram-rulea"></div>
+        <p class="rules-subhead">(a) 位置番号の組は最小になる方を選ぶ</p>
+        <ul>
+          <li>主鎖には両端、環には回る方向（時計回り／反時計回り）があり、番号のつけ方は複数候補がある</li>
+          <li>各候補の位置番号を順に並べ、先頭から順に比較し、最初に差が出たところで比較（合計の大小では判定しない）</li>
+          <li>環の場合も考え方は同じで、時計回り・反時計回りの両方で位置番号セットを作って比較</li>
+          <li>置換基が1つだけの場合、位置番号は不要（例：メチルシクロヘキサン）</li>
+        </ul>
+
         <p class="rules-caption">5-ブロモ-2-クロロ-2-フルオロ-1-ヨード-4-メチルペンタン</p>
-        <p>炭素5個の鎖に、ヨード（1番）、クロロとフルオロ（2番、同じ炭素に2つ）、メチル（4番）、ブロモ（5番）がついています。この向きの位置番号は{1,2,2,4,5}です。</p>
-        <p>逆向きに数えると、位置番号は{1,2,4,4,5}になります。1個目（1）も2個目（2）も同じで、<strong>3個目で初めて2と4の違いが出ます。</strong>2&lt;4なので、{1,2,2,4,5}の向き（＝この名前）が正解です。「最初の2つが同じだから、もう気にしなくていい」と思ってしまうのが、よくある間違いです。</p>
+        <div class="rule-diagram" id="diagram-rulea"></div>
+        <ul>
+          <li>左端から：{1,2,2,4,5}／右端から：{1,2,4,4,5}</li>
+          <li>1〜2個目は同点、3個目で 2 &lt; 4 → 「左端から」が正しい</li>
+          <li>「途中まで同点だから以降は無視してよい」という誤解に注意</li>
+        </ul>
 
-        <p><strong>⒝ 環（シクロアルカン）の場合</strong></p>
-        <p>環状分子は、番号を振る方向が時計回り・反時計回りの2通りあります。⒜と同じルールで、<strong>どちらの回り方が小さい番号になるか、両方試して</strong>比べます。なお、置換基が1つだけのときは位置番号は不要です（例：メチルシクロヘキサン）。</p>
+        <p class="rules-subhead">名前を書く順番</p>
+        <ul>
+          <li>位置番号の大小や、同点判定の有無にかかわらず、置換基名は常にアルファベット順に並べて書く</li>
+        </ul>
 
-        <p><strong>⒞ それでも同点なら、アルファベット順で先に小さい番号</strong></p>
-        <p>⒜⒝をやってもまだ番号の組み合わせが完全に同じになることがあります。そのときだけ、<strong>英語のつづり（アルファベット順）で先に来る置換基に、小さい番号を与えます。</strong></p>
-        <p class="rules-order">bromo(ブロモ) &lt; chloro(クロロ) &lt; ethyl(エチル) &lt; fluoro(フルオロ) &lt; iodo(ヨード) &lt; methyl(メチル)</p>
-
-        <p><strong>⒟ （コツ）環状分子では、置換基が2つついた炭素は「1番」の最有力候補</strong></p>
-        <p>環の炭素1個に置換基が2つついている場所があると、そこを1番にするだけで番号を2回小さく使えます。他のどの炭素を1番にしても、これより小さい並びには勝てません。<strong>このような炭素があれば、まずそこを1番の候補</strong>と考えると、番号付けがぐっと簡単になります。</p>
-
-        <p class="rules-subhead">⑵ 名前を書く順番は、いつもアルファベット順</p>
-        <p>位置番号が何番であっても、また⒞のような同点判定が必要だったかどうかに関わらず、<strong>名前の中で置換基を書く順番はいつもアルファベット順</strong>です。番号の大小とは関係ありません。</p>
+        <p class="rules-subhead">判断に悩む場合のコツ</p>
+        <p><strong>(c) それでも同点なら、アルファベット順で先の置換基に小さい番号</strong></p>
+        <p class="rules-order">bromo &lt; chloro &lt; ethyl &lt; fluoro &lt; iodo &lt; methyl</p>
+        <p>（英語のつづり順。五十音順ではない）</p>
+        <p><strong>(d) コツ：環状構造の場合、1つの炭素に置換基が2つあれば、そこが1位の最有力候補</strong></p>
+        <ul>
+          <li>二置換炭素を1位にすると、他のどの位置から始めるより位置番号セットが小さくなりやすい</li>
+          <li>該当する炭素があれば、まずそこを1位候補として検討する</li>
+        </ul>
       </section>
 
       <section class="rules-section">
-        <h3>③ 具体例</h3>
+        <h3>具体例</h3>
 
         <div class="rules-example">
           <strong>例1：基本パターン</strong>
-          <p>✅ 2-クロロ-3-メチルペンタン　❌ 4-クロロ-3-メチルペンタン</p>
-          <p>炭素5個の鎖に、クロロとメチルがついています。左から数えると{2,3}、右から数えると{4,3}→並べ直すと{3,4}。1個目を比べると2&lt;3なので、左から数えた方が正解です。</p>
-          <button class="diagram-toggle" data-diagram="ex1" type="button">図を見る</button>
-          <div class="rule-diagram" id="diagram-ex1" style="display:none;"></div>
+          <div class="rule-diagram" id="diagram-ex1"></div>
+          <p>✅ 2-クロロ-3-メチルペンタン<br>❌ 4-クロロ-3-メチルペンタン</p>
+          <ul>
+            <li>炭素5個の鎖にクロロ・メチル。左から{2,3}、右から{3,4}</li>
+            <li>1個目で 2&lt;3 → 左からが正解</li>
+          </ul>
         </div>
 
         <div class="rules-example">
           <strong>例2：2個目まで比べて決まる</strong>
-          <p>✅ 6-ブロモ-2-クロロ-3-メチルヘプタン　❌ 2-ブロモ-6-クロロ-5-メチルヘプタン</p>
-          <p>炭素7個の鎖に、ブロモ・クロロ・メチルがついています。左から数えると{2,3,6}、右から数えると{2,5,6}。1個目はどちらも2で同点。2個目を見ると3&lt;5なので、左から数えた{2,3,6}が正解です。「1個目が同じだから気にしなくていい」と思うのはよくある間違いです。</p>
-          <button class="diagram-toggle" data-diagram="ex2" type="button">図を見る</button>
-          <div class="rule-diagram" id="diagram-ex2" style="display:none;"></div>
+          <div class="rule-diagram" id="diagram-ex2"></div>
+          <p>✅ 6-ブロモ-2-クロロ-3-メチルヘプタン<br>❌ 2-ブロモ-6-クロロ-5-メチルヘプタン</p>
+          <ul>
+            <li>炭素7個の鎖にブロモ・クロロ・メチル。左から{2,3,6}、右から{2,5,6}</li>
+            <li>1個目は同点（2）、2個目で 3&lt;5 → 左からが正解</li>
+            <li>「1個目が同じだから以降は不問」は誤り</li>
+          </ul>
         </div>
 
         <div class="rules-example">
-          <strong>例3：環＋本当の同点（アルファベット順で決着）</strong>
-          <p>✅ 1-エチル-2-フルオロシクロヘキサン　❌ 2-エチル-1-フルオロシクロヘキサン</p>
-          <p>炭素6個の環に、エチルとフルオロが隣り合ってついています。時計回りでも反時計回りでも、位置番号は{1,2}のまま変わりません（本当の同点）。ここでアルファベット順の出番です。ethyl(エチル)のeはfluoro(フルオロ)のfより先に来るので、エチルに小さい番号「1」を与えます。</p>
-          <button class="diagram-toggle" data-diagram="ex3" type="button">図を見る</button>
-          <div class="rule-diagram" id="diagram-ex3" style="display:none;"></div>
+          <strong>例3：環＋真の同点（アルファベット順で決着）</strong>
+          <div class="rule-diagram" id="diagram-ex3"></div>
+          <p>✅ 1-エチル-2-フルオロシクロヘキサン<br>❌ 2-エチル-1-フルオロシクロヘキサン</p>
+          <ul>
+            <li>炭素6個の環にエチル・フルオロが隣接。両方向とも{1,2}で完全に同点</li>
+            <li>ethyl(e) &lt; fluoro(f) → エチルに小さい番号1を与える</li>
+          </ul>
         </div>
 
         <div class="rules-example">
-          <strong>例4：2置換炭素が1番の候補</strong>
+          <strong>例4：二置換炭素が1位の最有力候補</strong>
+          <div class="rule-diagram" id="diagram-ex4"></div>
           <p>✅ 2,6-ジブロモ-1-ヨード-1,3-ジメチルシクロヘキサン</p>
-          <p>炭素6個の環に、ブロモが2つ、ヨードが1つ、メチルが2つついています。1つの炭素にヨードとメチルの両方がついている場所があるので、そこを1番にします。あとは時計回り・反時計回りどちらが小さいかを比べるだけです。</p>
-          <button class="diagram-toggle" data-diagram="ex4" type="button">図を見る</button>
-          <div class="rule-diagram" id="diagram-ex4" style="display:none;"></div>
+          <ul>
+            <li>炭素6個の環にブロモ×2・ヨード×1・メチル×2</li>
+            <li>ヨードとメチルが同じ炭素につく箇所を1位とする</li>
+            <li>あとは時計回り・反時計回りで位置番号が小さくなる方を選ぶ</li>
+          </ul>
         </div>
       </section>
     </div>
@@ -2831,12 +2846,19 @@
         const data = cellMap.get(`${r},${c}`);
         if (data) {
           cellEl.className = 'rule-diagram-cell filled';
+          // パズル本体と同じ構造にする: svgIconは常に「回転前の基本形」を返すので、
+          // 実際の向きは内側のrotor要素にCSSのrotateをかけて表現する。
+          const rotor = document.createElement('div');
+          rotor.className = 'rule-diagram-rotor';
           if (data.element) {
-            cellEl.innerHTML = svgIcon(1, null, 0, false, data.element, new Set(data.dirs));
+            // ハロゲンは向きを持たない(結合方向をsvgIconに直接渡して描くため回転不要)
+            rotor.innerHTML = svgIcon(1, null, 0, false, data.element, new Set(data.dirs));
           } else {
             const { type, rotation } = panelForDirections(data.dirs);
-            cellEl.innerHTML = svgIcon(type, [], rotation, false, 'C');
+            rotor.innerHTML = svgIcon(type, [], rotation, false, 'C');
+            rotor.style.transform = `rotate(${rotation}deg)`;
           }
+          cellEl.appendChild(rotor);
         } else {
           cellEl.className = 'rule-diagram-cell';
         }
@@ -2846,26 +2868,12 @@
     el.dataset.rendered = '1';
   }
 
-  // ②⒜の図は折りたたまず最初から表示する
+  // すべての図は隠さず、常に表示する
   renderRuleDiagram('diagram-rulea', RULE_DIAGRAMS.rulea);
-
-  // ③の4例は「図を見る」タップで初めて描画し、以後は表示/非表示を切り替えるだけにする
-  document.querySelectorAll('.diagram-toggle').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.diagram;
-      const container = document.getElementById(`diagram-${key}`);
-      if (!container) return;
-      const showing = container.style.display !== 'none';
-      if (showing) {
-        container.style.display = 'none';
-        btn.textContent = '図を見る';
-      } else {
-        renderRuleDiagram(`diagram-${key}`, RULE_DIAGRAMS[key]);
-        container.style.display = 'grid';
-        btn.textContent = '図を隠す';
-      }
-    });
-  });
+  renderRuleDiagram('diagram-ex1', RULE_DIAGRAMS.ex1);
+  renderRuleDiagram('diagram-ex2', RULE_DIAGRAMS.ex2);
+  renderRuleDiagram('diagram-ex3', RULE_DIAGRAMS.ex3);
+  renderRuleDiagram('diagram-ex4', RULE_DIAGRAMS.ex4);
 
   document.getElementById('naming-rules-btn').addEventListener('click', () => {
     document.getElementById('rules-modal').style.display = 'flex';
