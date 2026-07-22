@@ -27,22 +27,7 @@
     --cat-multiplier-bg:#f1e8fb; --cat-multiplier-border:#c1a0e6;
     --cat-subname-bg:#e6f6ea; --cat-subname-border:#94cfa3;
     --cat-basename-bg:#fdf0e0; --cat-basename-border:#e8b877;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg:#1a1b18; --paper:#232420; --surface:#232420;
-      --grid-line:rgba(120,170,200,0.10);
-      --border:#3a3b34;
-      --ink:#ece8dc; --text:#ece8dc; --text-muted:#8f8b7d;
-      --warning:#e0a24d; --accent:#54c9b9; --accent-ink:#54c9b9;
-      --accent-soft:#1d3b37;
-      --highlighter:rgba(120,220,120,0.30);
-      --shadow:rgba(0,0,0,0.4);
-      --cat-number-bg:#1c2b38; --cat-number-border:#3a5a75;
-      --cat-multiplier-bg:#2a2038; --cat-multiplier-border:#5a4075;
-      --cat-subname-bg:#1c3324; --cat-subname-border:#3a6b48;
-      --cat-basename-bg:#33281a; --cat-basename-border:#7a5a30;
-    }
+    color-scheme: light;
   }
   *{box-sizing:border-box;}
   body{
@@ -118,6 +103,9 @@
     border-radius:12px;transition:transform .1s ease, background .1s ease;
   }
   .palette-card:active{transform:scale(.9) rotate(-3deg);background:var(--accent-soft);}
+  .palette-card.selected{
+    background:var(--accent-soft);outline:2.5px solid var(--accent);outline-offset:-1px;border-radius:12px;
+  }
   .palette-card .icon{width:52px;height:52px;margin:0 auto;pointer-events:none;}
   .ghost{position:fixed;pointer-events:none;width:56px;height:56px;opacity:.9;z-index:999;filter:drop-shadow(2px 3px 2px var(--shadow));}
 
@@ -416,8 +404,8 @@
   <header>
     <h1>アルカンパズル</h1>
     <div class="mode-tabs" id="mode-tabs">
-      <button class="mode-tab active" data-mode="game1">並べ</button>
-      <button class="mode-tab" data-mode="game2">名付け</button>
+      <button class="mode-tab active" data-mode="game1">並べる</button>
+      <button class="mode-tab" data-mode="game2">名付ける</button>
     </div>
   </header>
   <div class="diff-tabs-row">
@@ -445,8 +433,8 @@
       <button id="settings-close" class="modal-close" type="button">×</button>
     </div>
     <div class="modal-game-tabs" id="modal-game-tabs">
-      <button class="modal-game-tab active" data-game="game1">並べ</button>
-      <button class="modal-game-tab" data-game="game2">名付け</button>
+      <button class="modal-game-tab active" data-game="game1">並べる</button>
+      <button class="modal-game-tab" data-game="game2">名付ける</button>
     </div>
     <div class="modal-tier-tabs" id="modal-tier-tabs">
       <button class="modal-tier-tab active" data-tier="easy">やさしめ</button>
@@ -1508,6 +1496,8 @@
   let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   let cellEls = [];
   let dragState = null;
+  let paletteSelection = null; // クリック配置で選択中のパネル { type, element, rotation } | null
+  let selectedCardEl = null;   // 選択中のパレットカード要素(見た目の押下表示用)
   let traceState = null; // なぞって描く操作の進行状態: null | { path:[{r,c},...], closed:boolean }
   let traceSnapshot = null; // なぞり開始前のgridの退避(取り消し・キャンセル用)
   let interactionsEnabled = true; // ゲーム②(読み取り専用表示)ではfalseにする
@@ -1528,6 +1518,7 @@
   resetBtn.textContent = 'クリア';
   resetBtn.addEventListener('click', () => {
     playUiClickSound();
+    clearPaletteSelection();
     grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     nameRevealed = false;
     wasStructureValid = false;
@@ -2138,7 +2129,27 @@
         }
         card.appendChild(icon);
         row.appendChild(card);
-        card.addEventListener('pointerdown', (e) => { e.preventDefault(); startPaletteDrag(e, item); });
+        card.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const downX = e.clientX, downY = e.clientY;
+          let dragStarted = false;
+          const onMove = (ev) => {
+            if (dragStarted) return;
+            if (Math.hypot(ev.clientX - downX, ev.clientY - downY) > MOVE_THRESHOLD) {
+              dragStarted = true;
+              window.removeEventListener('pointermove', onMove);
+              window.removeEventListener('pointerup', onUp);
+              startPaletteDrag(ev, item);
+            }
+          };
+          const onUp = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            if (!dragStarted) togglePaletteSelection(item, card);
+          };
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+        });
       }
       paletteEl.appendChild(row);
     }
@@ -2161,8 +2172,37 @@
     document.body.appendChild(ghost);
     moveGhost(ghost, e.clientX, e.clientY);
     dragState = { mode: 'new', type, element, ghost, rotation };
+    clearPaletteSelection(); // ドラッグ配置とクリック配置が同時に有効にならないようにする
     window.addEventListener('pointermove', onDragMove);
     window.addEventListener('pointerup', onDragEnd);
+  }
+
+  // ---- クリック配置(パレットのカードを選んで、置きたいマスをタップする方式) ----
+  function togglePaletteSelection(item, cardEl) {
+    playUiClickSound();
+    if (selectedCardEl === cardEl) { clearPaletteSelection(); return; } // 同じカードの再クリックで選択解除
+    const type = item.kind === 'carbon' ? item.type : 1;
+    const element = item.kind === 'carbon' ? 'C' : item.element;
+    const rotation = (item.kind === 'carbon' && item.type === 2) ? 90 : 0;
+    if (selectedCardEl) selectedCardEl.classList.remove('selected');
+    paletteSelection = { type, element, rotation };
+    selectedCardEl = cardEl;
+    cardEl.classList.add('selected');
+  }
+
+  function clearPaletteSelection() {
+    if (selectedCardEl) selectedCardEl.classList.remove('selected');
+    selectedCardEl = null;
+    paletteSelection = null;
+  }
+
+  function placeSelectedAt(r, c) {
+    if (!isPlayableCell(r, c)) return;
+    const { type, element, rotation } = paletteSelection;
+    grid[r][c] = { type, rotation: rotation || 0, element }; // 既にパネルがあっても確認なしで上書き
+    nameRevealed = false; // パネルを操作したら「名前を表示」前の状態に戻す(練習モード)
+    playPlaceSound();
+    refreshAll();
   }
 
   function onDragMove(e) {
@@ -2217,6 +2257,24 @@
 
     cell.addEventListener('pointerdown', (e) => {
       if (!interactionsEnabled) return;
+      if (paletteSelection) {
+        // 配置モード: このマスをタップ(移動なしでpointerup)したら選択中のパネルを置く。
+        // 回転・移動・なぞって描くなど他の操作は配置モード中は行わない。
+        e.preventDefault();
+        const px = e.clientX, py = e.clientY;
+        let placeMoved = false;
+        const onPlaceMove = (ev) => {
+          if (!placeMoved && Math.hypot(ev.clientX - px, ev.clientY - py) > MOVE_THRESHOLD) placeMoved = true;
+        };
+        const onPlaceUp = () => {
+          window.removeEventListener('pointermove', onPlaceMove);
+          window.removeEventListener('pointerup', onPlaceUp);
+          if (!placeMoved) placeSelectedAt(r, c);
+        };
+        window.addEventListener('pointermove', onPlaceMove);
+        window.addEventListener('pointerup', onPlaceUp);
+        return;
+      }
       if (!grid[r][c]) {
         // 空きマスからのドラッグ: なぞって描く機能が有効なときだけ反応する
         if (isTraceEnabledNow()) { e.preventDefault(); startTrace(e, r, c); }
@@ -2246,6 +2304,7 @@
     // click/dblclickはタッチ操作だと発火が不安定なため使わず、pointerupの回数と間隔だけで自前判定する
     cell.addEventListener('pointerup', () => {
       if (!interactionsEnabled) return;
+      if (paletteSelection) return; // 配置はpointerdown内の専用リスナーで処理済み
       if (moved) { moved = false; return; }
       if (traceState) return; // なぞって描く操作の最中/直後は、このマスのタップ判定を無視する
       if (!grid[r][c]) return;
@@ -2542,6 +2601,7 @@
 
   // アルカン並べ: 練習(お題なし・自由に組む)か、やさしめ/まあまあ/そこそこ(お題を当てる)かで表示を切り替える
   function enterGame1Tier() {
+    clearPaletteSelection();
     const practice = difficulty === 'practice';
     document.getElementById('objective').style.display = practice ? 'none' : 'block';
     document.getElementById('status').style.display = practice ? 'block' : 'none';
@@ -2561,6 +2621,7 @@
   }
 
   function setMode(mode) {
+    clearPaletteSelection();
     currentMode = mode;
     // 「練習」はアルカン並べ専用の難度なので、アルカン名付けへ移るときは既定の難度に戻す
     if (mode === 'game2' && difficulty === 'practice') difficulty = 'easy';
