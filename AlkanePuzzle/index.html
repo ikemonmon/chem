@@ -2260,16 +2260,29 @@
       if (paletteSelection) {
         // 配置モード: このマスをタップ(移動なしでpointerup)したら選択中のパネルを置く。
         // 回転・移動・なぞって描くなど他の操作は配置モード中は行わない。
+        // ただし3マス以上をなぞる(スワイプする)と、選択を解除する。
         e.preventDefault();
         const px = e.clientX, py = e.clientY;
         let placeMoved = false;
+        let deselected = false;
+        const visitedCells = new Set([`${r},${c}`]); // なぞって通過した異なるマス
         const onPlaceMove = (ev) => {
           if (!placeMoved && Math.hypot(ev.clientX - px, ev.clientY - py) > MOVE_THRESHOLD) placeMoved = true;
+          if (deselected) return;
+          const target = document.elementFromPoint(ev.clientX, ev.clientY);
+          const cellEl = target && target.closest('.cell');
+          if (!cellEl) return;
+          visitedCells.add(`${cellEl.dataset.row},${cellEl.dataset.col}`);
+          if (visitedCells.size >= 3) { // 3マス目に入ったら選択解除
+            deselected = true;
+            clearPaletteSelection();
+            playUiClickSound();
+          }
         };
         const onPlaceUp = () => {
           window.removeEventListener('pointermove', onPlaceMove);
           window.removeEventListener('pointerup', onPlaceUp);
-          if (!placeMoved) placeSelectedAt(r, c);
+          if (!placeMoved && !deselected) placeSelectedAt(r, c);
         };
         window.addEventListener('pointermove', onPlaceMove);
         window.addEventListener('pointerup', onPlaceUp);
