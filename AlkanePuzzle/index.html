@@ -572,10 +572,13 @@
 
   const PANEL_ARM_TABLE = { 1: ['E'], 2: ['N', 'S'], 3: ['N', 'E'], 4: ['N', 'W', 'E'], 5: ['N', 'E', 'S', 'W'] };
   const PANEL_LABELS = { 1: '末端', 2: '直線', 3: 'かど', 4: '分岐', 5: '四級' };
-  // 練習モードでは主鎖・環ともに炭素20(イコサン)まで組めるようにするため、20まで用意する。
+  // 練習モードでは主鎖を炭素35(ペンタトリアコンタン)まで組めるようにするため、35まで用意する。
+  // 21以降は「1の位+10の位語幹」の組み合わせ方式に変わるため、個別の綴りを列挙している。
   const CHAIN_NAMES = [
     '', 'メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン',
     'ウンデカン', 'ドデカン', 'トリデカン', 'テトラデカン', 'ペンタデカン', 'ヘキサデカン', 'ヘプタデカン', 'オクタデカン', 'ノナデカン', 'イコサン',
+    'ヘンイコサン', 'ドコサン', 'トリコサン', 'テトラコサン', 'ペンタコサン', 'ヘキサコサン', 'ヘプタコサン', 'オクタコサン', 'ノナコサン', 'トリアコンタン',
+    'ヘントリアコンタン', 'ドトリアコンタン', 'トリトリアコンタン', 'テトラトリアコンタン', 'ペンタトリアコンタン',
   ];
   const SUBSTITUENT_NAME_BY_LENGTH = { 1: 'メチル', 2: 'エチル' };
   // アルファベット順(bromo, chloro, ethyl, fluoro, iodo, methyl)。日本語の五十音順ではない点に注意。
@@ -874,7 +877,7 @@
         else if (d === maxDist) candidatePairs.push([leaves[i], leaves[j]]);
       }
     }
-    if (maxDist + 1 > 20) throw new Error('UNSUPPORTED: 主鎖がイコサンを超えています');
+    if (maxDist + 1 > 35) throw new Error('UNSUPPORTED: 主鎖がペンタトリアコンタンを超えています');
 
     const candidatePaths = candidatePairs.map(([a, b]) => reconstructPath(distMaps.get(a).parent, a, b));
     const scored = candidatePaths.map((path) => {
@@ -1954,8 +1957,10 @@
     }
 
     const structureValid = !!(nameResult && nameResult.ok);
-    const isNewValid = structureValid && !wasStructureValid;
-    wasStructureValid = structureValid;
+    // なぞって描く操作の最中は、途中経過(例:2マス繋いだ時点のエタン)で正常判定が
+    // ちらつくたびに音・ハイライトが鳴らないよう、判定をドラッグ終了まで凍結する。
+    const isNewValid = !traceState && structureValid && !wasStructureValid;
+    if (!traceState) wasStructureValid = structureValid;
 
     lastMismatchMap = mismatchMap;
     lastIslands = islands;
