@@ -572,11 +572,19 @@
 
   const PANEL_ARM_TABLE = { 1: ['E'], 2: ['N', 'S'], 3: ['N', 'E'], 4: ['N', 'W', 'E'], 5: ['N', 'E', 'S', 'W'] };
   const PANEL_LABELS = { 1: '末端', 2: '直線', 3: 'かど', 4: '分岐', 5: '四級' };
-  const CHAIN_NAMES = ['', 'メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン'];
+  // 練習モードでは主鎖・環ともに炭素20(イコサン)まで組めるようにするため、20まで用意する。
+  const CHAIN_NAMES = [
+    '', 'メタン', 'エタン', 'プロパン', 'ブタン', 'ペンタン', 'ヘキサン', 'ヘプタン', 'オクタン', 'ノナン', 'デカン',
+    'ウンデカン', 'ドデカン', 'トリデカン', 'テトラデカン', 'ペンタデカン', 'ヘキサデカン', 'ヘプタデカン', 'オクタデカン', 'ノナデカン', 'イコサン',
+  ];
   const SUBSTITUENT_NAME_BY_LENGTH = { 1: 'メチル', 2: 'エチル' };
   // アルファベット順(bromo, chloro, ethyl, fluoro, iodo, methyl)。日本語の五十音順ではない点に注意。
   const SUBSTITUENT_ORDER = { 'ブロモ': 0, 'クロロ': 1, 'エチル': 2, 'フルオロ': 3, 'ヨード': 4, 'メチル': 5 };
-  const MULTIPLIER_PREFIX = ['', '', 'ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ']; // index = 同じ置換基の個数
+  // index = 同じ置換基の個数。同一置換基を20個まで置いても倍数接頭語が付けられるようにする。
+  const MULTIPLIER_PREFIX = [
+    '', '', 'ジ', 'トリ', 'テトラ', 'ペンタ', 'ヘキサ', 'ヘプタ', 'オクタ', 'ノナ', 'デカ',
+    'ウンデカ', 'ドデカ', 'トリデカ', 'テトラデカ', 'ペンタデカ', 'ヘキサデカ', 'ヘプタデカ', 'オクタデカ', 'ノナデカ', 'イコサ',
+  ];
   // ハロゲン(F/Cl/Br/I): 一価の原子なので必ず1マス・末端(type1相当)になる
   const HALOGEN_INFO = {
     F: { name: 'フルオロ', stroke: '#B08D1A', fill: '#F7F2A0' },
@@ -866,7 +874,7 @@
         else if (d === maxDist) candidatePairs.push([leaves[i], leaves[j]]);
       }
     }
-    if (maxDist + 1 > 10) throw new Error('UNSUPPORTED: 主鎖がデカンを超えています');
+    if (maxDist + 1 > 20) throw new Error('UNSUPPORTED: 主鎖がイコサンを超えています');
 
     const candidatePaths = candidatePairs.map(([a, b]) => reconstructPath(distMaps.get(a).parent, a, b));
     const scored = candidatePaths.map((path) => {
@@ -922,7 +930,7 @@
     const ring = findRing(graph);
     const ringSize = ring.length;
     if (ringSize % 2 !== 0) throw new Error('UNSUPPORTED: 奇数員環');
-    if (![4, 6, 8, 10].includes(ringSize)) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環は対象外`);
+    if (ringSize < 4 || ringSize > 20) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環は対象外`);
 
     const ringSet = new Set(ring);
     const rawSubstituents = extractSubstituents(graph, ringSet);
