@@ -48,9 +48,9 @@
     user-select:none;
     -webkit-touch-callout:none;
   }
-  #app{max-width:520px;margin:0 auto;padding:16px;}
+  #app{max-width:520px;margin:0 auto;padding:12px;}
 
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   header h1{
     font-size:20px;font-weight:800;margin:0;letter-spacing:.02em;
     color:var(--ink);
@@ -72,7 +72,7 @@
   /* ---- グリッド(方眼のマス) ---- */
   .grid{
     display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;
-    width:min(94vw,490px);margin:0 auto 16px;touch-action:none;
+    width:min(94vw,490px);margin:0 auto 10px;touch-action:none;
   }
   .cell{
     position:relative;aspect-ratio:1;
@@ -91,15 +91,15 @@
 
   /* ---- パレット ---- */
   .palette{
-    display:flex;flex-direction:column;gap:8px;align-items:center;
+    display:flex;flex-direction:column;gap:6px;align-items:center;
     background:var(--surface);
     border:2.5px solid var(--ink);border-radius:20px 18px 22px 19px;
-    padding:14px 10px;margin-bottom:14px;
+    padding:9px 10px;margin-bottom:10px;
     box-shadow:2px 3px 0 var(--shadow);
   }
   .palette-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
   .palette-card{
-    width:58px;text-align:center;padding:4px 2px;touch-action:none;cursor:grab;
+    width:58px;text-align:center;padding:3px 2px;touch-action:none;cursor:grab;
     border-radius:12px;transition:transform .1s ease, background .1s ease;
   }
   .palette-card:active{transform:scale(.9) rotate(-3deg);background:var(--accent-soft);}
@@ -112,7 +112,7 @@
   /* ---- ヒント(手描きの付箋風) ---- */
   .hint{
     font-size:12.5px;color:var(--text-muted);text-align:center;
-    margin:0 auto 14px;max-width:90%;font-weight:600;line-height:1.7;
+    margin:0 auto 8px;max-width:90%;font-weight:600;line-height:1.7;
   }
   .hint .keycap{
     display:inline-block;background:var(--accent-soft);color:var(--accent-ink);
@@ -140,7 +140,7 @@
   /* ---- モードタブ ---- */
   .mode-tabs{display:flex;gap:6px;flex-shrink:0;}
   .mode-tab{
-    font-size:14px;font-weight:700;padding:8px 14px;
+    font-size:14px;font-weight:700;padding:6px 14px;
     border-radius:14px 12px 15px 11px;border:2.5px solid var(--border);
     background:var(--surface);color:var(--text-muted);
     box-shadow:1px 2px 0 var(--shadow);
@@ -204,12 +204,12 @@
   .objective{
     position:relative;background:var(--surface);
     border:2.5px solid var(--accent);border-radius:18px 15px 19px 16px;
-    padding:14px 12px;margin-bottom:14px;font-size:15px;text-align:center;line-height:1.6;font-weight:700;
+    padding:10px 12px;margin-bottom:10px;font-size:15px;text-align:center;line-height:1.6;font-weight:700;
     box-shadow:2px 3px 0 var(--shadow);
   }
   .objective .name{font-size:22px;font-weight:800;color:var(--accent-ink);display:inline-block;}
   .objective button{
-    margin-top:10px;font-size:14px;font-weight:800;padding:8px 20px;
+    margin-top:8px;font-size:14px;font-weight:800;padding:7px 18px;
     border-radius:14px 12px 15px 11px;border:2.5px solid var(--accent);
     background:var(--accent);color:#fff;box-shadow:1px 2px 0 var(--shadow);
     transition:transform .08s ease, box-shadow .08s ease;
@@ -320,7 +320,7 @@
   }
 
   /* ---- 難易度設定(管理者向け・?admin=1のときだけ表示) ---- */
-  .diff-tabs-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .diff-tabs-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
   .diff-tabs-row .diff-tabs{flex:1;margin-bottom:0;}
   .gear-btn{
     flex-shrink:0;width:38px;height:38px;font-size:17px;line-height:1;
@@ -2419,6 +2419,8 @@
   function renderGame1Objective() {
     const obj = document.getElementById('objective');
     obj.classList.toggle('success', game1Checked === 'correct');
+    // 「お題：」ラベルはやさしめだけ表示する(まあまあ・そこそこは名前だけ見せる)
+    const objectiveLabel = difficulty === 'easy' ? 'お題：' : '';
     if (game1Checked === 'correct') {
       obj.innerHTML = `<span class="stamp tappable" id="correct-stamp1">${correctStampSVG()}</span>正解です！<br><span class="name">${targetName}</span>`;
       const stamp = document.getElementById('correct-stamp1');
@@ -2427,10 +2429,10 @@
       // 不正解スタンプを表示。チェックボタンは出さず、枠の右側に次の問題へ進むボタンを置く
       // (パネルを操作した場合は自動で消えてチェックボタンが再表示される)
       obj.innerHTML = `<span class="stamp" id="wrong-stamp1">${wrongStampSVG()}</span>`
-        + `<div class="objective-row">お題：<span class="name">${targetName}</span><button id="next-btn1" class="secondary">次の問題へ</button></div>`;
+        + `<div class="objective-row">${objectiveLabel}<span class="name">${targetName}</span><button id="next-btn1" class="secondary">次の問題へ</button></div>`;
       document.getElementById('next-btn1').addEventListener('click', () => { playUiClickSound(); startGame1(); });
     } else {
-      obj.innerHTML = `お題：<span class="name">${targetName}</span><div class="objective-actions"><button id="check-btn1">チェック</button></div>`;
+      obj.innerHTML = `${objectiveLabel}<span class="name">${targetName}</span><div class="objective-actions"><button id="check-btn1">チェック</button></div>`;
       document.getElementById('check-btn1').addEventListener('click', checkGame1Answer);
       document.querySelector('.objective-actions').appendChild(resetBtn);
     }
