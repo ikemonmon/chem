@@ -933,7 +933,7 @@
     const ring = findRing(graph);
     const ringSize = ring.length;
     if (ringSize % 2 !== 0) throw new Error('UNSUPPORTED: 奇数員環');
-    if (ringSize < 4 || ringSize > 20) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環は対象外`);
+    if (ringSize < 4 || ringSize > 34) throw new Error(`UNSUPPORTED: シクロ${ringSize}員環は対象外`);
 
     const ringSet = new Set(ring);
     const rawSubstituents = extractSubstituents(graph, ringSet);
@@ -2022,7 +2022,20 @@
   //  以後ずっと無音のままになってしまうため。特にiOS Safariで起こりやすい)
   function unlockAudio() {
     const ctx = getAudioCtx();
-    if (ctx && ctx.state === 'running') {
+    if (!ctx) return;
+    if (ctx.state !== 'running') {
+      // resume()の完了(非同期)を待たず、この同じジェスチャー内で無音バッファを
+      // 同期的にstart()する。iOS Safariはこれをもって「ユーザー操作で鳴らした」と
+      // 認識し音声出力を解錠するため、resume()だけより1回目のタップで確実に鳴る。
+      try {
+        const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.start(0);
+      } catch (e) { /* 解錠用の無音再生に失敗しても致命的ではない */ }
+    }
+    if (ctx.state === 'running') {
       window.removeEventListener('pointerdown', unlockAudio, true);
       window.removeEventListener('touchend', unlockAudio, true);
       window.removeEventListener('click', unlockAudio, true);
