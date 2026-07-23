@@ -2143,8 +2143,13 @@
         if (stillThere) {
           practiceActiveCells = new Set(stillThere.cells);
         } else if (validNow.length > 0) {
-          // E2: アクティブだった分子が消滅 → 残っている中で完成順が最新のものへフォールバック
-          practiceActiveCells = new Set(pickNewestMolecule(validNow).cells);
+          // E2: アクティブだった分子が消滅 → 残っている中で完成順が最新のものへフォールバック。
+          // 無音で2秒蛍光ペンだけ出し、アクティブが切り替わったことをそれとなく知らせる。
+          const fallback = pickNewestMolecule(validNow);
+          practiceActiveCells = new Set(fallback.cells);
+          highlightCells = new Set(fallback.cells);
+          highlightStartTime = Date.now();
+          startHighlightAnimation();
         } else {
           practiceActiveCells = null;
         }
