@@ -1700,7 +1700,40 @@
             else searchClear.style.display = 'none';
         });
 
-        searchInput.addEventListener('blur', () => { window.scrollTo(0, 0); });
+        // ★iPad等でソフトウェアキーボード表示に伴うビジュアルビューポートのずれを解消
+        function fixViewportScroll() {
+            window.scrollTo(0, 0);
+            resizeCanvas();
+        }
+
+        searchInput.addEventListener('blur', () => {
+            fixViewportScroll();
+            // blur直後はキーボード収納アニメーション中でずれが戻りきらないため遅延リトライ
+            setTimeout(fixViewportScroll, 50);
+            setTimeout(fixViewportScroll, 300);
+            setTimeout(fixViewportScroll, 800);
+        });
+
+        if (window.visualViewport) {
+            let vvResizeTimer = null;
+            window.visualViewport.addEventListener('resize', () => {
+                clearTimeout(vvResizeTimer);
+                vvResizeTimer = setTimeout(() => {
+                    // キーボードが閉じて表示領域がほぼ全画面に戻ったのに、
+                    // ページ側のスクロール位置がずれたままなら補正する
+                    const isKeyboardClosed = window.visualViewport.height >= window.innerHeight - 1;
+                    if (isKeyboardClosed && (window.visualViewport.offsetTop > 0 || window.scrollY > 0)) {
+                        fixViewportScroll();
+                    }
+                }, 50);
+            });
+            window.visualViewport.addEventListener('scroll', () => {
+                const isKeyboardClosed = window.visualViewport.height >= window.innerHeight - 1;
+                if (isKeyboardClosed && (window.visualViewport.offsetTop > 0 || window.scrollY > 0)) {
+                    fixViewportScroll();
+                }
+            });
+        }
 
         searchClear.addEventListener('click', () => {
             searchInput.value = '';
