@@ -1596,8 +1596,8 @@
   let practiceCellComponentIndex = new Map(); // "r,c" -> practiceComponents内のindex(タップ判定用)
   let practiceActiveCells = null;          // 現在アクティブな分子のマス集合(Set<"r,c">) | null
   let practicePrevValidSigs = new Set();   // 直前フレームで「正常」だった分子の署名集合
-  let practiceMoleculeOrder = new Map();   // 署名 -> 完成した順番(連番)。今も正常な分子の分だけ保持
-  let practiceSeqCounter = 0;              // 完成順を振るための連番カウンタ
+  let practiceMoleculeOrder = new Map();   // 署名 -> 最後にアクティブになった順番(連番)。今も正常な分子の分だけ保持
+  let practiceSeqCounter = 0;              // その順番を振るための連番カウンタ
 
   function isPracticeTier() { return currentMode === 'game1' && difficulty === 'practice'; }
 
@@ -2097,10 +2097,18 @@
   // ============================================================
   // アルカン並べ「練習」専用: 複数分子を同時に認識する
   // ============================================================
-  // 完成順(sequence)が最大の成分を選ぶ(E1で新規完成した分子、E2でのフォールバック先の選定に使う)
+  // 「最後にアクティブになった順」が最大の成分を選ぶ(E1の同時完成時の選定、E2のフォールバック先の選定に使う)
   function pickNewestMolecule(list) {
     return list.reduce((best, a) =>
       (practiceMoleculeOrder.get(a.sig) > practiceMoleculeOrder.get(best.sig) ? a : best));
+  }
+
+  // 指定した署名の分子が「今アクティブになった」ことを記録する。
+  // E2のフォールバックは、完成が新しい順ではなく最後にアクティブになった順を優先するため、
+  // 完成した瞬間だけでなく、アクティブに切り替わるたびにここを呼んで順序を更新する。
+  function markMoleculeActive(sig) {
+    practiceSeqCounter++;
+    practiceMoleculeOrder.set(sig, practiceSeqCounter);
   }
 
   function refreshPractice(mismatchMap) {
@@ -2120,10 +2128,7 @@
       const validSigs = new Set(validNow.map((a) => a.sig));
       const newlyValid = validNow.filter((a) => !practicePrevValidSigs.has(a.sig));
 
-      for (const a of newlyValid) {
-        practiceSeqCounter++;
-        practiceMoleculeOrder.set(a.sig, practiceSeqCounter);
-      }
+      for (const a of newlyValid) markMoleculeActive(a.sig);
       for (const sig of [...practiceMoleculeOrder.keys()]) {
         if (!validSigs.has(sig)) practiceMoleculeOrder.delete(sig);
       }
@@ -2143,10 +2148,11 @@
         if (stillThere) {
           practiceActiveCells = new Set(stillThere.cells);
         } else if (validNow.length > 0) {
-          // E2: アクティブだった分子が消滅 → 残っている中で完成順が最新のものへフォールバック。
+          // E2: アクティブだった分子が消滅 → 残っている中で最後にアクティブになったものへフォールバック。
           // 無音で2秒蛍光ペンだけ出し、アクティブが切り替わったことをそれとなく知らせる。
           const fallback = pickNewestMolecule(validNow);
           practiceActiveCells = new Set(fallback.cells);
+          markMoleculeActive(fallback.sig);
           highlightCells = new Set(fallback.cells);
           highlightStartTime = Date.now();
           startHighlightAnimation();
@@ -2157,6 +2163,7 @@
       // D: アクティブが無く、正常分子がちょうど1個なら自動的に選ぶ(保護は2個以上のときだけ)
       if (!practiceActiveCells && validNow.length === 1) {
         practiceActiveCells = new Set(validNow[0].cells);
+        markMoleculeActive(validNow[0].sig);
       }
 
       practicePrevValidSigs = validSigs;
@@ -2194,6 +2201,7 @@
   function focusPracticeComponent(comp, withHighlight) {
     practiceActiveCells = new Set(comp.cells);
     if (withHighlight) {
+      markMoleculeActive(comp.sig); // 正常分子をタップで選び直した = 今アクティブになった
       highlightCells = new Set(comp.cells);
       highlightStartTime = Date.now();
       startHighlightAnimation();
