@@ -610,6 +610,111 @@
     outline:3px solid var(--accent-deep);
     outline-offset:3px;
   }
+  /* ---------- detailed manual (collapsible) ---------- */
+  .manual{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .manual > .section-head{ margin-bottom:8px; }
+  .manual details{
+    background:var(--paper-card);
+    border:1.5px solid var(--border);
+    border-radius:16px;
+    box-shadow:2px 3px 0 var(--shadow);
+    overflow:hidden;
+  }
+  .manual summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:16px 18px;
+    font-family:'Hiragino Maru Gothic ProN',sans-serif;
+    font-weight:800;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .manual summary::-webkit-details-marker{ display:none; }
+  .manual summary .mode-no{
+    flex-shrink:0;
+    width:26px; height:26px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+  }
+  .manual summary .mode-sub{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+  .manual summary .chev{
+    margin-left:auto;
+    flex-shrink:0;
+    color:var(--ink-soft);
+    transition:transform .2s ease;
+  }
+  .manual details[open] summary .chev{ transform:rotate(180deg); }
+  .manual .steps{
+    list-style:none;
+    margin:0;
+    padding:0 18px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    counter-reset:step;
+  }
+  .manual .steps > li{
+    position:relative;
+    padding-left:38px;
+    font-size:14px;
+    line-height:1.75;
+    color:var(--ink);
+    counter-increment:step;
+  }
+  .manual .steps > li::before{
+    content:counter(step);
+    position:absolute;
+    left:0; top:1px;
+    width:26px; height:26px;
+    border-radius:50%;
+    background:var(--accent-soft);
+    border:1.5px solid var(--accent);
+    color:var(--accent-deep);
+    font-family:'Hiragino Maru Gothic ProN',sans-serif;
+    font-weight:800;
+    font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .manual .steps > li.steps-note-item{
+    padding-left:0;
+    counter-increment:none;
+  }
+  .manual .steps > li.steps-note-item::before{ display:none; }
+  .manual .steps > li .k{
+    font-weight:800;
+    color:var(--accent-deep);
+  }
+  .manual .color-key{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:6px;
+  }
+  .manual .color-key .chip{ font-size:11px; padding:4px 9px; }
+  .manual .note-line{
+    margin-top:6px;
+    padding:10px 12px;
+    background:var(--accent-soft);
+    border:1.5px solid var(--accent);
+    border-radius:10px;
+    font-size:13px;
+    line-height:1.7;
+    color:var(--ink);
+  }
   footer{
     text-align:center;
     font-size:12px;
@@ -851,6 +956,56 @@
     <h2>さあ、最初の1問を組んでみよう。</h2>
     <p>「並べる」の練習モードから、まずは分子をひとつ組み立ててみるのがおすすめ。</p>
     <a class="go" href="index.html">アルカンパズルを開く →</a>
+  </section>
+
+  <!-- DETAILED MANUAL (collapsible) -->
+  <section class="manual">
+    <div class="section-head">
+      <span class="eyebrow">もっとくわしく</span>
+      <h2>モード別・くわしい操作の流れ</h2>
+    </div>
+
+    <!-- ① 並べる -->
+    <details>
+      <summary>
+        <span class="mode-no">①</span>
+        並べる
+        <span class="mode-sub">お題の分子を組み立てる</span>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </summary>
+      <ol class="steps">
+        <li>お題の分子名を確認する。<span class="k">やさしめ</span>は「お題：」つき、<span class="k">まあまあ・そこそこ</span>は名前だけが出ます。</li>
+        <li>下のパレットから<span class="k">炭素（黒丸）</span>をドラッグして盤面に置く。</li>
+        <li>タップで結合の向きを回す（<span class="k">1タップ＝順回転／2タップ＝逆回転</span>）。<span class="k">3タップ</span>で消す、ドラッグで動かす。</li>
+        <li>炭素をつないで主鎖や枝をつくり、<span class="k">ハロゲン（F・Cl・Br・I）</span>を必要な位置にドラッグして付ける。</li>
+        <li><span class="k">「チェック」</span>で答え合わせ。「正解」ハンコが出たら画面をタップして次の問題へ。</li>
+        <li class="steps-note-item"><div class="note-line"><strong>練習モード</strong>は、お題なしで自由に組むと分子の名前がリアルタイムで表示されます。「クリア」はいつでも押せます。</div></li>
+      </ol>
+    </details>
+
+    <!-- ② 名付ける -->
+    <details>
+      <summary>
+        <span class="mode-no">②</span>
+        名付ける
+        <span class="mode-sub">できた分子に名前をつける</span>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </summary>
+      <ol class="steps">
+        <li>盤面に、完成した分子（お題）が表示される。</li>
+        <li>語群のパーツを<span class="k">正しい順番でタップ</span>して、上の解答欄に名前を組み立てる。パーツは4系統に色分けされています。
+          <div class="color-key">
+            <span class="chip number">青＝位置番号</span>
+            <span class="chip mult">紫＝倍数（ジ・トリ…）</span>
+            <span class="chip sub">緑＝置換基</span>
+            <span class="chip base">橙＝母体名</span>
+          </div>
+        </li>
+        <li><span class="k">「1つ戻す」</span>で直前の1手を取り消し、<span class="k">「クリア」</span>で全部消す。</li>
+        <li><span class="k">「回答する」</span>で判定。不正解なら<span class="k">「再挑戦」</span>か<span class="k">「正答を見る」</span>を選べます。</li>
+        <li class="steps-note-item"><div class="note-line">置換基が2種類以上あるときの詳しい決まり（主鎖の選び方・位置番号の付け方・アルファベット順）は、アプリ内の<strong>「命名ルール」</strong>ボタンから読めます。</div></li>
+      </ol>
+    </details>
   </section>
 
   <footer>アルカンパズル・入門ガイド</footer>
