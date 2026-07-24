@@ -139,11 +139,6 @@
   .video-hero:hover .play-circle,
   .video-hero:focus-visible .play-circle{ transform:scale(1.08); }
   .video-hero:focus-visible{ outline:3px solid var(--lime-ink); outline-offset:4px; }
-  .video-caption{
-    font-size:12.5px;
-    color:var(--ink-faint);
-    letter-spacing:0.02em;
-  }
   @media (prefers-reduced-motion: reduce){ .video-hero .play-circle{ transition:none; } }
 
   /* ---------- SECTION HEAD ---------- */
@@ -344,6 +339,35 @@
     color:rgba(255,255,255,0.45);
     max-width:440px;
   }
+  .stereo-methods{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    width:100%;
+    max-width:440px;
+  }
+  @media (max-width:480px){ .stereo-methods{ grid-template-columns:1fr; } }
+  .stereo-method{
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:14px;
+    padding:14px 16px;
+    text-align:left;
+  }
+  .stereo-method h4{
+    font-family:'Jost',sans-serif;
+    font-style:normal;
+    font-weight:500;
+    font-size:13.5px;
+    color:var(--lime);
+    margin:0 0 6px;
+  }
+  .stereo-method p{
+    font-size:12.5px;
+    color:rgba(255,255,255,0.75);
+    margin:0;
+    line-height:1.6;
+  }
 
   /* ---------- SS DETAIL ---------- */
   .ss-detail{
@@ -458,16 +482,15 @@
       <img src="https://i.ytimg.com/vi/Ba_PNW5MWeQ/maxresdefault.jpg" alt="Molecule 3D Viewer 紹介動画のサムネイル" loading="lazy">
       <span class="play-circle"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></span>
     </button>
-    <span class="video-caption">▶ 紹介動画「ステレオ分子(立体視)」</span>
   </section>
 
   <!-- WHAT IS THIS -->
   <section>
     <p class="lede">名前を入れて検索するだけで、<strong>アミノ酸からカフェイン、DNAの部品まで</strong>、実在するほぼすべての分子が3D構造で目の前に現れる。ボタンひとつで見た目もモードも自在に変わる、理科室に置きたくなるツール。</p>
     <div class="stat-row">
-      <div class="stat"><span class="num">1</span><span class="label">化合物名を打つだけ(日本語もOK)</span></div>
+      <div class="stat"><span class="num">ひとつ</span><span class="label">化合物名を打つだけ(日本語もOK)</span></div>
       <div class="stat"><span class="num">裸眼</span><span class="label">メガネ不要の立体視</span></div>
-      <div class="stat"><span class="num">∞</span><span class="label">PubChem 収載分子ぜんぶが対象</span></div>
+      <div class="stat"><span class="num">無制限</span><span class="label">PubChem 収載分子ぜんぶが対象</span></div>
     </div>
   </section>
 
@@ -593,16 +616,14 @@
         </div>
       </div>
 
-      <div class="feature">
-        <div class="feature-top">
-          <div class="chip amber">
-            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><circle cx="12" cy="11" r="2.5" fill="currentColor" stroke="none"/></svg>
-          </div>
-          <div class="feature-title"><h3>操作のヒント</h3></div>
-        </div>
-        <p>指1本のドラッグで自由に回転、2本指のピンチでズーム。PCではマウスドラッグで回転、右ドラッグで視点をずらせる。</p>
-      </div>
+    </div>
+  </section>
 
+  <!-- OPERATION HINT (standalone) -->
+  <section>
+    <div class="tip">
+      <span class="mark">操作のヒント</span>
+      <p>指<strong>1本のドラッグ</strong>で自由に回転、<strong>2本指のピンチ</strong>でズーム。PCでは<strong>マウスドラッグ</strong>で回転、<strong>右ドラッグ</strong>で視点をずらせる。</p>
     </div>
   </section>
 
@@ -621,18 +642,31 @@
       </svg>
       <ul class="stereo-list">
         <li><span class="i">1</span>画面から30〜50cmほど離れる。姿勢はまっすぐに。</li>
-        <li><span class="i">2</span>画面の少し手前を見るように、軽く寄り目にする。</li>
-        <li><span class="i">3</span>横に2つ並んだ像が、真ん中でもう1つ重なって見えてきたら、その中央の像にピントを合わせる。</li>
-        <li><span class="i">4</span>ピントが合った瞬間、分子が奥行きを持って浮かび上がる。</li>
+        <li><span class="i">2</span>横に2つ並んだ像が、真ん中でもう1つ重なって見えるまでピントをずらす。</li>
       </ul>
-      <p class="stereo-note">寄り目が苦手なときは「立体視モード」を平行法または単眼に切り替えて。単眼モードなら誰でもすぐに普通の3Dモデルとして見られる。</p>
+      <div class="stereo-methods">
+        <div class="stereo-method">
+          <h4>交差法(Cross)</h4>
+          <p>軽く寄り目にして、画面より手前の一点を見るようにピントを合わせる。</p>
+        </div>
+        <div class="stereo-method">
+          <h4>平行法(Parallel)</h4>
+          <p>力を抜いて、画面より奥をぼんやり眺めるように視線を平行にする。</p>
+        </div>
+      </div>
+      <p class="stereo-note">中央の像にピントが合った瞬間、分子が奥行きを持って浮かび上がる。どちらも苦手なら「立体視モード」を単眼に切り替えれば、普通の3Dモデルとしてすぐ見られる。</p>
     </div>
   </section>
 
   <!-- SCREENSAVER -->
   <section>
     <div class="section-head">
-      <span class="eyebrow">Bonus</span>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="chip amber">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><circle cx="12" cy="11" r="2.5" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <span class="eyebrow">Bonus</span>
+      </div>
       <h2>スクリーンセーバーで、教室をギャラリーに。</h2>
       <p>スクリーンセーバーのボタンをタップすると全画面表示になり、登録した分子が次々と自動で流れる。休み時間や教室の待ち時間に、アンビエントな理科展示として。</p>
     </div>
