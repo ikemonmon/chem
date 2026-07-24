@@ -715,6 +715,19 @@
     line-height:1.7;
     color:var(--ink);
   }
+  .manual .note-list{
+    margin:0;
+    padding-left:1.1em;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+  }
+  .manual .note-list li{
+    padding-left:2px;
+  }
+  .manual .note-list li::marker{
+    color:var(--accent-deep);
+  }
   footer{
     text-align:center;
     font-size:12px;
@@ -976,6 +989,13 @@
       <ol class="steps">
         <li>お題の分子名を確認する。<span class="k">やさしめ</span>は「お題：」つき、<span class="k">まあまあ・そこそこ</span>は名前だけが出ます。</li>
         <li>下のパレットから<span class="k">炭素（黒丸）</span>をドラッグして盤面に置く。</li>
+        <li class="steps-note-item"><div class="note-line">原子の置き方はいろいろ選べます。
+          <ul class="note-list">
+            <li>パレットをドラッグして、マスに1つずつ置く</li>
+            <li>パレットをタップして選ぶと、あとは盤面をタップするだけで連続して置ける（<span class="k">3マス以上</span>をなぞると選択は解除される）</li>
+            <li>空いているマスからドラッグすると、なぞった通りに主鎖をつなげて置くことができる</li>
+          </ul>
+        </div></li>
         <li>タップで結合の向きを回す（<span class="k">1タップ＝順回転／2タップ＝逆回転</span>）。<span class="k">3タップ</span>で消す、ドラッグで動かす。</li>
         <li>炭素をつないで主鎖や枝をつくり、<span class="k">ハロゲン（F・Cl・Br・I）</span>を必要な位置にドラッグして付ける。</li>
         <li><span class="k">「チェック」</span>で答え合わせ。「正解」ハンコが出たら画面をタップして次の問題へ。</li>
