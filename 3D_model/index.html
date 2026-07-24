@@ -337,10 +337,58 @@
             line-height: 1.6;
             color: rgba(255, 255, 255, 0.7);
         }
+        #portrait-warning p.portrait-sub {
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.45);
+            max-width: 320px;
+        }
+        #portrait-dismiss-btn {
+            margin-top: 8px;
+            padding: 12px 30px;
+            border-radius: 30px;
+            border: none;
+            background: var(--text-active);
+            color: #14170f;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.15s ease;
+        }
+        #portrait-dismiss-btn:active {
+            transform: scale(0.96);
+        }
 
         @media (max-width: 1024px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) {
             #portrait-warning {
                 display: flex;
+            }
+        }
+
+        html.portrait-ok #portrait-warning {
+            display: none !important;
+        }
+
+        /* 縦画面用UI：下部パネルを縦積み・折り返しにして画面内に収める */
+        @media (max-width: 1024px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) {
+            #ui-wrapper {
+                flex-direction: column;
+                gap: 10px;
+            }
+            #control-panel {
+                flex-wrap: wrap;
+                justify-content: center;
+                max-width: 92vw;
+                row-gap: 10px;
+            }
+            .ui-group {
+                border-right: none;
+                padding-right: 0;
+            }
+            #search-container {
+                max-width: 92vw;
             }
         }
 
@@ -385,6 +433,15 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
+    <script>
+        (function(){
+            try {
+                if (localStorage.getItem('mv3d_portrait_dismissed') === '1') {
+                    document.documentElement.classList.add('portrait-ok');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <div id="app-container">
         <div id="ss-exit-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 1500; cursor: pointer;"></div>
 
@@ -395,6 +452,8 @@
                 <path d="M17 6H7"/>
             </svg>
             <p>立体視の表示最適化のため、端末を横向き（Landscape）に回転してください。</p>
+            <p class="portrait-sub">※縦向きのままでも使えます。その場合は立体視が見えにくいことがあるため、デフォルトは単眼モードで表示します。</p>
+            <button type="button" id="portrait-dismiss-btn">このまま使用する</button>
         </div>
         <div id="toast-notification"></div>
         
@@ -1831,7 +1890,7 @@
                 btnStereo.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 21V3M16 21V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
             }
         }
-        btnStereo.addEventListener('click', () => { currentStereoIndex = (currentStereoIndex + 1) % 3; updateStereoMode(); });
+        btnStereo.addEventListener('click', () => { userChangedStereo = true; currentStereoIndex = (currentStereoIndex + 1) % 3; updateStereoMode(); });
 
         const btnDepth = document.getElementById('btn-depth');
         btnDepth.addEventListener('click', () => {
@@ -2006,6 +2065,34 @@
             });
         });
 
+        // ==========================================
+        // 縦画面（Portrait）対応：警告の解除・向き連動の単眼デフォルト
+        // ==========================================
+        const btnPortraitDismiss = document.getElementById('portrait-dismiss-btn');
+        if (btnPortraitDismiss) {
+            btnPortraitDismiss.addEventListener('click', () => {
+                document.documentElement.classList.add('portrait-ok');
+                try { localStorage.setItem('mv3d_portrait_dismissed', '1'); } catch (e) {}
+                setTimeout(resizeCanvas, 50);
+                setTimeout(resizeCanvas, 300);
+            });
+        }
+
+        let userChangedStereo = false;
+        const portraitStereoMQ = window.matchMedia("(max-width: 1024px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait)");
+
+        function applyOrientationStereoDefault() {
+            if (userChangedStereo || ssActive) return;
+            currentStereoIndex = portraitStereoMQ.matches ? 2 : 0;
+            updateStereoMode();
+        }
+
+        if (portraitStereoMQ.addEventListener) {
+            portraitStereoMQ.addEventListener('change', applyOrientationStereoDefault);
+        } else if (portraitStereoMQ.addListener) {
+            portraitStereoMQ.addListener(applyOrientationStereoDefault);
+        }
+
         // Key bindings
         document.addEventListener('keydown', (e) => {
             if (ssActive) {
@@ -2042,7 +2129,7 @@
         // ==========================================
         // アプリケーション初期化実行
         // ==========================================
-        updateStereoMode();
+        applyOrientationStereoDefault();
         updateModelMode();
         updateBgMode(currentBgMode);
         fetchMoleculeData('L-cysteine');
